@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>DivyaNexus API Status</title>
+  <style>
+    body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:system-ui,-apple-system,Segoe UI,sans-serif;background:#070719;color:#fff;padding:24px}.panel{width:min(720px,100%);padding:30px;border:1px solid #ffffff24;border-radius:24px;background:#ffffff0d;box-shadow:0 30px 80px #0008}.row{display:grid;grid-template-columns:150px 1fr;gap:12px;padding:10px 0;border-bottom:1px solid #ffffff17}.ok{color:#58e39c}.bad{color:#ff7b7b}code{overflow-wrap:anywhere;color:#ffd166}a{color:#ffd166}
+  </style>
+</head>
+<body>
+  <main class="panel">
+    <h1>DivyaNexus API Status</h1>
+    <p id="summary">Checking production API…</p>
+    <div id="details"></div>
+    <p><a href="index.html">Return to DivyaNexus</a></p>
+  </main>
+  <script src="js/config.js"></script>
+  <script src="js/api-client.js"></script>
+  <script>
+    (async()=>{const summary=document.getElementById('summary');const details=document.getElementById('details');try{const result=await window.AppApi.status();const body=result.body;summary.className='ok';summary.textContent='Production API is online.';const values={Service:body.service,Name:body.name,Environment:body.environment,Version:body.version,'API version':body.apiVersion,'Request ID':result.requestId};details.innerHTML=Object.entries(values).map(([key,value])=>`<div class="row"><strong>${key}</strong><code>${value??'—'}</code></div>`).join('')}catch(error){summary.className='bad';summary.textContent='Production API check failed.';details.innerHTML=`<div class="row"><strong>Error</strong><code>${error.message}</code></div>`}})();
+  </script>
+</body>
+</html>
