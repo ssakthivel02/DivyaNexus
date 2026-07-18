@@ -1,0 +1,82 @@
+name: production-smoke
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: production-smoke-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      WEBSITE_URL: https://divyanexus.omsaravanabhava.org
+      API_URL: https://api-divyanexus.omsaravanabhava.org
+      EXPECTED_SERVICE: divyanexus-api
+      EXPECTED_VERSION: 1.0.0
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate repository contract
+        run: |
+          test -f CNAME
+          test "$(tr -d '\r\n' < CNAME)" = "divyanexus.omsaravanabhava.org"
+          test -f js/config.js
+          test -f js/api-client.js
+          test -f api-status.html
+          test -f worker/src/index.js
+          test -f worker/wrangler.jsonc
+          grep -Fq "$API_URL/api/v1" js/config.js
+
+      - name: Wait for GitHub Pages publication
+        shell: bash
+        run: |
+          set -euo pipefail
+          for attempt in {1..24}; do
+            site_code=$(curl -L -sS -o /tmp/site.html -w '%{http_code}' "$WEBSITE_URL/?smoke=${GITHUB_SHA}") || site_code=000
+            config_code=$(curl -L -sS -o /tmp/config.js -w '%{http_code}' "$WEBSITE_URL/js/config.js?smoke=${GITHUB_SHA}") || config_code=000
+            status_code=$(curl -L -sS -o /tmp/api-status.html -w '%{http_code}' "$WEBSITE_URL/api-status.html?smoke=${GITHUB_SHA}") || status_code=000
+
+            if [[ "$site_code" == "200" && "$config_code" == "200" && "$status_code" == "200" ]] && grep -Fq "$API_URL/api/v1" /tmp/config.js; then
+              echo "GitHub Pages publication is current."
+              exit 0
+            fi
+
+            echo "Attempt $attempt: site=$site_code config=$config_code api-status=$status_code; waiting 10 seconds."
+            sleep 10
+          done
+
+          echo "GitHub Pages did not publish the expected files within the retry window."
+          exit 1
+
+      - name: Validate production API contract
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl -fsS "$API_URL/api/v1/status?smoke=${GITHUB_SHA}" -o /tmp/api.json
+          python - <<'PY'
+          import json, os
+          with open('/tmp/api.json', encoding='utf-8') as handle:
+              body = json.load(handle)
+          expected = {
+              'status': 'ok',
+              'service': os.environ['EXPECTED_SERVICE'],
+              'environment': 'production',
+              'version': os.environ['EXPECTED_VERSION'],
+              'apiVersion': 'v1',
+          }
+          mismatches = {key: (value, body.get(key)) for key, value in expected.items() if body.get(key) != value}
+          if mismatches:
+              raise SystemExit(f'API contract mismatch: {mismatches}')
+          if not body.get('requestId'):
+              raise SystemExit('API response is missing requestId')
+          print('Production API contract validated:', body['service'], body['version'])
+          PY
