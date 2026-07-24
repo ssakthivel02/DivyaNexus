@@ -1,0 +1,60 @@
+name: Import DivyaNexus Stage B Source V2
+
+on:
+  push:
+    branches:
+      - repair/divyanexus-production
+    paths:
+      - ".github/workflows/import-stageb-v2.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: import-divyanexus-stage-b-v2
+  cancel-in-progress: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repair branch
+        uses: actions/checkout@v4
+        with:
+          ref: repair/divyanexus-production
+          fetch-depth: 0
+
+      - name: Download and verify recovered Stage B source
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 5 --retry-delay 3 \
+            "https://filebin.net/divyanexus-stageb-7f3c91e2/DivyaNexus_StageB_React_Source_WORKFLOW_FIXED.zip" \
+            --output /tmp/divyanexus-stageb.zip
+          unzip -t /tmp/divyanexus-stageb.zip
+
+      - name: Restore source into repair branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          rm -rf /tmp/divyanexus-stageb
+          mkdir -p /tmp/divyanexus-stageb
+          unzip -q -o /tmp/divyanexus-stageb.zip -d /tmp/divyanexus-stageb
+          rsync -a /tmp/divyanexus-stageb/ ./
+          rm -rf .stageb-import
+          rm -f .github/workflows/validate-pr.yml
+
+      - name: Commit and push recovered application
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No source changes to commit."
+            exit 0
+          fi
+          git commit -m "feat: migrate DivyaNexus Stage B React application"
+          git push origin HEAD:repair/divyanexus-production
