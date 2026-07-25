@@ -11,6 +11,9 @@ permissions:
   pages: write
   id-token: write
 
+env:
+  PRODUCTION_DOMAIN: divyanexus.omsaravanabhava.org
+
 concurrency:
   group: divyanexus-pages-production
   cancel-in-progress: false
@@ -51,8 +54,16 @@ jobs:
           test -f dist/public/index.html
           test -d dist/public/assets
           test -f CNAME
-          test "$(tr -d '\r\n' < CNAME)" = "divyanexus.omsaravanabhava.org"
+          test "$(tr -d '\r\n' < CNAME)" = "$PRODUCTION_DOMAIN"
           cp CNAME dist/public/CNAME
+          ! grep -R -E "manus-storage|__manus__|BUILT_IN_FORGE|filebin\.net|%VITE_ANALYTICS_" dist/public
+
+      - name: Ensure Pages uses GitHub Actions
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api --method PUT "repos/${GITHUB_REPOSITORY}/pages" -f build_type=workflow
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
