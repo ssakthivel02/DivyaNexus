@@ -1,0 +1,55 @@
+name: Validate DivyaNexus React App
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - repair/divyanexus-production
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: divyanexus-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript check
+        run: pnpm run check
+
+      - name: Build production application
+        env:
+          VITE_BASE_PATH: /
+        run: pnpm run build
+
+      - name: Validate build output
+        run: |
+          set -euo pipefail
+          test -f dist/public/index.html
+          test -d dist/public/assets
+          find dist/public/assets -maxdepth 1 -type f | grep -Eq '\.(js|mjs)$'
+          find dist/public/assets -maxdepth 1 -type f | grep -Eq '\.css$'

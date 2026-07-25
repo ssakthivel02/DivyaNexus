@@ -1,82 +1,88 @@
-name: production-smoke
+name: Verify DivyaNexus Production
 
 on:
-  push:
-    branches: [main]
+  workflow_run:
+    workflows:
+      - Deploy DivyaNexus React App
+    types:
+      - completed
   workflow_dispatch:
 
 permissions:
   contents: read
 
 concurrency:
-  group: production-smoke-${{ github.ref }}
+  group: divyanexus-production-smoke
   cancel-in-progress: true
 
 jobs:
-  validate:
+  smoke:
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     env:
       WEBSITE_URL: https://divyanexus.omsaravanabhava.org
-      API_URL: https://api-divyanexus.omsaravanabhava.org
-      EXPECTED_SERVICE: divyanexus-api
-      EXPECTED_VERSION: 1.0.0
     steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Validate repository contract
-        run: |
-          test -f CNAME
-          test "$(tr -d '\r\n' < CNAME)" = "divyanexus.omsaravanabhava.org"
-          test -f js/config.js
-          test -f js/api-client.js
-          test -f api-status.html
-          test -f worker/src/index.js
-          test -f worker/wrangler.jsonc
-          grep -Fq "$API_URL/api/v1" js/config.js
-
-      - name: Wait for GitHub Pages publication
+      - name: Verify homepage and deployed assets
         shell: bash
         run: |
           set -euo pipefail
-          for attempt in {1..24}; do
-            site_code=$(curl -L -sS -o /tmp/site.html -w '%{http_code}' "$WEBSITE_URL/?smoke=${GITHUB_SHA}") || site_code=000
-            config_code=$(curl -L -sS -o /tmp/config.js -w '%{http_code}' "$WEBSITE_URL/js/config.js?smoke=${GITHUB_SHA}") || config_code=000
-            status_code=$(curl -L -sS -o /tmp/api-status.html -w '%{http_code}' "$WEBSITE_URL/api-status.html?smoke=${GITHUB_SHA}") || status_code=000
 
-            if [[ "$site_code" == "200" && "$config_code" == "200" && "$status_code" == "200" ]] && grep -Fq "$API_URL/api/v1" /tmp/config.js; then
-              echo "GitHub Pages publication is current."
-              exit 0
+          success=0
+          for attempt in {1..30}; do
+            site_code=$(curl --connect-timeout 10 --max-time 30 -L -sS \
+              -H 'Cache-Control: no-cache' \
+              -o /tmp/site.html \
+              -w '%{http_code}' \
+              "$WEBSITE_URL/?deployment-check=${GITHUB_RUN_ID}-${attempt}") || site_code=000
+
+            if [[ "$site_code" == "200" ]]; then
+              mapfile -t assets < <(
+                grep -Eo '(src|href)="[^"]+\.(js|mjs|css)(\?[^\"]*)?"' /tmp/site.html \
+                  | sed -E 's/^(src|href)="//; s/"$//' \
+                  | sort -u
+              )
+
+              if [[ ${#assets[@]} -gt 0 ]]; then
+                all_assets_ok=1
+                for asset in "${assets[@]}"; do
+                  if [[ "$asset" =~ ^https?:// ]]; then
+                    asset_url="$asset"
+                  elif [[ "$asset" == /* ]]; then
+                    asset_url="$WEBSITE_URL$asset"
+                  else
+                    asset_url="$WEBSITE_URL/$asset"
+                  fi
+
+                  asset_code=$(curl --connect-timeout 10 --max-time 30 -L -sS \
+                    -H 'Cache-Control: no-cache' \
+                    -o /dev/null \
+                    -w '%{http_code}' \
+                    "$asset_url") || asset_code=000
+
+                  echo "$asset_code $asset_url"
+                  if [[ "$asset_code" != "200" ]]; then
+                    all_assets_ok=0
+                  fi
+                done
+
+                if [[ "$all_assets_ok" == "1" ]]; then
+                  success=1
+                  break
+                fi
+              fi
             fi
 
-            echo "Attempt $attempt: site=$site_code config=$config_code api-status=$status_code; waiting 10 seconds."
+            echo "Attempt $attempt: homepage HTTP $site_code; waiting 10 seconds."
             sleep 10
           done
 
-          echo "GitHub Pages did not publish the expected files within the retry window."
-          exit 1
+          if [[ "$success" != "1" ]]; then
+            echo "Production verification failed: homepage or linked JS/CSS assets are unavailable."
+            exit 1
+          fi
 
-      - name: Validate production API contract
-        shell: bash
-        run: |
-          set -euo pipefail
-          curl -fsS "$API_URL/api/v1/status?smoke=${GITHUB_SHA}" -o /tmp/api.json
-          python - <<'PY'
-          import json, os
-          with open('/tmp/api.json', encoding='utf-8') as handle:
-              body = json.load(handle)
-          expected = {
-              'status': 'ok',
-              'service': os.environ['EXPECTED_SERVICE'],
-              'environment': 'production',
-              'version': os.environ['EXPECTED_VERSION'],
-              'apiVersion': 'v1',
-          }
-          mismatches = {key: (value, body.get(key)) for key, value in expected.items() if body.get(key) != value}
-          if mismatches:
-              raise SystemExit(f'API contract mismatch: {mismatches}')
-          if not body.get('requestId'):
-              raise SystemExit('API response is missing requestId')
-          print('Production API contract validated:', body['service'], body['version'])
-          PY
+          grep -qi '<title' /tmp/site.html
+          echo "DivyaNexus production homepage and linked assets verified."
