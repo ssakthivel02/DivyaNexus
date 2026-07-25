@@ -73,7 +73,10 @@ test.describe("DivyaNexus production smoke coverage", () => {
 
   test("desktop navigation and browser history work", async ({ page }) => {
     await openAppRoute(page, "/");
-    await page.getByRole("link", { name: "Scriptures", exact: true }).click();
+    await page
+      .getByRole("navigation", { name: "Primary navigation" })
+      .getByRole("link", { name: "Scriptures", exact: true })
+      .click();
     await expect(page).toHaveURL(/\/scriptures$/);
     await expect(page.locator("#main-content")).toBeVisible();
 
@@ -150,8 +153,8 @@ test.describe("DivyaNexus production smoke coverage", () => {
     await page.getByRole("button", { name: "Send question" }).click();
 
     await expect(page.getByRole("heading", { name: "A source-aware reflection on duty" })).toBeVisible();
-    await expect(page.getByText(/Generated explanation/i)).toBeVisible();
-    await expect(page.getByText(/Content boundary:/i)).toBeVisible();
+    await expect(page.locator(".ask-response-card__title .ask-layer-label")).toContainText("Generated explanation");
+    await expect(page.locator(".ask-boundary")).toContainText("Content boundary:");
   });
 
   for (const viewport of [
