@@ -58,13 +58,6 @@ jobs:
           cp CNAME dist/public/CNAME
           ! grep -R -E "manus-storage|__manus__|BUILT_IN_FORGE|filebin\.net|%VITE_ANALYTICS_" dist/public
 
-      - name: Ensure Pages uses GitHub Actions
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          gh api --method PUT "repos/${GITHUB_REPOSITORY}/pages" -f build_type=workflow
-
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
 
