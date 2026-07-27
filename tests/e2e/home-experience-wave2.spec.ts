@@ -37,9 +37,10 @@ test.describe("DivyaNexus homepage experience wave 2", () => {
     await openHome(page);
 
     await expect(page.getByRole("button", { name: /Search scriptures, deities, temples/i })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Bhagavad Gita" })).toBeVisible();
-    await expect(page.getByRole("link", { name: "Rig Veda" })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Peace/ })).toBeVisible();
+    const chips = page.locator(".cinema-hero__search-chips");
+    await expect(chips.getByRole("link", { name: "Bhagavad Gita", exact: true })).toBeVisible();
+    await expect(chips.getByRole("link", { name: "Rig Veda", exact: true })).toBeVisible();
+    await expect(chips.getByRole("link", { name: /Peace/ })).toBeVisible();
   });
 
   test("homepage displays truthful collection evidence and trust signals", async ({ page }) => {
