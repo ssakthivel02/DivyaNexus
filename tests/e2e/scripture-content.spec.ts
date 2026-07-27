@@ -47,7 +47,9 @@ test.describe("verified scripture reader", () => {
       await expect(page.getByText("Original-language text · verified primary text")).toBeVisible();
       await expect(page.getByText("Tamil · DivyaNexus editorial translation")).toBeVisible();
       await expect(page.getByText("English · DivyaNexus editorial translation")).toBeVisible();
-      await expect(page.getByText(record.source, { exact: false })).toBeVisible();
+      await expect(
+        page.locator(".reader-commentary strong").filter({ hasText: record.source }).first(),
+      ).toBeVisible();
       await expect(page.getByRole("link", { name: "Open the source text in a new tab" })).toHaveAttribute(
         "target",
         "_blank",
@@ -68,6 +70,6 @@ test.describe("verified scripture reader", () => {
 
     await page.getByRole("button", { name: /Bhagavad Gita 2\.47/ }).click();
     await expect(page.getByRole("heading", { name: "Bhagavad Gita 2.47", exact: true })).toBeVisible();
-    await expect(page.getByText("கடமை", { exact: false })).toBeVisible();
+    await expect(page.getByText("உனக்குரிய உரிமை செயலில் மட்டுமே", { exact: false })).toBeVisible();
   });
 });
