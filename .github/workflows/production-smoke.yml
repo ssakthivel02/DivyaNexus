@@ -21,24 +21,37 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 12
     env:
       WEBSITE_URL: https://divyanexus.omsaravanabhava.org
+      EXPECTED_RELEASE: stage-b-wave2
+      EXPECTED_TITLE: DivyaNexus — Vedic Knowledge & Learning
     steps:
-      - name: Verify homepage and deployed assets
+      - name: Verify current React release and deployed assets
         shell: bash
         run: |
           set -euo pipefail
 
+          verify_release_html() {
+            local file="$1"
+            grep -Fq '<div id="root" data-divyanexus-version="'"$EXPECTED_RELEASE"'">' "$file"
+            grep -Fq '<meta name="divyanexus-release" content="'"$EXPECTED_RELEASE"'"' "$file"
+            grep -Fq "<title>$EXPECTED_TITLE</title>" "$file"
+            ! grep -Fq 'Ancient Wisdom. Modern Intelligence.' "$file"
+            ! grep -Eq 'manus-storage|__manus__|BUILT_IN_FORGE|filebin\.net|%VITE_ANALYTICS_' "$file"
+          }
+
           success=0
-          for attempt in {1..30}; do
+          for attempt in {1..36}; do
+            cache_key="${GITHUB_RUN_ID}-${attempt}-$(date +%s)"
             site_code=$(curl --connect-timeout 10 --max-time 30 -L -sS \
-              -H 'Cache-Control: no-cache' \
+              -H 'Cache-Control: no-cache, no-store, max-age=0' \
+              -H 'Pragma: no-cache' \
               -o /tmp/site.html \
               -w '%{http_code}' \
-              "$WEBSITE_URL/?deployment-check=${GITHUB_RUN_ID}-${attempt}") || site_code=000
+              "$WEBSITE_URL/?deployment-check=$cache_key") || site_code=000
 
-            if [[ "$site_code" == "200" ]]; then
+            if [[ "$site_code" == "200" ]] && verify_release_html /tmp/site.html; then
               mapfile -t assets < <(
                 grep -Eo '(src|href)="[^"]+\.(js|mjs|css)(\?[^\"]*)?"' /tmp/site.html \
                   | sed -E 's/^(src|href)="//; s/"$//' \
@@ -75,14 +88,35 @@ jobs:
               fi
             fi
 
-            echo "Attempt $attempt: homepage HTTP $site_code; waiting 10 seconds."
+            echo "Attempt $attempt: homepage HTTP $site_code or release marker mismatch; waiting 10 seconds."
             sleep 10
           done
 
           if [[ "$success" != "1" ]]; then
-            echo "Production verification failed: homepage or linked JS/CSS assets are unavailable."
+            echo "Production verification failed. The custom domain is not serving release $EXPECTED_RELEASE with all linked JS/CSS assets available."
+            echo "First 40 lines returned by production:"
+            sed -n '1,40p' /tmp/site.html || true
             exit 1
           fi
 
-          grep -qi '<title' /tmp/site.html
-          echo "DivyaNexus production homepage and linked assets verified."
+          echo "DivyaNexus production release $EXPECTED_RELEASE and linked assets verified."
+
+      - name: Verify direct application routes
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for route in scriptures deities ask-divya; do
+            route_code=$(curl --connect-timeout 10 --max-time 30 -L -sS \
+              -H 'Cache-Control: no-cache, no-store, max-age=0' \
+              -o "/tmp/$route.html" \
+              -w '%{http_code}' \
+              "$WEBSITE_URL/$route?route-check=${GITHUB_RUN_ID}") || route_code=000
+
+            echo "$route_code /$route"
+            test "$route_code" = "200"
+            grep -Fq 'data-divyanexus-version="'"$EXPECTED_RELEASE"'"' "/tmp/$route.html"
+            ! grep -Fq 'Ancient Wisdom. Modern Intelligence.' "/tmp/$route.html"
+          done
+
+          echo "Direct routes verified against the current React application shell."
