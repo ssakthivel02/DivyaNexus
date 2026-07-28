@@ -1,5 +1,5 @@
 /* DivyaNexus offline shell: cache safe public assets; never cache account or API data. */
-const CACHE = "divyanexus-stage-b-wave7-v1";
+const CACHE = "divyanexus-stage-b-wave8-v1";
 const SHELL_URL = new URL("./", self.registration.scope).toString();
 const MANIFEST_URL = new URL("./manifest.webmanifest", self.registration.scope).toString();
 const OFFLINE_URL = new URL("./offline.html", self.registration.scope).toString();

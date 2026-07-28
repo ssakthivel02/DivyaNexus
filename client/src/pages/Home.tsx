@@ -30,6 +30,7 @@ import { deityEditorialCards } from "@/data/deityEditorial";
 import { homePathways, popularSearches, trustSignals } from "@/data/homeExperience";
 import { getBookmarks, toggleBookmark } from "@/lib/localLibrary";
 import { Reveal } from "@/components/Reveal";
+import { PortalArtworkPanel } from "@/components/PortalArtworkPanel";
 import "@/home-wave2.css";
 
 type HomeProps = { onAsk: () => void; onSearch: () => void };
@@ -158,7 +159,7 @@ export default function Home({ onAsk, onSearch }: HomeProps) {
 
             <div className="cinema-hero__actions">
               <button className="button button--primary button--glow" onClick={onAsk}><Sparkles size={17} aria-hidden="true" />Ask Divya</button>
-              <Link className="button button--glass" href="/explore"><Compass size={17} aria-hidden="true" />Explore the universe</Link>
+              <Link className="button button--glass" href="/explore"><Compass size={17} aria-hidden="true" />Explore the universe</Link><a className="button button--glass" href="#owner-portal-vision"><Stars size={17} aria-hidden="true" />View portal vision</a>
             </div>
             <div className="cinema-hero__source-line"><span />A vivid learning experience, with primary sources, editorial translation, and generated reflection visibly distinguished.</div>
           </div>
@@ -237,6 +238,8 @@ export default function Home({ onAsk, onSearch }: HomeProps) {
           <div><strong>{knowledgeCategories.length}</strong><span>knowledge destinations</span></div>
           <div><strong>{heroFrames.length}</strong><span>cinematic hero scenes</span></div>
         </section>
+
+        <PortalArtworkPanel />
 
         <section className="cinema-section cinema-section--wisdom" aria-labelledby="daily-wisdom-title">
           <Reveal className="cinema-wisdom">

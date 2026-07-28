@@ -8,7 +8,7 @@ export interface VerifiedScriptureRecord {
   transliteration: string;
   tamilTranslation: string;
   englishTranslation: string;
-  wordNotes: Array<{ term: string; meaning: string }>;
+  wordNotes: Array<{ term: string; meaning: string; tamilMeaning?: string }>;
   sourceName: string;
   sourceUrl: string;
   sourceNote: string;
@@ -40,10 +40,10 @@ export const verifiedScriptureRecords: Record<string, VerifiedScriptureRecord> =
     englishTranslation:
       "I praise Agni, the household priest, the divine officiant of the sacrifice, the invoker, and the foremost bestower of treasures.",
     wordNotes: [
-      { term: "Agni", meaning: "The invoked divine fire and ritual mediator in this hymn." },
-      { term: "purohita", meaning: "One placed in front; the priest who serves at the forefront." },
-      { term: "ṛtvij", meaning: "An officiant who performs the rite at the proper season or time." },
-      { term: "hotṛ", meaning: "The invoking or reciting priest." },
+      { term: "Agni", meaning: "The invoked divine fire and ritual mediator in this hymn.", tamilMeaning: "இந்த மந்திரத்தில் அழைக்கப்படும் தெய்வீக அக்னியும் யாகத்தின் நடுவரும்." },
+      { term: "purohita", meaning: "One placed in front; the priest who serves at the forefront.", tamilMeaning: "முன்னிலையில் அமர்த்தப்பட்டவர்; சடங்கின் முன்பணியை நிறைவேற்றும் புரோகிதர்." },
+      { term: "ṛtvij", meaning: "An officiant who performs the rite at the proper season or time.", tamilMeaning: "உரிய காலத்தில் சடங்கை நடத்தும் யாக அதிகாரி." },
+      { term: "hotṛ", meaning: "The invoking or reciting priest.", tamilMeaning: "அழைப்புப் பாடலை ஓதும் அல்லது உரைக்கும் புரோகிதர்." },
     ],
     sourceName: "Vedic Heritage Portal — Rigveda, Shakala Shakha, Mandala 1, Sukta 1",
     sourceUrl: "https://vedicheritage.gov.in/rigveda-shakala-shakha-mandala-01-sukta-01/",
@@ -65,9 +65,9 @@ export const verifiedScriptureRecords: Record<string, VerifiedScriptureRecord> =
     englishTranslation:
       "O Pūṣan, lead us past the obstruction on the road; divine guide, go before us and accompany us.",
     wordNotes: [
-      { term: "Pūṣan", meaning: "A Vedic deity associated in this hymn with roads, guidance, and safe passage." },
-      { term: "adhvan", meaning: "Road, path, or journey." },
-      { term: "aṃhas", meaning: "Constraint, distress, or obstruction; the nuance depends on context." },
+      { term: "Pūṣan", meaning: "A Vedic deity associated in this hymn with roads, guidance, and safe passage.", tamilMeaning: "இந்த மந்திரத்தில் பாதை, வழிகாட்டல், பாதுகாப்பான பயணம் ஆகியவற்றுடன் தொடர்புடைய வேதத் தெய்வம்." },
+      { term: "adhvan", meaning: "Road, path, or journey.", tamilMeaning: "சாலை, பாதை அல்லது பயணம்." },
+      { term: "aṃhas", meaning: "Constraint, distress, or obstruction; the nuance depends on context.", tamilMeaning: "கட்டுப்பாடு, துயரம் அல்லது தடை; பொருள் சூழலைப் பொறுத்தது." },
     ],
     sourceName: "Sanskrit Wikisource — Rigveda Sukta 1.42",
     sourceUrl:
@@ -90,9 +90,9 @@ export const verifiedScriptureRecords: Record<string, VerifiedScriptureRecord> =
     englishTranslation:
       "The luminous rays bear aloft the divine, all-knowing Sūrya, so that he may be seen by all.",
     wordNotes: [
-      { term: "ketavaḥ", meaning: "Signs, banners, or rays; here understood as the Sun's luminous rays." },
-      { term: "jātavedas", meaning: "A knower of beings or births; an epithet whose nuance depends on Vedic context." },
-      { term: "dṛśe viśvāya", meaning: "For the sight of all; so that all may see." },
+      { term: "ketavaḥ", meaning: "Signs, banners, or rays; here understood as the Sun's luminous rays.", tamilMeaning: "அடையாளங்கள், கொடிகள் அல்லது கதிர்கள்; இங்கு சூரியனின் ஒளிக்கதிர்களாக எடுத்துக்கொள்ளப்படுகிறது." },
+      { term: "jātavedas", meaning: "A knower of beings or births; an epithet whose nuance depends on Vedic context.", tamilMeaning: "உயிர்கள் அல்லது பிறப்புகளை அறிந்தவர்; வேதச் சூழலின்படி நுணுக்கம் மாறும் சிறப்புப்பெயர்." },
+      { term: "dṛśe viśvāya", meaning: "For the sight of all; so that all may see.", tamilMeaning: "அனைவரும் காணும்படி; எல்லோரின் பார்வைக்காக." },
     ],
     sourceName: "Sanskrit Wikisource — Rigveda Sukta 1.50",
     sourceUrl:
@@ -117,9 +117,9 @@ export const verifiedScriptureRecords: Record<string, VerifiedScriptureRecord> =
     englishTranslation:
       "Your claim is to action alone, never to its fruits. Do not make the fruits of action your motive, and do not become attached to inaction.",
     wordNotes: [
-      { term: "adhikāra", meaning: "Scope, claim, authority, or responsibility in relation to action." },
-      { term: "phala", meaning: "Fruit or result of action." },
-      { term: "akarma", meaning: "Inaction or non-performance of action." },
+      { term: "adhikāra", meaning: "Scope, claim, authority, or responsibility in relation to action.", tamilMeaning: "செயலுடன் தொடர்புடைய உரிமை, அதிகார வரம்பு அல்லது பொறுப்பு." },
+      { term: "phala", meaning: "Fruit or result of action.", tamilMeaning: "செயலின் பலன் அல்லது முடிவு." },
+      { term: "akarma", meaning: "Inaction or non-performance of action.", tamilMeaning: "செயலின்மை அல்லது செயலை நிறைவேற்றாத நிலை." },
     ],
     sourceName: "Gita Supersite, IIT Kanpur — Bhagavad Gita 2.47",
     sourceUrl:
@@ -144,9 +144,9 @@ export const verifiedScriptureRecords: Record<string, VerifiedScriptureRecord> =
     englishTranslation:
       "Whenever dharma declines and adharma rises, O Bhārata, then I manifest myself.",
     wordNotes: [
-      { term: "dharma", meaning: "A context-sensitive term involving sustaining order, responsibility, and right conduct." },
-      { term: "glāni", meaning: "Decline, weakening, or diminishment." },
-      { term: "sṛjāmi ātmānam", meaning: "I bring forth or manifest myself; traditions explain the phrase in different ways." },
+      { term: "dharma", meaning: "A context-sensitive term involving sustaining order, responsibility, and right conduct.", tamilMeaning: "ஒழுங்கைத் தாங்குதல், பொறுப்பு, நல்வழி ஆகியவற்றைச் சார்ந்த சூழல் உணர்வுடைய சொல்." },
+      { term: "glāni", meaning: "Decline, weakening, or diminishment.", tamilMeaning: "சரிவு, தளர்ச்சி அல்லது குறைதல்." },
+      { term: "sṛjāmi ātmānam", meaning: "I bring forth or manifest myself; traditions explain the phrase in different ways.", tamilMeaning: "நான் என்னை வெளிப்படுத்துகிறேன்; பல மரபுகள் இந்த சொற்றொடரை வேறுபட்ட முறையில் விளக்குகின்றன." },
     ],
     sourceName: "Gita Supersite, IIT Kanpur — Bhagavad Gita 4.7",
     sourceUrl:

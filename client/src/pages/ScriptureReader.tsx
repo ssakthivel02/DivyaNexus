@@ -17,6 +17,7 @@ import {
   Stars,
 } from "lucide-react";
 import { Link } from "wouter";
+import { SpeechControls, type SpeechItem } from "@/components/SpeechControls";
 import { ASSETS, records, type KnowledgeRecord } from "@/data/content";
 import { getVerifiedScriptureRecord } from "@/data/verifiedScripture";
 import {
@@ -72,7 +73,8 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
   const initialIndex = Math.max(0, set.records.findIndex((record) => record.id === requested));
   const [index, setIndex] = useState(initialIndex);
   const [showCommentary, setShowCommentary] = useState(true);
-  const [fontScale, setFontScale] = useState(Number(getPreference("fontSize", "1")) || 1);
+  const [fontScale, setFontScale] = useState(Number(getPreference("fontSize", "1.08")) || 1.08);
+  const [readerLanguage, setReaderLanguage] = useState<"both" | "tamil" | "english">("both");
   const record = set.records[index] ?? set.records[0];
   const [saved, setSaved] = useState(() => (record ? getBookmarks().includes(record.id) : false));
 
@@ -99,9 +101,20 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
   const displayTamilTitle = verified?.tamilTitle ?? record.tamilTitle;
   const displayReference = verified?.reference ?? record.reference;
   const displayStatus = verified?.status ?? record.reviewStatus;
+  const speechItems: SpeechItem[] = verified
+    ? [
+        { id: `${record.id}-tamil`, label: "Tamil meaning", tamilLabel: "தமிழ் பொருள்", text: verified.tamilTranslation, lang: "ta-IN", rate: 0.82, sourceLabel: `${displayTitle} · Tamil editorial translation` },
+        { id: `${record.id}-sanskrit`, label: "Sanskrit text", tamilLabel: "சமஸ்கிருத மூலம்", text: verified.originalText, lang: "sa-IN", rate: 0.72, sourceLabel: `${displayTitle} · verified primary text; device speech does not preserve Vedic accents` },
+        { id: `${record.id}-iast`, label: "IAST transliteration", tamilLabel: "ஒலிப்பெயர்ப்பு", text: verified.transliteration, lang: "en-GB", rate: 0.7, sourceLabel: `${displayTitle} · readable transliteration` },
+        { id: `${record.id}-english`, label: "English meaning", tamilLabel: "ஆங்கில பொருள்", text: verified.englishTranslation, lang: "en-GB", rate: 0.88, sourceLabel: `${displayTitle} · English editorial translation` },
+      ]
+    : [
+        { id: `${record.id}-tamil`, label: "Tamil overview", tamilLabel: "தமிழ் சுருக்கம்", text: record.tamilMeaning, lang: "ta-IN", rate: 0.82, sourceLabel: `${displayTitle} · educational overview` },
+        { id: `${record.id}-english`, label: "English overview", tamilLabel: "ஆங்கில சுருக்கம்", text: record.englishMeaning, lang: "en-GB", rate: 0.88, sourceLabel: `${displayTitle} · educational overview` },
+      ];
 
   const changeScale = (next: number) => {
-    const value = Math.min(1.25, Math.max(0.87, next));
+    const value = Math.min(1.45, Math.max(0.95, next));
     setFontScale(value);
     setPreference("fontSize", String(value));
   };
@@ -194,6 +207,11 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
                   Commentary
                 </button>
               </div>
+              <div className="reader-language-switch" role="group" aria-label="Reader language focus">
+                <button type="button" className={readerLanguage === "both" ? "is-active" : ""} aria-pressed={readerLanguage === "both"} onClick={() => setReaderLanguage("both")}>Tamil + English</button>
+                <button type="button" className={readerLanguage === "tamil" ? "is-active" : ""} aria-pressed={readerLanguage === "tamil"} onClick={() => setReaderLanguage("tamil")}>தமிழ் மட்டும்</button>
+                <button type="button" className={readerLanguage === "english" ? "is-active" : ""} aria-pressed={readerLanguage === "english"} onClick={() => setReaderLanguage("english")}>English only</button>
+              </div>
             </div>
 
             <div className="reader-paper reader-paper--cinema" style={{ fontSize: `${fontScale}rem` }}>
@@ -217,14 +235,14 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
                   <p className="reader-label">Readable IAST transliteration</p>
                   <p className="reader-transliteration">{verified.transliteration}</p>
 
-                  <div className="reader-meaning-grid">
-                    <div>
+                  <div className="reader-meaning-grid" data-reader-language={readerLanguage}>
+                    <div className="reader-language-panel reader-language-panel--tamil">
                       <p className="reader-label">Tamil · DivyaNexus editorial translation</p>
                       <p className="reader-translation" lang="ta">
                         {verified.tamilTranslation}
                       </p>
                     </div>
-                    <div>
+                    <div className="reader-language-panel reader-language-panel--english">
                       <p className="reader-label">English · DivyaNexus editorial translation</p>
                       <p className="reader-translation">{verified.englishTranslation}</p>
                     </div>
@@ -235,7 +253,7 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
                     {verified.wordNotes.map((note) => (
                       <div key={note.term}>
                         <p className="reader-translation">
-                          <strong>{note.term}</strong><br />{note.meaning}
+                          <strong>{note.term}</strong><br />{note.meaning}{note.tamilMeaning && <span className="reader-word-note__tamil" lang="ta">{note.tamilMeaning}</span>}
                         </p>
                       </div>
                     ))}
@@ -260,12 +278,12 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
                   <p className="reader-transliteration">
                     This overview remains available for discovery, but it does not display an unverified quotation.
                   </p>
-                  <div className="reader-meaning-grid">
-                    <div>
+                  <div className="reader-meaning-grid" data-reader-language={readerLanguage}>
+                    <div className="reader-language-panel reader-language-panel--tamil">
                       <p className="reader-label">Tamil meaning · educational overview</p>
                       <p className="reader-translation" lang="ta">{record.tamilMeaning}</p>
                     </div>
-                    <div>
+                    <div className="reader-language-panel reader-language-panel--english">
                       <p className="reader-label">English meaning · educational overview</p>
                       <p className="reader-translation">{record.englishMeaning}</p>
                     </div>
@@ -280,10 +298,14 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
                 </>
               )}
 
+              <div id="reader-audio">
+                <SpeechControls items={speechItems} title={`Listen to ${displayTitle}`} compact />
+              </div>
+
               <div className="reader-actions">
-                <Link className="button" href="/audio">
-                  <Headphones size={15} aria-hidden="true" />Listen
-                </Link>
+                <a className="button" href="#reader-audio">
+                  <Headphones size={15} aria-hidden="true" />Listen here
+                </a>
                 <Link className="button" href={`/ask-divya?context=${encodeURIComponent(record.id)}`}>
                   <MessageCircleQuestion size={15} aria-hidden="true" />Ask Divya
                 </Link>
