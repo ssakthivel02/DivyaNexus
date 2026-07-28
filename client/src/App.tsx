@@ -8,6 +8,8 @@ import { Route, Router, Switch, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AudioMiniPlayer } from "@/components/AudioMiniPlayer";
+import { CollectionCoverage } from "@/components/CollectionCoverage";
+import { PortalArtworkPanel } from "@/components/PortalArtworkPanel";
 import { SearchOverlay } from "@/components/SearchOverlay";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -78,7 +80,7 @@ function AppRoutes({ onAsk, onSearch }: { onAsk: () => void; onSearch: () => voi
 }
 
 function AppShell() {
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
   const [searchOpen, setSearchOpen] = useState(false);
   const [theme, setTheme] = useState<"night" | "dawn">(() => getPreference("theme", "night") === "dawn" ? "dawn" : "night");
   useEffect(() => {
@@ -92,6 +94,8 @@ function AppShell() {
       <div className="site-shell">
         <SiteHeader theme={theme} onToggleTheme={() => setTheme((current) => current === "night" ? "dawn" : "night")} onSearch={() => setSearchOpen(true)} onAsk={openAsk} />
         <div className="page-shell"><Suspense fallback={<div className="route-loading" role="status"><span />Opening a study path…</div>}><AppRoutes onAsk={openAsk} onSearch={() => setSearchOpen(true)} /></Suspense></div>
+        {location === "/" && <CollectionCoverage />}
+        {location === "/" && <PortalArtworkPanel />}
         <SiteFooter />
         <AudioMiniPlayer />
       </div>
