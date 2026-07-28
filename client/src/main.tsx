@@ -6,6 +6,7 @@ import "./production-wave4.css";
 import "./editorial-wave5.css";
 import "./quality-wave6.css";
 import "./owner-artwork-wave7.css";
+import "./readability-wave8.css";
 
 createRoot(document.getElementById("root")!).render(<App />);
 markApplicationReady();
