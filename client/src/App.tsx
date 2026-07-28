@@ -15,6 +15,7 @@ import { getPreference, setPreference } from "@/lib/localLibrary";
 const About = lazy(() => import("@/pages/About"));
 const AskDivya = lazy(() => import("@/pages/AskDivya"));
 const Audio = lazy(() => import("@/pages/Audio"));
+const CollectionStatus = lazy(() => import("@/pages/CollectionStatus"));
 const Contact = lazy(() => import("@/pages/Contact"));
 const ContentDirectory = lazy(() => import("@/pages/ContentDirectory"));
 const DeityDetail = lazy(() => import("@/pages/DeityDetail"));
@@ -59,6 +60,7 @@ function AppRoutes({ onAsk, onSearch }: { onAsk: () => void; onSearch: () => voi
       <Route path="/guidance">{() => <ContentDirectory kind="life-guidance" />}</Route>
       <Route path="/learning">{() => <ContentDirectory kind="learning" />}</Route>
       <Route path="/kids">{() => <ContentDirectory kind="kids" />}</Route>
+      <Route path="/collection-status" component={CollectionStatus} />
       <Route path="/audio" component={Audio} />
       <Route path="/library" component={Library} />
       <Route path="/about" component={About} />
