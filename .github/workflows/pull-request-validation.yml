@@ -4,9 +4,6 @@ on:
   pull_request:
     branches:
       - main
-  push:
-    branches:
-      - repair/divyanexus-production
   workflow_dispatch:
 
 permissions:
@@ -19,6 +16,7 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -41,15 +39,16 @@ jobs:
       - name: TypeScript check
         run: pnpm run check
 
+      - name: Validate source portability and release markers
+        run: pnpm run verify:source-boundaries
+
+      - name: Validate router, manifest and sitemap
+        run: pnpm run verify:routes
+
       - name: Build production application
         env:
           VITE_BASE_PATH: /
         run: pnpm run build
 
-      - name: Validate build output
-        run: |
-          set -euo pipefail
-          test -f dist/public/index.html
-          test -d dist/public/assets
-          find dist/public/assets -maxdepth 1 -type f | grep -Eq '\.(js|mjs)$'
-          find dist/public/assets -maxdepth 1 -type f | grep -Eq '\.css$'
+      - name: Validate deployable build artifact
+        run: pnpm run verify:build
