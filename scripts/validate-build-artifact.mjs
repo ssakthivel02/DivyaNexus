@@ -12,7 +12,17 @@ const requiredFiles = [
   "robots.txt",
   "sitemap.xml",
   ".well-known/security.txt",
+  "scriptures/index.html",
+  "deities/index.html",
+  "deities/murugan/index.html",
+  "ask-divya/index.html",
+  "life-guidance/index.html",
+  "library/index.html",
+  "sources/index.html",
+  "privacy/index.html",
+  "status/index.html",
 ];
+const directRouteShells = requiredFiles.filter((file) => file.endsWith("/index.html"));
 const forbiddenPatterns = ["manus-storage", "__manus__", "BUILT_IN_FORGE", "filebin.net", "%VITE_ANALYTICS_", "Ancient Wisdom. Modern Intelligence."];
 const unresolvedPlaceholderPatterns = [/%BASE_URL%/, /%PUBLIC_URL%/, /%VITE_[A-Z0-9_]+%/];
 const failures = [];
@@ -48,6 +58,15 @@ if (existsSync(indexPath)) {
   const index = readFileSync(indexPath, "utf8");
   if (!index.includes(`content="${expectedRelease}"`)) failures.push(`index.html does not declare ${expectedRelease}`);
   if (!index.includes(`data-divyanexus-version="${expectedRelease}"`)) failures.push(`index.html root marker does not declare ${expectedRelease}`);
+}
+
+for (const file of directRouteShells) {
+  const path = resolve(output, file);
+  if (!existsSync(path)) continue;
+  const content = readFileSync(path, "utf8");
+  if (!content.includes(`data-divyanexus-version="${expectedRelease}"`)) {
+    failures.push(`${file} is not the verified ${expectedRelease} application shell`);
+  }
 }
 
 const scripts = files.filter((file) => /\.(?:js|mjs)$/i.test(file));
