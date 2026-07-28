@@ -1,5 +1,9 @@
 import { expect, test, type Page } from "@playwright/test";
 
+// The service worker deliberately precaches the owner artwork. Blocking it in this
+// focused suite allows the network-failure fallback path to be tested deterministically.
+test.use({ serviceWorkers: "block" });
+
 async function openHome(page: Page) {
   await page.goto("/", { waitUntil: "domcontentloaded" });
   await expect(page.locator(".route-loading")).toHaveCount(0, { timeout: 15_000 });
