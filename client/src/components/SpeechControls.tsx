@@ -1,0 +1,131 @@
+import { useEffect, useMemo, useState } from "react";
+import { CirclePause, Gauge, Languages, Play, RotateCcw, Square } from "lucide-react";
+import { useSpeechSynthesis, type SpeechRequest } from "@/hooks/useSpeechSynthesis";
+
+export type SpeechItem = SpeechRequest & {
+  id: string;
+  label: string;
+  tamilLabel?: string;
+  sourceLabel?: string;
+};
+
+export function SpeechControls({
+  items,
+  title = "Listen with a device voice",
+  compact = false,
+}: {
+  items: SpeechItem[];
+  title?: string;
+  compact?: boolean;
+}) {
+  const firstItem = items[0];
+  const [selectedId, setSelectedId] = useState(firstItem?.id ?? "");
+  const [rate, setRate] = useState(firstItem?.rate ?? 0.88);
+  const speech = useSpeechSynthesis();
+
+  useEffect(() => {
+    if (!items.some((item) => item.id === selectedId)) setSelectedId(items[0]?.id ?? "");
+  }, [items, selectedId]);
+
+  const selected = useMemo(
+    () => items.find((item) => item.id === selectedId) ?? firstItem,
+    [firstItem, items, selectedId],
+  );
+  const preferredRate = selected?.rate ?? 0.88;
+
+  useEffect(() => {
+    if (selected) setRate(preferredRate);
+  }, [preferredRate, selected?.id]);
+
+  if (!selected) return null;
+
+  const languagePrefix = selected.lang.split("-")[0].toLowerCase();
+  const hasMatchingVoice = speech.voices.some((voice) => voice.lang.toLowerCase().startsWith(languagePrefix));
+  const voiceStatus = !speech.supported
+    ? "This browser does not expose speech synthesis."
+    : speech.activeVoice
+      ? `Voice: ${speech.activeVoice}`
+      : speech.voices.length === 0
+        ? "Voice list is loading; playback will use the browser default if needed."
+        : hasMatchingVoice
+          ? `A matching ${selected.lang} voice is available and will be selected at playback.`
+          : `No matching ${selected.lang} voice was reported; the browser may use a fallback voice.`;
+
+  const play = () => speech.speak({
+    text: selected.text,
+    lang: selected.lang,
+    rate,
+    pitch: selected.pitch,
+  });
+
+  return (
+    <section className={`speech-controls ${compact ? "speech-controls--compact" : ""}`} aria-label={title}>
+      <div className="speech-controls__heading">
+        <div>
+          <p className="scene-kicker"><Languages size={14} aria-hidden="true" />On-device speech</p>
+          <h3>{title}</h3>
+        </div>
+        <span className={`speech-controls__status is-${speech.state}`} role="status" aria-live="polite">
+          {speech.state === "speaking" ? "Speaking" : speech.state === "paused" ? "Paused" : speech.state === "error" ? "Unavailable" : "Ready"}
+        </span>
+      </div>
+
+      <div className="speech-controls__languages" role="radiogroup" aria-label="Choose text and language">
+        {items.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            role="radio"
+            aria-checked={item.id === selected.id}
+            className={item.id === selected.id ? "is-active" : ""}
+            onClick={() => {
+              speech.stop();
+              setSelectedId(item.id);
+            }}
+          >
+            <strong>{item.label}</strong>
+            {item.tamilLabel && <span lang="ta">{item.tamilLabel}</span>}
+          </button>
+        ))}
+      </div>
+
+      <div className="speech-controls__transcript" lang={selected.lang.startsWith("ta") ? "ta" : selected.lang.startsWith("sa") ? "sa" : "en"}>
+        <span>{selected.sourceLabel ?? "Selected text"}</span>
+        <p>{selected.text}</p>
+      </div>
+
+      <div className="speech-controls__actions">
+        <button type="button" className="button button--primary" onClick={play} disabled={!speech.supported}>
+          <Play size={16} aria-hidden="true" />{speech.state === "ended" ? "Play again" : "Play"}
+        </button>
+        {speech.state === "speaking" ? (
+          <button type="button" className="button" onClick={speech.pause}><CirclePause size={16} aria-hidden="true" />Pause</button>
+        ) : speech.state === "paused" ? (
+          <button type="button" className="button" onClick={speech.resume}><Play size={16} aria-hidden="true" />Resume</button>
+        ) : null}
+        <button type="button" className="button" onClick={speech.stop}><Square size={15} aria-hidden="true" />Stop</button>
+        <button type="button" className="button button--quiet" onClick={() => setRate(preferredRate)}><RotateCcw size={15} aria-hidden="true" />Reset speed</button>
+      </div>
+
+      <label className="speech-controls__rate">
+        <span><Gauge size={15} aria-hidden="true" />Reading speed <strong>{rate.toFixed(2)}×</strong></span>
+        <input
+          type="range"
+          min="0.55"
+          max="1.2"
+          step="0.05"
+          value={rate}
+          aria-label={`Reading speed for ${selected.label}`}
+          aria-valuetext={`${rate.toFixed(2)} times normal speed`}
+          onChange={(event) => setRate(Number(event.target.value))}
+        />
+      </label>
+
+      <p className="speech-controls__boundary">
+        No autoplay. This is synthetic speech generated by the voice installed on this device. It is not a reviewed human recitation and does not preserve Vedic accents.
+      </p>
+      <p className="speech-controls__voice" aria-live="polite">{voiceStatus}</p>
+      {speech.error && <p className="speech-controls__error" role="alert">{speech.error}</p>}
+    </section>
+  );
+}
