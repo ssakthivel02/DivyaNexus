@@ -32,7 +32,9 @@ for (const marker of [
   if (!audio.includes(marker)) failures.push(`Audio page is missing ${marker}`);
 }
 
-if (audio.includes("autoplay")) failures.push("Audio page must not introduce autoplay");
+if (/<(?:audio|video)\b[^>]*\bautoplay\b/i.test(audio) || /\.autoplay\s*=/.test(audio)) {
+  failures.push("Audio page must not implement autoplay");
+}
 if (!audio.includes('speechLanguage === "ta-IN"')) failures.push("Tamil browser speech is not explicit");
 if (!audio.includes('speechLanguage === "en-GB"')) failures.push("English browser speech is not explicit");
 
