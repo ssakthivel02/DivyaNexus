@@ -8,6 +8,7 @@ const requiredFiles = [
   "index.html",
   "manifest.webmanifest",
   "sw.js",
+  "offline.html",
   "health.json",
   "robots.txt",
   "sitemap.xml",
