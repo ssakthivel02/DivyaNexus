@@ -1,49 +1,37 @@
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { AlertCircle, Home } from "lucide-react";
-import { useLocation } from "wouter";
+import { ArrowRight, Compass, Home, Search, Sparkles } from "lucide-react";
+import { Link, useLocation } from "wouter";
+import { ASSETS } from "@/data/content";
+
+const suggestions = [
+  { title: "Explore the universe", detail: "Browse all well-marked knowledge pathways.", href: "/explore", icon: Compass },
+  { title: "Search the collection", detail: "Try Tamil, English or transliteration.", href: "/search", icon: Search },
+  { title: "Ask Divya", detail: "Open the bounded local guidance pathway.", href: "/ask-divya", icon: Sparkles },
+] as const;
 
 export default function NotFound() {
-  const [, setLocation] = useLocation();
-
-  const handleGoHome = () => {
-    setLocation("/");
-  };
+  const [location] = useLocation();
 
   return (
-    <div className="min-h-screen w-full flex items-center justify-center bg-gradient-to-br from-slate-50 to-slate-100">
-      <Card className="w-full max-w-lg mx-4 shadow-lg border-0 bg-white/80 backdrop-blur-sm">
-        <CardContent className="pt-8 pb-8 text-center">
-          <div className="flex justify-center mb-6">
-            <div className="relative">
-              <div className="absolute inset-0 bg-red-100 rounded-full animate-pulse" />
-              <AlertCircle className="relative h-16 w-16 text-red-500" />
-            </div>
-          </div>
-
-          <h1 className="text-4xl font-bold text-slate-900 mb-2">404</h1>
-
-          <h2 className="text-xl font-semibold text-slate-700 mb-4">
-            Page Not Found
-          </h2>
-
-          <p className="text-slate-600 mb-8 leading-relaxed">
-            Sorry, the page you are looking for doesn't exist.
-            <br />
-            It may have been moved or deleted.
-          </p>
-
-          <div className="flex flex-col sm:flex-row gap-3 justify-center">
-            <Button
-              onClick={handleGoHome}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2.5 rounded-lg transition-all duration-200 shadow-md hover:shadow-lg"
-            >
-              <Home className="w-4 h-4 mr-2" />
-              Go Home
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+    <main id="main-content" className="page-main not-found-wave6">
+      <img src={ASSETS.heroArchive} alt="A quiet illuminated archive beyond a dark celestial threshold" />
+      <div className="not-found-wave6__veil" />
+      <section className="not-found-wave6__content">
+        <p className="scene-kicker">404 · Unmarked path</p>
+        <p lang="ta" className="not-found-wave6__tamil">இந்தப் பாதை இன்னும் குறிக்கப்படவில்லை</p>
+        <h1>The requested path is outside the current archive.</h1>
+        <p>The address may be incomplete, retired or not yet part of the reviewed DivyaNexus route collection. No substitute content has been invented for it.</p>
+        <code>{location}</code>
+        <Link href="/" className="button button--primary"><Home size={17} aria-hidden="true" />Return home</Link>
+      </section>
+      <section className="not-found-wave6__routes" aria-label="Suggested recovery routes">
+        {suggestions.map(({ title, detail, href, icon: Icon }) => (
+          <Link key={href} href={href}>
+            <Icon size={20} aria-hidden="true" />
+            <div><strong>{title}</strong><span>{detail}</span></div>
+            <ArrowRight size={17} aria-hidden="true" />
+          </Link>
+        ))}
+      </section>
+    </main>
   );
 }
