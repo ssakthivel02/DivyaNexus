@@ -33,7 +33,7 @@ jobs:
         shell: bash
         run: |
           set +e
-          node scripts/apply-wave8-source-patches.mjs > wave8-patch.log 2>&1
+          node scripts/run-wave8-patcher.mjs > wave8-patch.log 2>&1
           status=$?
           cat wave8-patch.log
           echo "status=$status" >> "$GITHUB_OUTPUT"
