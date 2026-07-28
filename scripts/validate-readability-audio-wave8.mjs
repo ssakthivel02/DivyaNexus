@@ -10,6 +10,7 @@ const files = {
   hook: resolve(root, "client/src/hooks/useSpeechSynthesis.ts"),
   scripture: resolve(root, "client/src/data/verifiedScripture.ts"),
   css: resolve(root, "client/src/readability-wave8.css"),
+  hardening: resolve(root, "client/src/readability-wave8-hardening.css"),
   main: resolve(root, "client/src/main.tsx"),
   worker: resolve(root, "client/public/sw.js"),
 };
@@ -23,8 +24,11 @@ const text = Object.fromEntries(
   Object.entries(files).map(([label, path]) => [label, existsSync(path) ? readFileSync(path, "utf8") : ""]),
 );
 
-for (const marker of ["PortalArtworkPanel", "<PortalArtworkPanel />", "owner-portal-vision"]) {
-  if (!text.home.includes(marker)) failures.push(`Homepage is missing owner-artwork marker: ${marker}`);
+for (const marker of ["PortalArtworkPanel", "<PortalArtworkPanel />", "owner-portal-vision", "Listen now", "Tamil, Sanskrit, transliteration, and English"]) {
+  if (!text.home.includes(marker)) failures.push(`Homepage is missing Wave 8 marker: ${marker}`);
+}
+for (const forbidden of ["Listen later", "when a reviewed recording is ready"]) {
+  if (text.home.includes(forbidden)) failures.push(`Homepage still contains stale audio copy: ${forbidden}`);
 }
 
 for (const marker of ["audio-cinema--live", "SpeechControls", "synthetic device speech", "Tamil meaning", "Sanskrit text", "IAST transliteration", "English meaning"]) {
@@ -39,12 +43,12 @@ for (const marker of ["readerLanguage", "reader-language-switch", "reader-audio"
   if (!text.reader.includes(marker)) failures.push(`Reader is missing readability/audio marker: ${marker}`);
 }
 
-for (const marker of ["speechSynthesis.speak", "SpeechSynthesisUtterance", "voiceschanged", "pause", "resume", "cancel"]) {
+for (const marker of ["speechSynthesis.speak", "SpeechSynthesisUtterance", "voiceschanged", "pause", "resume", "cancel", "setError(\"\")"]) {
   if (!text.hook.includes(marker)) failures.push(`Speech hook is missing lifecycle marker: ${marker}`);
 }
 
-for (const marker of ["synthetic speech", "On-device speech", "Reading speed", "No autoplay"]) {
-  if (!text.speech.includes(marker)) failures.push(`Speech controls are missing trust or control marker: ${marker}`);
+for (const marker of ["synthetic speech", "On-device speech", "Reading speed", "No autoplay", "preferredRate", "No matching", "aria-valuetext"]) {
+  if (!text.speech.includes(marker)) failures.push(`Speech controls are missing trust, rate or voice marker: ${marker}`);
 }
 
 const tamilWordNotes = (text.scripture.match(/tamilMeaning:/g) ?? []).length;
@@ -60,7 +64,18 @@ for (const marker of [
   if (!text.css.includes(marker)) failures.push(`Wave 8 CSS is missing marker: ${marker}`);
 }
 
+for (const marker of [
+  '"Nirmala UI"',
+  '"Tamil Sangam MN"',
+  ".portal-artwork__visual img",
+  "brightness(1.1)",
+  "prefers-reduced-motion",
+]) {
+  if (!text.hardening.includes(marker)) failures.push(`Wave 8 hardening CSS is missing marker: ${marker}`);
+}
+
 if (!text.main.includes('import "./readability-wave8.css"')) failures.push("Application entry does not load Wave 8 CSS");
+if (!text.main.includes('import "./readability-wave8-hardening.css"')) failures.push("Application entry does not load Wave 8 hardening CSS last");
 if (!text.worker.includes("divyanexus-stage-b-wave8-v1")) failures.push("Service worker cache is not bumped to Wave 8");
 
 if (failures.length) {
@@ -68,4 +83,4 @@ if (failures.length) {
   process.exit(1);
 }
 
-console.log(`Wave 8 validation passed with ${tamilWordNotes} Tamil word-note meanings and working multilingual speech contracts.`);
+console.log(`Wave 8 validation passed with ${tamilWordNotes} Tamil word-note meanings, active owner artwork, working multilingual speech, language-specific rates and cross-platform Tamil font fallbacks.`);
