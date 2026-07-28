@@ -1,0 +1,258 @@
+/* DivyaNexus Deity Encyclopedia Wave 3 */
+
+.deity-directory,
+.deity-detail { overflow: hidden; }
+
+.deity-directory-hero,
+.deity-detail-hero {
+  position: relative;
+  isolation: isolate;
+  min-height: 590px;
+  display: grid;
+  align-items: end;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+  background: #080b20;
+}
+
+.deity-directory-hero > img,
+.deity-detail-hero > img {
+  position: absolute;
+  z-index: -3;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: brightness(1.12) saturate(1.08) contrast(1.02);
+}
+
+.deity-directory-hero__veil,
+.deity-detail-hero__veil {
+  position: absolute;
+  z-index: -2;
+  inset: 0;
+  background:
+    linear-gradient(90deg, rgba(4, 6, 19, .96), rgba(7, 10, 31, .76) 53%, rgba(7, 10, 31, .35)),
+    linear-gradient(0deg, #080b20, transparent 48%);
+}
+
+.deity-directory-hero__inner,
+.deity-detail-hero__inner {
+  width: var(--content);
+  margin-inline: auto;
+  padding: 8rem 0 4.4rem;
+}
+
+.deity-directory-hero__inner { max-width: min(1200px, calc(100% - 2.5rem)); }
+.deity-directory-hero__inner > p:not(.scene-kicker) { max-width: 66ch; color: rgba(251, 248, 237, .82); }
+.deity-directory-hero__inner > p[lang="ta"],
+.deity-detail-hero__tamil { margin: .9rem 0 .4rem; color: var(--gold-bright); font-size: clamp(1.05rem, 2.2vw, 1.55rem); }
+.deity-directory-hero h1,
+.deity-detail-hero h1 { max-width: 12ch; margin: 0 0 1.2rem; color: #fffaf0; font-size: clamp(3.4rem, 7vw, 7rem); line-height: .87; }
+.deity-directory-hero h1 em { color: var(--saffron-soft); font-style: italic; }
+
+.deity-directory-hero__evidence,
+.deity-detail-hero__status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  margin-top: 1.5rem;
+}
+
+.deity-directory-hero__evidence span,
+.deity-detail-hero__status span {
+  display: inline-flex;
+  align-items: center;
+  gap: .38rem;
+  border: 1px solid rgba(236, 213, 139, .26);
+  border-radius: 999px;
+  padding: .42rem .65rem;
+  background: rgba(7, 10, 29, .55);
+  color: var(--pearl-dim);
+  font-size: .68rem;
+  font-weight: 750;
+  backdrop-filter: blur(9px);
+}
+
+.deity-directory-hero__evidence strong { color: var(--saffron-soft); font-size: 1rem; }
+
+.deity-directory-workspace,
+.deity-detail-layout,
+.deity-related,
+.deity-detail-actions { width: var(--content); margin-inline: auto; }
+
+.deity-directory-workspace { padding: clamp(2.5rem, 6vw, 6rem) 0 7rem; }
+.deity-directory-search {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: .75rem;
+  min-height: 58px;
+  border: 1px solid var(--line-strong);
+  border-radius: .8rem;
+  padding: .55rem .8rem;
+  background: var(--glass);
+}
+.deity-directory-search svg { color: var(--gold-bright); }
+.deity-directory-search input { width: 100%; border: 0; outline: 0; background: transparent; color: var(--pearl); }
+.deity-directory-search input::placeholder { color: var(--muted); }
+.deity-directory-search button { display: grid; place-items: center; background: transparent; color: var(--muted); cursor: pointer; }
+
+.deity-directory-filters { display: flex; flex-wrap: wrap; gap: .45rem; margin-top: .8rem; }
+.deity-directory-filters button {
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  padding: .45rem .7rem;
+  background: transparent;
+  color: var(--muted);
+  font-size: .7rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+.deity-directory-filters button.is-active { border-color: var(--saffron); background: rgba(240, 164, 58, .12); color: var(--gold-bright); }
+
+.deity-directory-heading { display: grid; grid-template-columns: 1fr auto; gap: .5rem 2rem; align-items: end; margin: 3rem 0 1.4rem; }
+.deity-directory-heading .scene-kicker { grid-column: 1 / -1; }
+.deity-directory-heading h2 { margin: 0; font-size: clamp(2.2rem, 4vw, 4.2rem); }
+.deity-directory-heading > p:last-child { max-width: 54ch; margin: 0; color: var(--muted); font-size: .8rem; }
+
+.deity-directory-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: .8rem; }
+.deity-directory-card {
+  position: relative;
+  min-height: 330px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--line);
+  border-radius: .85rem;
+  padding: 1.35rem;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 95% 0, rgba(240, 164, 58, .12), transparent 12rem),
+    linear-gradient(145deg, rgba(23, 29, 74, .92), rgba(10, 14, 42, .92));
+  transition: transform 180ms var(--ease-out), border-color 180ms var(--ease-out), box-shadow 180ms var(--ease-out);
+}
+.deity-directory-card:hover { transform: translateY(-4px); border-color: var(--line-strong); box-shadow: 0 22px 55px rgba(0,0,0,.22); }
+.deity-directory-card__number { align-self: flex-end; color: var(--saffron-soft); font-family: var(--font-display); font-size: 1rem; }
+.deity-directory-card > p[lang="ta"] { margin: 2.2rem 0 .2rem; color: var(--gold); }
+.deity-directory-card h2 { margin: 0; font-size: clamp(2rem, 4vw, 3.6rem); line-height: .9; }
+.deity-directory-card small { margin-top: .45rem; color: var(--gold-bright); }
+.deity-directory-card > p:not([lang="ta"]) { margin: 1rem 0; color: var(--pearl-dim); }
+.deity-directory-card > div { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: auto; }
+.deity-directory-card > div span { border: 1px solid var(--line); border-radius: 999px; padding: .3rem .5rem; color: var(--muted); font-size: .61rem; }
+.deity-directory-card b { display: inline-flex; align-items: center; gap: .4rem; margin-top: .8rem; color: var(--gold-bright); font-size: .72rem; }
+
+.deity-directory-empty,
+.deity-missing { width: var(--content); margin: 4rem auto; border: 1px solid var(--line); border-radius: .85rem; padding: clamp(2rem, 6vw, 5rem); background: var(--panel); text-align: center; }
+.deity-directory-empty button { border: 1px solid var(--line-strong); border-radius: .65rem; padding: .7rem 1rem; background: transparent; color: var(--gold-bright); cursor: pointer; }
+
+.deity-back-link { display: inline-flex; align-items: center; gap: .4rem; margin-bottom: 2rem; color: var(--gold-bright); font-size: .74rem; font-weight: 800; }
+.deity-detail-hero__strapline { max-width: 62ch; color: rgba(251,248,237,.88); font-size: 1rem; }
+.deity-detail-hero__tamil-summary { max-width: 62ch; color: var(--gold-bright); }
+
+.deity-detail-actions { position: relative; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-top: -1.2rem; border: 1px solid var(--line); border-radius: .75rem; padding: .75rem; background: color-mix(in srgb, var(--ink-900) 88%, transparent); backdrop-filter: blur(16px); }
+.deity-detail-actions button,
+.deity-detail-actions a { display: inline-flex; min-height: 40px; align-items: center; gap: .4rem; border: 1px solid var(--line); border-radius: .55rem; padding: .55rem .7rem; background: transparent; color: var(--pearl-dim); font-size: .7rem; font-weight: 800; cursor: pointer; }
+.deity-detail-actions button:hover,
+.deity-detail-actions a:hover { border-color: var(--saffron); color: var(--gold-bright); }
+.deity-detail-actions > span { margin-left: auto; color: var(--gold-bright); font-size: .7rem; }
+
+.deity-detail-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(300px, .42fr); gap: 1rem; padding: 4rem 0; align-items: start; }
+.deity-overview { display: grid; gap: 1rem; }
+.deity-summary-panel,
+.deity-facts,
+.deity-relationships,
+.deity-questions,
+.deity-list-block,
+.deity-source-panel { border: 1px solid var(--line); border-radius: .85rem; background: var(--panel); }
+.deity-summary-panel,
+.deity-facts,
+.deity-relationships,
+.deity-questions { padding: clamp(1.4rem, 4vw, 3rem); }
+.deity-summary-panel h2,
+.deity-section-heading h2,
+.deity-source-panel h2 { margin: .65rem 0 1rem; font-size: clamp(2rem, 4vw, 3.7rem); line-height: .92; }
+.deity-summary-panel__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.deity-summary-panel__grid p { margin: 0; color: var(--pearl-dim); }
+.deity-summary-panel__grid p[lang="ta"] { color: var(--gold-bright); }
+.deity-aliases { display: flex; flex-wrap: wrap; gap: .4rem; margin-top: 1.3rem; }
+.deity-aliases span { border: 1px solid var(--line); border-radius: 999px; padding: .34rem .55rem; color: var(--muted); font-size: .67rem; }
+
+.deity-facts__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; }
+.deity-facts__grid article,
+.deity-relationships article { border-left: 2px solid var(--saffron); padding: .75rem 0 .75rem .9rem; }
+.deity-facts__grid span { color: var(--gold-bright); font-size: .66rem; font-weight: 850; text-transform: uppercase; letter-spacing: .07em; }
+.deity-facts__grid p,
+.deity-relationships p { margin: .3rem 0 0; color: var(--pearl-dim); font-size: .8rem; }
+
+.deity-study-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
+.deity-list-block { padding: 1.3rem; }
+.deity-list-block h2 { margin: 0 0 .8rem; font-size: 1.7rem; }
+.deity-list-block ul { display: grid; gap: .45rem; margin: 0; padding-left: 1.1rem; color: var(--pearl-dim); }
+.deity-list-block li::marker { color: var(--saffron); }
+.deity-relationships > div { display: grid; gap: .7rem; }
+.deity-questions ol { display: grid; gap: .7rem; margin: 1rem 0 0; padding-left: 1.4rem; color: var(--pearl-dim); }
+.deity-questions li::marker { color: var(--saffron); font-family: var(--font-display); font-size: 1.2rem; }
+
+.deity-source-panel { position: sticky; top: 96px; padding: 1.3rem; }
+.deity-source-panel > p { color: var(--muted); font-size: .76rem; }
+.deity-source-panel__status { display: flex; flex-wrap: wrap; gap: .35rem; margin: 1rem 0; }
+.deity-source-panel__status span { border: 1px solid var(--line); border-radius: 999px; padding: .3rem .5rem; color: var(--gold-bright); font-size: .61rem; }
+.deity-source-panel__list { display: grid; gap: .65rem; }
+.deity-source-panel__list a { display: grid; border: 1px solid var(--line); border-radius: .65rem; padding: .9rem; background: rgba(255,255,255,.025); }
+.deity-source-panel__list a:hover { border-color: var(--line-strong); }
+.deity-source-panel__list span { color: var(--saffron-soft); font-size: .6rem; font-weight: 850; text-transform: uppercase; letter-spacing: .07em; }
+.deity-source-panel__list strong { margin-top: .3rem; color: var(--pearl); }
+.deity-source-panel__list small { color: var(--gold-bright); }
+.deity-source-panel__list p { margin: .55rem 0; color: var(--muted); font-size: .68rem; }
+.deity-source-panel__list b { display: inline-flex; align-items: center; gap: .35rem; color: var(--gold-bright); font-size: .67rem; }
+.deity-source-panel__notice { border-left: 2px solid var(--saffron); padding-left: .7rem; }
+
+.deity-related { padding: 0 0 7rem; }
+.deity-related__grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .7rem; }
+.deity-related__grid a { min-height: 210px; display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: .75rem; padding: 1rem; background: linear-gradient(145deg, rgba(24,30,76,.82), rgba(9,13,39,.82)); }
+.deity-related__grid a:hover { border-color: var(--line-strong); transform: translateY(-2px); }
+.deity-related__grid span { color: var(--gold); }
+.deity-related__grid strong { margin-top: .3rem; font-family: var(--font-display); font-size: 2rem; }
+.deity-related__grid p { color: var(--muted); font-size: .72rem; }
+.deity-related__grid b { display: inline-flex; align-items: center; gap: .35rem; margin-top: auto; color: var(--gold-bright); font-size: .68rem; }
+
+:root.dawn .deity-directory-hero__veil,
+:root.dawn .deity-detail-hero__veil { background: linear-gradient(90deg, rgba(245,240,231,.97), rgba(245,240,231,.78) 54%, rgba(245,240,231,.32)), linear-gradient(0deg, var(--ink-950), transparent 48%); }
+:root.dawn .deity-directory-hero h1,
+:root.dawn .deity-detail-hero h1 { color: #171525; }
+:root.dawn .deity-directory-hero__inner > p:not(.scene-kicker),
+:root.dawn .deity-detail-hero__strapline { color: rgba(24,23,42,.8); }
+
+@media (max-width: 900px) {
+  .deity-detail-layout { grid-template-columns: 1fr; }
+  .deity-source-panel { position: static; }
+  .deity-related__grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+@media (max-width: 680px) {
+  .deity-directory-hero,
+  .deity-detail-hero { min-height: 520px; }
+  .deity-directory-hero__inner,
+  .deity-detail-hero__inner { padding: 6.3rem 0 3rem; }
+  .deity-directory-grid,
+  .deity-summary-panel__grid,
+  .deity-study-grid,
+  .deity-facts__grid,
+  .deity-related__grid { grid-template-columns: 1fr; }
+  .deity-directory-heading { grid-template-columns: 1fr; }
+  .deity-detail-actions { margin-top: 0; border-radius: 0; border-inline: 0; }
+  .deity-detail-actions > span { width: 100%; margin-left: 0; }
+}
+
+@media (max-width: 380px) {
+  .deity-directory-hero h1,
+  .deity-detail-hero h1 { font-size: 3rem; }
+  .deity-directory-card { min-height: 300px; padding: 1rem; }
+  .deity-detail-actions button,
+  .deity-detail-actions a { width: 100%; justify-content: center; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .deity-directory-card,
+  .deity-related__grid a { transition: none; transform: none !important; }
+}
