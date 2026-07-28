@@ -1,26 +1,61 @@
 {
+  "id": "./",
   "name": "DivyaNexus — Vedic Knowledge & Learning",
   "short_name": "DivyaNexus",
-  "description": "A source-aware Vedic knowledge, learning, and devotional wisdom experience.",
+  "description": "A source-aware Vedic knowledge, learning, and devotional wisdom experience in Tamil and English.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui", "browser"],
+  "orientation": "any",
   "background_color": "#080b1f",
   "theme_color": "#080b1f",
-  "lang": "en",
+  "lang": "en-GB",
   "dir": "ltr",
+  "categories": ["education", "books", "lifestyle"],
+  "prefer_related_applications": false,
   "icons": [
     {
-      "src": "/assets/divyanexus/app-icon-192.png",
+      "src": "./assets/divyanexus/app-icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any"
     },
     {
-      "src": "/assets/divyanexus/app-icon-512.png",
+      "src": "./assets/divyanexus/app-icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Search knowledge",
+      "short_name": "Search",
+      "description": "Search Tamil, English and transliteration records.",
+      "url": "./search",
+      "icons": [{ "src": "./assets/divyanexus/app-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Ask Divya",
+      "short_name": "Ask Divya",
+      "description": "Open the bounded local guidance pathway.",
+      "url": "./ask-divya",
+      "icons": [{ "src": "./assets/divyanexus/app-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "Scripture library",
+      "short_name": "Scriptures",
+      "description": "Open source-aware scripture starter records.",
+      "url": "./scriptures",
+      "icons": [{ "src": "./assets/divyanexus/app-icon-192.png", "sizes": "192x192", "type": "image/png" }]
+    },
+    {
+      "name": "My local library",
+      "short_name": "Library",
+      "description": "Open browser-local bookmarks, history, searches and notes.",
+      "url": "./library",
+      "icons": [{ "src": "./assets/divyanexus/app-icon-192.png", "sizes": "192x192", "type": "image/png" }]
     }
   ]
 }
