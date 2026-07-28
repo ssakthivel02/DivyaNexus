@@ -22,7 +22,7 @@ jobs:
           node-version: 22
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
-      - name: Capture compiler output
+      - name: Capture Wave 6 validation output
         shell: bash
         run: |
           set +e
@@ -30,6 +30,10 @@ jobs:
           echo "install_exit=$?" >> wave6-diagnostics.txt
           pnpm run check >> wave6-diagnostics.txt 2>&1
           echo "typecheck_exit=$?" >> wave6-diagnostics.txt
+          pnpm exec tsx scripts/validate-route-metadata.ts >> wave6-diagnostics.txt 2>&1
+          echo "metadata_exit=$?" >> wave6-diagnostics.txt
+          node scripts/validate-pwa-assets.mjs >> wave6-diagnostics.txt 2>&1
+          echo "pwa_exit=$?" >> wave6-diagnostics.txt
           exit 0
       - uses: actions/upload-artifact@v4
         with:
