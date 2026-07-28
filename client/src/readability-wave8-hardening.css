@@ -1,0 +1,25 @@
+/* Wave 8 hardening: cross-platform Tamil readability and the actual owner-artwork selector. */
+
+[lang="ta"] {
+  font-family: "Noto Sans Tamil", "Nirmala UI", "Latha", "Tamil Sangam MN", "Noto Sans", sans-serif;
+  font-variant-ligatures: common-ligatures;
+  overflow-wrap: anywhere;
+}
+
+.portal-artwork__visual img {
+  filter: brightness(1.1) saturate(1.07) contrast(1.01);
+}
+
+.speech-controls__voice {
+  min-height: 1.1rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .speech-controls *,
+  .portal-artwork__visual img {
+    scroll-behavior: auto;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
