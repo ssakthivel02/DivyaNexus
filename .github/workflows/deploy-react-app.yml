@@ -13,7 +13,7 @@ permissions:
 
 env:
   PRODUCTION_DOMAIN: divyanexus.omsaravanabhava.org
-  RELEASE_ID: stage-b-wave4
+  RELEASE_ID: stage-b-wave8
 
 concurrency:
   group: divyanexus-pages-production
@@ -74,7 +74,7 @@ jobs:
             "builtAt": "$built_at"
           }
           EOF
-          grep -Fq '"release": "stage-b-wave4"' dist/public/release.json
+          grep -Fq '"release": "stage-b-wave8"' dist/public/release.json
           grep -Fq '"commit": "'"$GITHUB_SHA"'"' dist/public/release.json
           test -f dist/public/CNAME
       - name: Configure GitHub Pages

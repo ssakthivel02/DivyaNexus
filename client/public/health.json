@@ -1,8 +1,14 @@
 {
   "status": "ok",
   "service": "DivyaNexus Web",
-  "release": "stage-b-wave4",
+  "release": "stage-b-wave8",
   "scope": "static application shell",
+  "capabilities": [
+    "owner-selected artwork",
+    "Tamil-readable scripture reader",
+    "multilingual synthetic speech",
+    "offline shell"
+  ],
   "reviewedAt": "2026-07-28",
   "note": "This endpoint confirms deployment content only; it is not a global uptime guarantee."
 }

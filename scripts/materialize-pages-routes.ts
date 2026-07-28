@@ -6,7 +6,7 @@ import { deityRecords } from "../client/src/features/deities/index.ts";
 const root = process.cwd();
 const output = resolve(root, "dist/public");
 const shellPath = resolve(output, "index.html");
-const expectedRelease = "stage-b-wave4";
+const expectedRelease = "stage-b-wave8";
 
 function safeOutputDirectory(route: string) {
   const segments = route
@@ -18,22 +18,17 @@ function safeOutputDirectory(route: string) {
     });
 
   const directory = resolve(output, ...segments);
-  if (directory !== output && !directory.startsWith(`${output}${sep}`)) {
-    throw new Error(`Route escaped deploy output: ${route}`);
-  }
+  if (directory !== output && !directory.startsWith(`${output}${sep}`)) throw new Error(`Route escaped deploy output: ${route}`);
   return directory;
 }
 
 const shell = await readFile(shellPath, "utf8");
-if (!shell.includes(`data-divyanexus-version="${expectedRelease}"`)) {
-  throw new Error(`Build shell does not identify ${expectedRelease}`);
-}
+if (!shell.includes(`data-divyanexus-version="${expectedRelease}"`)) throw new Error(`Build shell does not identify ${expectedRelease}`);
 
 const routes = new Set<string>([
   ...STATIC_APP_ROUTES.map((route) => route.path),
   ...deityRecords.map((record) => `/deities/${record.slug}`),
 ]);
-
 routes.delete("/");
 
 for (const route of [...routes].sort()) {
@@ -42,4 +37,4 @@ for (const route of [...routes].sort()) {
   await copyFile(shellPath, resolve(directory, "index.html"));
 }
 
-console.log(`Materialized ${routes.size} GitHub Pages direct routes from the verified React shell.`);
+console.log(`Materialized ${routes.size} GitHub Pages direct routes from the verified ${expectedRelease} React shell.`);

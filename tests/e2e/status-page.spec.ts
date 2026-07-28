@@ -8,10 +8,10 @@ async function openStatus(page: import("@playwright/test").Page) {
 }
 
 test.describe("production status page", () => {
-  test("shows transparent release evidence and browser boundaries", async ({ page }) => {
+  test("shows transparent Wave 8 release evidence and browser boundaries", async ({ page }) => {
     await openStatus(page);
     await expect(page.getByRole("heading", { name: "Release status without hidden assumptions." })).toBeVisible();
-    await expect(page.getByText("stage-b-wave4", { exact: true })).toBeVisible();
+    await expect(page.getByText("stage-b-wave8", { exact: true })).toBeVisible();
     await expect(page.getByText("HTML release marker", { exact: true })).toBeVisible();
     await expect(page.getByText("React root marker", { exact: true })).toBeVisible();
     await expect(page.getByText("Browser-local data", { exact: true })).toBeVisible();
