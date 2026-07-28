@@ -16,10 +16,11 @@ jobs:
     runs-on: ubuntu-latest
     env:
       GH_TOKEN: ${{ github.token }}
+      WEBSITE_URL: https://divyanexus.omsaravanabhava.org
     steps:
       - uses: actions/checkout@v4
 
-      - name: Capture recent main workflow runs
+      - name: Capture recent main workflow runs and production endpoints
         shell: bash
         run: |
           set +e
@@ -32,14 +33,29 @@ jobs:
           gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/production-smoke.yml/runs?branch=main&per_page=20" > smoke-runs.json 2> smoke-runs.err
           echo "smoke_exit=$?" >> diagnostic-status.txt
 
-          gh run view 30351055390 --repo "$GITHUB_REPOSITORY" --log-failed > smoke-failed.log 2> smoke-failed.err
-          echo "smoke_log_exit=$?" >> diagnostic-status.txt
+          latest_smoke_id=$(node -e "const d=require('./smoke-runs.json'); console.log(d.workflow_runs?.[0]?.id || '')")
+          echo "latest_smoke_id=$latest_smoke_id" >> diagnostic-status.txt
+          if [[ -n "$latest_smoke_id" ]]; then
+            gh run view "$latest_smoke_id" --repo "$GITHUB_REPOSITORY" --log-failed > smoke-failed.log 2> smoke-failed.err
+            echo "smoke_log_exit=$?" >> diagnostic-status.txt
+          fi
 
           gh api -X GET "repos/$GITHUB_REPOSITORY/pages" > pages-site.json 2> pages-site.err
           echo "pages_exit=$?" >> diagnostic-status.txt
 
           gh api -X GET "repos/$GITHUB_REPOSITORY/deployments?environment=github-pages&per_page=20" > pages-deployments.json 2> pages-deployments.err
           echo "deployments_exit=$?" >> diagnostic-status.txt
+
+          cache_key="${GITHUB_RUN_ID}-$(date +%s)"
+          for endpoint in sitemap.xml robots.txt .well-known/security.txt release.json health.json collection-status; do
+            safe_name=$(echo "$endpoint" | tr '/.' '__')
+            curl --connect-timeout 10 --max-time 30 -L -sS \
+              -H 'Cache-Control: no-cache, no-store, max-age=0' \
+              -D "production-${safe_name}.headers" \
+              -o "production-${safe_name}.body" \
+              -w '%{http_code}\n' \
+              "$WEBSITE_URL/$endpoint?diagnostic=$cache_key" > "production-${safe_name}.status" 2> "production-${safe_name}.err"
+          done
 
           cat diagnostic-status.txt
 
@@ -61,5 +77,6 @@ jobs:
             pages-site.err
             pages-deployments.json
             pages-deployments.err
+            production-*
           if-no-files-found: error
           retention-days: 2
