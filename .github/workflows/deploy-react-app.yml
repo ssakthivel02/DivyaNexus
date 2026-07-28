@@ -45,7 +45,7 @@ jobs:
       - name: TypeScript check
         run: pnpm run check
 
-      - name: Validate source, route, metadata, editorial, PWA and artwork contracts
+      - name: Validate source, route, metadata, editorial, PWA, artwork, readability and audio contracts
         run: |
           node scripts/validate-source-boundaries.mjs
           pnpm exec tsx scripts/validate-route-manifest.ts
@@ -53,6 +53,7 @@ jobs:
           pnpm exec tsx scripts/validate-editorial-registry.ts
           node scripts/validate-pwa-assets.mjs
           node scripts/validate-owner-artwork.mjs
+          node scripts/validate-readability-audio-wave8.mjs
 
       - name: Build production application
         env:
