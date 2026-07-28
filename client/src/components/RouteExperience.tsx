@@ -28,29 +28,42 @@ export function RouteExperience() {
     setAnnouncement(`${meta.label} page loaded`);
     if (!window.location.hash) window.scrollTo({ top: 0, left: 0, behavior: "auto" });
 
+    let interval = 0;
     let frame = 0;
-    let settled = false;
-    const focusMain = () => {
-      const main = document.getElementById("main-content");
-      if (!main || settled) return false;
-      settled = true;
-      if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
-      frame = window.requestAnimationFrame(() => main.focus({ preventScroll: true }));
-      return true;
-    };
+    let attempts = 0;
+    let lastMain: HTMLElement | null = null;
+    let stableChecks = 0;
 
-    if (focusMain()) return () => window.cancelAnimationFrame(frame);
+    const start = window.setTimeout(() => {
+      interval = window.setInterval(() => {
+        attempts += 1;
+        const loading = document.querySelector(".route-loading");
+        const main = document.getElementById("main-content");
 
-    const observer = new MutationObserver(() => {
-      if (focusMain()) observer.disconnect();
-    });
-    observer.observe(document.querySelector(".page-shell") ?? document.body, { childList: true, subtree: true });
-    const timeout = window.setTimeout(() => observer.disconnect(), 10_000);
+        if (!loading && main) {
+          if (main === lastMain) stableChecks += 1;
+          else {
+            lastMain = main;
+            stableChecks = 0;
+          }
+
+          if (stableChecks >= 1) {
+            if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
+            frame = window.requestAnimationFrame(() => main.focus({ preventScroll: true }));
+            window.clearInterval(interval);
+          }
+        } else {
+          lastMain = null;
+          stableChecks = 0;
+        }
+
+        if (attempts >= 200) window.clearInterval(interval);
+      }, 50);
+    }, 100);
 
     return () => {
-      settled = true;
-      observer.disconnect();
-      window.clearTimeout(timeout);
+      window.clearTimeout(start);
+      window.clearInterval(interval);
       window.cancelAnimationFrame(frame);
     };
   }, [location]);
