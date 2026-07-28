@@ -148,6 +148,9 @@ jobs:
             deities/murugan
             ask-divya
             life-guidance
+            glossary
+            learning
+            kids
             collection-status
             library
             sources
@@ -171,12 +174,12 @@ jobs:
 
           echo "Direct routes verified against the current React application shell."
 
-      - name: Verify public operational endpoints
+      - name: Verify public operational and offline endpoints
         shell: bash
         run: |
           set -euo pipefail
 
-          for endpoint in robots.txt sitemap.xml .well-known/security.txt; do
+          for endpoint in robots.txt sitemap.xml manifest.webmanifest sw.js offline.html .well-known/security.txt; do
             code=$(curl --connect-timeout 10 --max-time 30 -L -sS \
               -o "/tmp/$(echo "$endpoint" | tr '/.' '__')" \
               -w '%{http_code}' \
@@ -188,5 +191,8 @@ jobs:
           grep -Fq 'Sitemap: https://divyanexus.omsaravanabhava.org/sitemap.xml' /tmp/robots_txt
           grep -Fq 'https://divyanexus.omsaravanabhava.org/status' /tmp/sitemap_xml
           grep -Fq 'https://divyanexus.omsaravanabhava.org/collection-status' /tmp/sitemap_xml
+          grep -Fq '"shortcuts"' /tmp/manifest_webmanifest
+          grep -Fq 'divyanexus-stage-b-wave6-v1' /tmp/sw_js
+          grep -Fq 'This path is not cached yet.' /tmp/offline_html
           grep -Fq 'Canonical: https://divyanexus.omsaravanabhava.org/.well-known/security.txt' /tmp/_well-known_security_txt
-          echo "Robots, sitemap and coordinated disclosure endpoints verified."
+          echo "Robots, sitemap, manifest, service worker, offline fallback and coordinated disclosure endpoints verified."

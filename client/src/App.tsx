@@ -7,9 +7,12 @@ import { lazy, Suspense, useEffect, useState } from "react";
 import { Route, Router, Switch, useLocation } from "wouter";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import { AudioMiniPlayer } from "@/components/AudioMiniPlayer";
 import { CollectionCoverage } from "@/components/CollectionCoverage";
+import { DocumentMeta } from "@/components/DocumentMeta";
 import { PortalArtworkPanel } from "@/components/PortalArtworkPanel";
+import { RouteExperience } from "@/components/RouteExperience";
 import { SearchOverlay } from "@/components/SearchOverlay";
 import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
@@ -90,6 +93,8 @@ function AppShell() {
   const openAsk = () => setLocation("/ask-divya");
   return (
     <TooltipProvider>
+      <DocumentMeta />
+      <RouteExperience />
       <RestoreLegacyPath />
       <div className="site-shell">
         <SiteHeader theme={theme} onToggleTheme={() => setTheme((current) => current === "night" ? "dawn" : "night")} onSearch={() => setSearchOpen(true)} onAsk={openAsk} />
@@ -108,8 +113,10 @@ function AppShell() {
 export default function App() {
   const base = import.meta.env.BASE_URL === "/" ? "" : import.meta.env.BASE_URL.replace(/\/$/, "");
   return (
-    <Router base={base}>
-      <AppShell />
-    </Router>
+    <AppErrorBoundary>
+      <Router base={base}>
+        <AppShell />
+      </Router>
+    </AppErrorBoundary>
   );
 }

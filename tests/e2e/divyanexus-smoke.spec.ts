@@ -90,10 +90,12 @@ test.describe("DivyaNexus production smoke coverage", () => {
     await page.setViewportSize({ width: 375, height: 812 });
     await openAppRoute(page, "/");
 
-    const menuButton = page.getByRole("button", { name: "Open navigation menu" });
+    const menuButton = page.locator(".mobile-menu-button");
     await expect(menuButton).toBeVisible();
+    await expect(menuButton).toHaveAttribute("aria-label", "Open navigation menu");
     await menuButton.click();
     await expect(menuButton).toHaveAttribute("aria-expanded", "true");
+    await expect(menuButton).toHaveAttribute("aria-label", "Close navigation menu");
     await expect(page.locator("#mobile-navigation")).toHaveClass(/is-open/);
 
     await page.locator("#mobile-navigation").getByRole("link", { name: "Explore all" }).click();

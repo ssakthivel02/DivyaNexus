@@ -11,6 +11,13 @@ export type LocalNote = {
   updatedAt: string;
 };
 
+export type LocalLibraryImportResult = {
+  bookmarks: number;
+  history: number;
+  savedSearches: number;
+  notes: number;
+};
+
 const preferenceKeys = {
   bookmarks: "divyanexus.bookmarks",
   history: "divyanexus.history",
@@ -32,6 +39,15 @@ function readJson<T>(key: string, fallback: T): T {
 function writeJson<T>(key: string, value: T) {
   window.localStorage.setItem(key, JSON.stringify(value));
   window.dispatchEvent(new CustomEvent("divyanexus-library-change"));
+}
+
+function unique(values: string[], limit?: number) {
+  const result = Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
+  return typeof limit === "number" ? result.slice(0, limit) : result;
+}
+
+function toStringArray(value: unknown) {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === "string") : [];
 }
 
 export function getBookmarks() {
@@ -119,6 +135,16 @@ export async function saveNote(note: Omit<LocalNote, "id" | "updatedAt"> & Parti
   return payload;
 }
 
+export async function deleteNote(noteId: string) {
+  const db = await openNotesDb();
+  await new Promise<void>((resolve, reject) => {
+    const request = db.transaction("notes", "readwrite").objectStore("notes").delete(noteId);
+    request.onsuccess = () => resolve();
+    request.onerror = () => reject(request.error);
+  });
+  window.dispatchEvent(new CustomEvent("divyanexus-library-change"));
+}
+
 export async function clearLocalLibrary() {
   Object.values(preferenceKeys).forEach((key) => window.localStorage.removeItem(key));
   try {
@@ -133,8 +159,89 @@ export async function clearLocalLibrary() {
   }
 }
 
+function validImportedNotes(value: unknown): LocalNote[] {
+  if (!Array.isArray(value)) return [];
+  return value.flatMap((item) => {
+    if (!item || typeof item !== "object") return [];
+    const candidate = item as Partial<LocalNote>;
+    if (typeof candidate.title !== "string" || typeof candidate.body !== "string") return [];
+    const updatedAt = typeof candidate.updatedAt === "string" && !Number.isNaN(Date.parse(candidate.updatedAt))
+      ? candidate.updatedAt
+      : new Date().toISOString();
+    return [{
+      id: typeof candidate.id === "string" && candidate.id.trim() ? candidate.id : crypto.randomUUID(),
+      recordId: typeof candidate.recordId === "string" && candidate.recordId.trim() ? candidate.recordId : "general",
+      title: candidate.title.trim() || "Untitled note",
+      body: candidate.body.trim(),
+      updatedAt,
+    }];
+  });
+}
+
+export async function importLocalLibrary(text: string): Promise<LocalLibraryImportResult> {
+  let parsed: unknown;
+  try {
+    parsed = JSON.parse(text);
+  } catch {
+    throw new Error("The selected file is not valid JSON.");
+  }
+  if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    throw new Error("The selected file is not a DivyaNexus local-data object.");
+  }
+
+  const payload = parsed as Record<string, unknown>;
+  const bookmarks = unique([...toStringArray(payload.bookmarks), ...getBookmarks()]);
+  const history = unique([...toStringArray(payload.history), ...getHistory()], 12);
+  const savedSearches = unique([...toStringArray(payload.savedSearches), ...getSavedSearches()], 8);
+  const notes = validImportedNotes(payload.notes);
+
+  writeJson(preferenceKeys.bookmarks, bookmarks);
+  writeJson(preferenceKeys.history, history);
+  writeJson(preferenceKeys.searches, savedSearches);
+
+  const preferences = payload.preferences;
+  if (preferences && typeof preferences === "object" && !Array.isArray(preferences)) {
+    const allowed = ["theme", "fontSize", "audioPosition"] as const;
+    for (const key of allowed) {
+      const value = (preferences as Record<string, unknown>)[key];
+      if (typeof value === "string") window.localStorage.setItem(preferenceKeys[key], value);
+    }
+  }
+
+  if (notes.length) {
+    const db = await openNotesDb();
+    await new Promise<void>((resolve, reject) => {
+      const transaction = db.transaction("notes", "readwrite");
+      const store = transaction.objectStore("notes");
+      notes.forEach((note) => store.put(note));
+      transaction.oncomplete = () => resolve();
+      transaction.onerror = () => reject(transaction.error);
+      transaction.onabort = () => reject(transaction.error);
+    });
+  }
+
+  window.dispatchEvent(new CustomEvent("divyanexus-library-change"));
+  return {
+    bookmarks: bookmarks.length,
+    history: history.length,
+    savedSearches: savedSearches.length,
+    notes: notes.length,
+  };
+}
+
+export async function getStorageEstimate() {
+  if (!navigator.storage?.estimate) return null;
+  const estimate = await navigator.storage.estimate();
+  return {
+    usage: estimate.usage ?? 0,
+    quota: estimate.quota ?? 0,
+  };
+}
+
 export async function exportLocalLibrary() {
   const payload = {
+    format: "divyanexus-local-library",
+    version: 1,
     exportedAt: new Date().toISOString(),
     notice: "This export contains browser-local DivyaNexus data only. It does not represent synced account data.",
     bookmarks: getBookmarks(),
@@ -150,4 +257,3 @@ export async function exportLocalLibrary() {
   anchor.click();
   URL.revokeObjectURL(url);
 }
-
