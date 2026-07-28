@@ -18,7 +18,7 @@ concurrency:
 
 jobs:
   patch:
-    if: ${{ !contains(github.event.head_commit.message || '', 'apply Wave 8 source patches') }}
+    if: ${{ !contains(github.event.head_commit.message || '', 'apply Wave 8 source patches') && !contains(github.event.head_commit.message || '', 'capture Wave 8 patch failure') }}
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
@@ -29,15 +29,39 @@ jobs:
           fetch-depth: 0
 
       - name: Apply deterministic source patches
-        run: node scripts/apply-wave8-source-patches.mjs
+        id: apply
+        shell: bash
+        run: |
+          set +e
+          node scripts/apply-wave8-source-patches.mjs > wave8-patch.log 2>&1
+          status=$?
+          cat wave8-patch.log
+          echo "status=$status" >> "$GITHUB_OUTPUT"
+          exit 0
 
       - name: Commit patched sources
+        if: ${{ steps.apply.outputs.status == '0' }}
         shell: bash
         run: |
           set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          rm -f wave8-patch.log
           git add -A
           git diff --cached --stat
           git commit -m "feat: apply Wave 8 source patches"
           git push origin HEAD:fix/divyanexus-readability-audio-wave8
+
+      - name: Commit failure evidence
+        if: ${{ steps.apply.outputs.status != '0' }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          git reset --hard HEAD
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          cp wave8-patch.log WAVE8_PATCH_FAILURE.txt
+          git add WAVE8_PATCH_FAILURE.txt
+          git commit -m "chore: capture Wave 8 patch failure"
+          git push origin HEAD:fix/divyanexus-readability-audio-wave8
+          exit 1
