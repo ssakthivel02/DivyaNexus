@@ -14,6 +14,7 @@ const requiredFiles = [
   ".well-known/security.txt",
 ];
 const forbiddenPatterns = ["manus-storage", "__manus__", "BUILT_IN_FORGE", "filebin.net", "%VITE_ANALYTICS_", "Ancient Wisdom. Modern Intelligence."];
+const unresolvedPlaceholderPatterns = [/%BASE_URL%/, /%PUBLIC_URL%/, /%VITE_[A-Z0-9_]+%/];
 const failures = [];
 
 if (!existsSync(output)) failures.push("dist/public does not exist; run pnpm run build first");
@@ -37,7 +38,9 @@ for (const file of textFiles) {
   for (const pattern of forbiddenPatterns) {
     if (content.includes(pattern)) failures.push(`${relative(output, file)} contains forbidden production marker: ${pattern}`);
   }
-  if (/%[A-Z0-9_]+%/.test(content)) failures.push(`${relative(output, file)} contains an unresolved build placeholder`);
+  for (const pattern of unresolvedPlaceholderPatterns) {
+    if (pattern.test(content)) failures.push(`${relative(output, file)} contains unresolved build placeholder ${pattern}`);
+  }
 }
 
 const indexPath = resolve(output, "index.html");
