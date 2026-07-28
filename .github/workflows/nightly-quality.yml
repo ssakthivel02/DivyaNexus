@@ -1,0 +1,74 @@
+name: DivyaNexus Nightly Quality
+
+on:
+  schedule:
+    - cron: "30 3 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: divyanexus-nightly-quality
+  cancel-in-progress: true
+
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install application dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install Playwright test runner
+        run: pnpm add --save-dev --lockfile=false @playwright/test@1.55.0
+
+      - name: Run TypeScript and production build
+        env:
+          VITE_BASE_PATH: /
+        run: |
+          pnpm run check
+          pnpm run build
+
+      - name: Run static production contracts
+        run: |
+          pnpm run verify:source-boundaries
+          pnpm run verify:routes
+          pnpm run verify:build
+
+      - name: Install Chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run Wave 4 browser contracts
+        run: >-
+          pnpm exec playwright test
+          tests/e2e/release-contract.spec.ts
+          tests/e2e/status-page.spec.ts
+          tests/e2e/route-manifest.spec.ts
+          tests/e2e/security-boundary.spec.ts
+
+      - name: Upload browser evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-quality-${{ github.run_id }}
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 14
