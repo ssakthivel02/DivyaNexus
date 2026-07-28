@@ -31,7 +31,7 @@ test.describe("quality wave metadata and navigation", () => {
     await waitForRoute(page);
     await expect(page).toHaveTitle("Scripture Learning Library — DivyaNexus");
     await expect.poll(() => page.evaluate(() => document.activeElement?.id)).toBe("main-content");
-    await expect(page.getByRole("status").filter({ hasText: "Scriptures page loaded" })).toBeAttached();
+    await expect(page.locator(".route-announcer")).toHaveText("Scriptures page loaded");
   });
 
   test("offline status is explicit without claiming complete offline coverage", async ({ page, context }) => {
@@ -50,8 +50,9 @@ test.describe("quality wave metadata and navigation", () => {
     await waitForRoute(page);
     await expect(page.getByRole("heading", { name: "The requested path is outside the current archive." })).toBeVisible();
     await expect(page.locator('meta[name="robots"]')).toHaveAttribute("content", "noindex,follow");
-    await expect(page.getByRole("link", { name: /Explore the universe/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Search the collection/ })).toBeVisible();
-    await expect(page.getByRole("link", { name: /Ask Divya/ })).toBeVisible();
+    const recovery = page.getByRole("region", { name: "Suggested recovery routes" });
+    await expect(recovery.getByRole("link", { name: /Explore the universe/ })).toBeVisible();
+    await expect(recovery.getByRole("link", { name: /Search the collection/ })).toBeVisible();
+    await expect(recovery.getByRole("link", { name: /Ask Divya/ })).toBeVisible();
   });
 });
