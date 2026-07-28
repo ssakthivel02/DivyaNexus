@@ -37,20 +37,27 @@ export function useSpeechSynthesis() {
   }, [supported]);
 
   const stop = useCallback(() => {
-    if (!supported) return;
-    window.speechSynthesis.cancel();
+    if (supported) window.speechSynthesis.cancel();
+    setError("");
     setState("idle");
   }, [supported]);
 
   const speak = useCallback((request: SpeechRequest) => {
-    if (!supported || !request.text.trim()) {
+    if (!supported) {
       setError("Speech is not available in this browser.");
       setState("error");
       return;
     }
 
+    const text = request.text.trim();
+    if (!text) {
+      setError("There is no readable text selected for speech.");
+      setState("error");
+      return;
+    }
+
     window.speechSynthesis.cancel();
-    const utterance = new SpeechSynthesisUtterance(request.text.trim());
+    const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = request.lang;
     utterance.rate = Math.min(1.35, Math.max(0.55, request.rate ?? 0.9));
     utterance.pitch = Math.min(1.25, Math.max(0.75, request.pitch ?? 1));
@@ -65,7 +72,10 @@ export function useSpeechSynthesis() {
     utterance.onresume = () => setState("speaking");
     utterance.onend = () => setState("ended");
     utterance.onerror = (event) => {
-      if (event.error === "canceled" || event.error === "interrupted") return;
+      if (event.error === "canceled" || event.error === "interrupted") {
+        setState("idle");
+        return;
+      }
       setError(`Speech could not start: ${event.error}.`);
       setState("error");
     };
@@ -74,7 +84,7 @@ export function useSpeechSynthesis() {
   }, [supported, voices]);
 
   const pause = useCallback(() => {
-    if (!supported || !window.speechSynthesis.speaking) return;
+    if (!supported || !window.speechSynthesis.speaking || window.speechSynthesis.paused) return;
     window.speechSynthesis.pause();
     setState("paused");
   }, [supported]);
