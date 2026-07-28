@@ -136,12 +136,16 @@ test.describe("DivyaNexus production smoke coverage", () => {
     });
   }
 
-  test("unsupported deity query shows honest no-result guidance", async ({ page }) => {
+  test("Shiva query opens the reviewed deity encyclopedia record", async ({ page }) => {
     await openAppRoute(page, "/search");
     const input = page.getByRole("textbox", { name: "Search knowledge records" });
     await input.fill("Shiva");
     await page.getByRole("button", { name: "Search", exact: true }).click();
-    await expect(page.getByRole("heading", { name: "No direct record has surfaced yet." })).toBeVisible();
+    const result = page.locator(".search-cinema__result").filter({ hasText: "Deity encyclopedia" }).filter({ hasText: "Shiva" });
+    await expect(result).toBeVisible();
+    await result.click();
+    await expect(page).toHaveURL(/\/deities\/shiva/);
+    await expect(page.getByRole("heading", { name: "Shiva", exact: true })).toBeVisible();
   });
 
   test("Ask Divya produces a transparently bounded local response", async ({ page }) => {
