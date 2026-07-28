@@ -6,10 +6,19 @@
     <meta name="theme-color" content="#080b1f" />
     <meta name="description" content="DivyaNexus is a source-aware Vedic knowledge, learning, and devotional wisdom platform for Tamil and English exploration." />
     <meta name="application-name" content="DivyaNexus" />
+    <meta name="apple-mobile-web-app-title" content="DivyaNexus" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="format-detection" content="telephone=no" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <meta name="color-scheme" content="dark light" />
     <meta name="divyanexus-release" content="stage-b-wave4" />
     <meta name="divyanexus-status" content="/status" />
     <link rel="canonical" href="https://divyanexus.omsaravanabhava.org/" />
+    <link rel="alternate" hreflang="en" href="https://divyanexus.omsaravanabhava.org/" />
+    <link rel="alternate" hreflang="ta" href="https://divyanexus.omsaravanabhava.org/" />
+    <link rel="alternate" hreflang="x-default" href="https://divyanexus.omsaravanabhava.org/" />
 
     <meta property="og:type" content="website" />
     <meta property="og:site_name" content="DivyaNexus" />
@@ -29,6 +38,7 @@
     <link rel="icon" type="image/png" sizes="192x192" href="/assets/divyanexus/app-icon-192.png" />
     <link rel="apple-touch-icon" sizes="192x192" href="/assets/divyanexus/app-icon-192.png" />
     <link rel="manifest" href="%BASE_URL%manifest.webmanifest" />
+    <link rel="preload" as="image" href="/assets/divyanexus/hero-moonlit-horizon.webp" fetchpriority="high" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;0,700;1,500;1,600&family=Manrope:wght@400;500;600;700;800&family=Noto+Sans+Tamil:wght@400;500;600;700&family=Noto+Serif+Tamil:wght@400;500;600&display=swap" rel="stylesheet" />
@@ -36,6 +46,12 @@
   </head>
   <body>
     <div id="root" data-divyanexus-version="stage-b-wave4"></div>
+    <noscript>
+      <main style="max-width:760px;margin:80px auto;padding:24px;font-family:system-ui;line-height:1.7">
+        <h1>DivyaNexus requires JavaScript for its interactive learning routes.</h1>
+        <p>The public privacy, terms, source and contact documents remain available after JavaScript is enabled. No account or browser-local data is changed by this message.</p>
+      </main>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
