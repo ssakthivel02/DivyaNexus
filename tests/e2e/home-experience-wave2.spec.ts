@@ -66,15 +66,16 @@ test.describe("DivyaNexus homepage experience wave 2", () => {
     expect(visual.filter).toContain("brightness");
   });
 
-  test("deity universe exposes ten foundational editorial pathways", async ({ page }) => {
+  test("deity universe exposes ten foundational encyclopedia records", async ({ page }) => {
     const response = await page.goto("/deities", { waitUntil: "domcontentloaded" });
     expect(response?.status()).toBeLessThan(400);
     await expect(page.locator(".route-loading")).toHaveCount(0, { timeout: 15_000 });
 
-    const tabs = page.getByRole("tab");
-    await expect(tabs).toHaveCount(10);
-    await expect(page.getByRole("tab", { name: /Murugan/ })).toBeVisible();
-    await expect(page.getByRole("tab", { name: /Nataraja/ })).toBeVisible();
+    const cards = page.locator(".deity-directory-card");
+    await expect(cards).toHaveCount(10);
+    await expect(cards.filter({ hasText: "Murugan" })).toBeVisible();
+    await expect(cards.filter({ hasText: "Nataraja" })).toBeVisible();
+    await expect(page.getByText("Visible confidence and sources")).toBeVisible();
   });
 
   for (const viewport of [
