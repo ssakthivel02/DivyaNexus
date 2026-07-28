@@ -46,11 +46,20 @@ else {
 if (!existsSync(deploymentWorkflowPath)) failures.push("Pages deployment workflow is missing");
 else {
   const workflow = readFileSync(deploymentWorkflowPath, "utf8");
-  if (!workflow.includes("uses: actions/upload-pages-artifact@v4")) {
-    failures.push("Pages deployment must use actions/upload-pages-artifact@v4");
+  const requiredWorkflowEvidence = [
+    "tar \\",
+    "--directory dist/public",
+    'tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx \'./.nojekyll\'',
+    'tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx \'./.well-known/security.txt\'',
+    "uses: actions/upload-artifact@v4",
+    "name: github-pages",
+    "path: ${{ runner.temp }}/artifact.tar",
+  ];
+  for (const evidence of requiredWorkflowEvidence) {
+    if (!workflow.includes(evidence)) failures.push(`Pages deployment is missing deterministic packaging evidence: ${evidence}`);
   }
-  if (!workflow.includes("include-hidden-files: true")) {
-    failures.push("Pages deployment must include hidden files so .nojekyll and .well-known are published");
+  if (workflow.includes("uses: actions/upload-pages-artifact@")) {
+    failures.push("Pages deployment must not rely on upload-pages-artifact hidden-file filtering");
   }
 }
 
