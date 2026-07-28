@@ -57,6 +57,9 @@ jobs:
       - name: Validate owner-selected artwork
         run: node scripts/validate-owner-artwork.mjs
 
+      - name: Validate Wave 8 readability and audio
+        run: node scripts/validate-readability-audio-wave8.mjs
+
       - name: Build production application
         env:
           VITE_BASE_PATH: /
