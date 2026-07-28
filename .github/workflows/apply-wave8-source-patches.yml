@@ -4,6 +4,9 @@ on:
   push:
     branches:
       - fix/divyanexus-readability-audio-wave8
+  pull_request:
+    branches:
+      - main
   workflow_dispatch:
 
 permissions:
