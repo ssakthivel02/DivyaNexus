@@ -26,15 +26,33 @@ export function RouteExperience() {
   useEffect(() => {
     const meta = resolveRouteMeta(location);
     setAnnouncement(`${meta.label} page loaded`);
-    const frame = window.requestAnimationFrame(() => {
+    if (!window.location.hash) window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+
+    let frame = 0;
+    let settled = false;
+    const focusMain = () => {
       const main = document.getElementById("main-content");
-      if (main) {
-        if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
-        main.focus({ preventScroll: true });
-      }
-      if (!window.location.hash) window.scrollTo({ top: 0, left: 0, behavior: "auto" });
+      if (!main || settled) return false;
+      settled = true;
+      if (!main.hasAttribute("tabindex")) main.setAttribute("tabindex", "-1");
+      frame = window.requestAnimationFrame(() => main.focus({ preventScroll: true }));
+      return true;
+    };
+
+    if (focusMain()) return () => window.cancelAnimationFrame(frame);
+
+    const observer = new MutationObserver(() => {
+      if (focusMain()) observer.disconnect();
     });
-    return () => window.cancelAnimationFrame(frame);
+    observer.observe(document.querySelector(".page-shell") ?? document.body, { childList: true, subtree: true });
+    const timeout = window.setTimeout(() => observer.disconnect(), 10_000);
+
+    return () => {
+      settled = true;
+      observer.disconnect();
+      window.clearTimeout(timeout);
+      window.cancelAnimationFrame(frame);
+    };
   }, [location]);
 
   return (
