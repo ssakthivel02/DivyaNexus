@@ -11,6 +11,7 @@ const requiredFiles = [
   "health.json",
   "robots.txt",
   "sitemap.xml",
+  ".nojekyll",
   ".well-known/security.txt",
   "scriptures/index.html",
   "deities/index.html",
