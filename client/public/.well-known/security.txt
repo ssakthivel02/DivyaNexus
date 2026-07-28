@@ -1,0 +1,6 @@
+Contact: https://divyanexus.omsaravanabhava.org/contact
+Policy: https://divyanexus.omsaravanabhava.org/privacy
+Canonical: https://divyanexus.omsaravanabhava.org/.well-known/security.txt
+Preferred-Languages: en, ta
+Expires: 2027-07-28T00:00:00Z
+Acknowledgments: https://divyanexus.omsaravanabhava.org/about
