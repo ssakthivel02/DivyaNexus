@@ -57,6 +57,9 @@ jobs:
       - name: Validate owner-selected artwork
         run: node scripts/validate-owner-artwork.mjs
 
+      - name: Validate readability and bilingual browser audio
+        run: node scripts/validate-readability-audio.mjs
+
       - name: Build production application
         env:
           VITE_BASE_PATH: /
