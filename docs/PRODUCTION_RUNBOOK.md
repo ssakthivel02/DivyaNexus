@@ -17,10 +17,10 @@
 ```bash
 pnpm install --frozen-lockfile
 pnpm run check
+node scripts/validate-source-boundaries.mjs
+pnpm exec tsx scripts/validate-route-manifest.ts
 pnpm run build
-pnpm run verify:source-boundaries
-pnpm run verify:routes
-pnpm run verify:build
+node scripts/validate-build-artifact.mjs
 pnpm exec playwright test
 ```
 
