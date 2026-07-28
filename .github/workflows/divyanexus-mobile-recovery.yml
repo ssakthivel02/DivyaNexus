@@ -1,0 +1,250 @@
+name: DivyaNexus Mobile Recovery
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "mobile-recovery/**"
+      - ".github/workflows/divyanexus-mobile-recovery.yml"
+  pull_request:
+    paths:
+      - "mobile-recovery/**"
+      - ".github/workflows/divyanexus-mobile-recovery.yml"
+  workflow_dispatch:
+    inputs:
+      run_eas_preview:
+        description: "Queue a signed EAS preview APK with the existing credentials"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+
+concurrency:
+  group: divyanexus-mobile-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CI: "1"
+  NODE_VERSION: "20.19.4"
+  SOURCE_SHA256: "88e9ca929d8ccd757d92feb5070deff7f1c40782b58c3d83e11dc509c875571d"
+
+jobs:
+  validate-and-compile:
+    name: Validate and compile Android
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - name: Checkout recovery branch
+        uses: actions/checkout@v4
+
+      - name: Reconstruct audited mobile source
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat \
+            mobile-recovery/payload/source-build.tar.xz.part-00 \
+            mobile-recovery/payload/source-build.tar.xz.part-01 \
+            mobile-recovery/payload/source-build.tar.xz.part-02 \
+            mobile-recovery/payload/source-build.tar.xz.part-03.00 \
+            mobile-recovery/payload/source-build.tar.xz.part-03.01 \
+            mobile-recovery/payload/source-build.tar.xz.part-03.02 \
+            mobile-recovery/payload/source-build.tar.xz.part-03.03 \
+            mobile-recovery/payload/source-build.tar.xz.part-03.04 \
+            mobile-recovery/payload/source-build.tar.xz.part-04 \
+            > /tmp/source-build.tar.xz
+          echo "${SOURCE_SHA256}  /tmp/source-build.tar.xz" | sha256sum --check --strict -
+          mkdir -p _mobile
+          tar -xJf /tmp/source-build.tar.xz -C _mobile
+          python3 mobile-recovery/generate_assets.py _mobile/assets/images
+          test -s _mobile/assets/images/icon.png
+          test -s _mobile/assets/images/android-icon-foreground.png
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Install dependencies from the clean manifest
+        working-directory: _mobile
+        run: npm install --no-audit --no-fund
+
+      - name: Run source integrity gate
+        working-directory: _mobile
+        run: npm run validate:source
+
+      - name: Verify Expo dependency alignment
+        working-directory: _mobile
+        run: npx expo install --check
+
+      - name: Run Expo Doctor
+        working-directory: _mobile
+        run: npx expo-doctor
+
+      - name: Run TypeScript strict check
+        working-directory: _mobile
+        run: npm run check
+
+      - name: Run Expo lint
+        working-directory: _mobile
+        run: npm run lint
+
+      - name: Capture and assert resolved Expo identity
+        working-directory: _mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p reports
+          npx expo config --type public --json > reports/expo-config.json
+          node <<'NODE'
+          const fs = require('fs');
+          const c = JSON.parse(fs.readFileSync('reports/expo-config.json', 'utf8'));
+          const checks = [
+            [c.android?.package, 'com.divyanexus.app', 'Android package'],
+            [c.android?.versionCode, 4, 'Android versionCode'],
+            [c.version, '1.0.3', 'versionName'],
+            [c.extra?.eas?.projectId, 'e7251fb7-a83e-4834-b0d5-b6a4eab0e654', 'EAS projectId'],
+          ];
+          for (const [actual, expected, label] of checks) {
+            if (actual !== expected) throw new Error(`${label}: expected ${expected}, got ${actual}`);
+            console.log(`PASS ${label}: ${actual}`);
+          }
+          NODE
+
+      - name: Export Android JavaScript bundle
+        working-directory: _mobile
+        run: npx expo export --platform android --clear
+
+      - name: Generate clean Android native project
+        working-directory: _mobile
+        run: npx expo prebuild --platform android --clean --no-install
+
+      - name: Assert generated Gradle identity
+        working-directory: _mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          grep -R --line-number 'applicationId.*com.divyanexus.app' android/app/build.gradle
+          grep -R --line-number 'versionCode 4' android/app/build.gradle
+          grep -R --line-number 'versionName "1.0.3"' android/app/build.gradle
+
+      - name: Compile APK, AAB and Android lint report
+        working-directory: _mobile/android
+        shell: bash
+        run: |
+          set -euo pipefail
+          chmod +x gradlew
+          ./gradlew :app:assembleDebug :app:bundleRelease :app:lintRelease --stacktrace --no-daemon
+
+      - name: Assert compiled APK manifest and target API
+        working-directory: _mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          AAB="android/app/build/outputs/bundle/release/app-release.aab"
+          test -s "$APK"
+          test -s "$AAB"
+          APKANALYZER="$(find "$ANDROID_HOME" -type f -name apkanalyzer | head -n 1)"
+          test -x "$APKANALYZER"
+          APP_ID="$($APKANALYZER manifest application-id "$APK")"
+          VERSION_CODE="$($APKANALYZER manifest version-code "$APK")"
+          VERSION_NAME="$($APKANALYZER manifest version-name "$APK")"
+          TARGET_SDK="$($APKANALYZER manifest target-sdk "$APK")"
+          printf 'applicationId=%s\nversionCode=%s\nversionName=%s\ntargetSdk=%s\n' \
+            "$APP_ID" "$VERSION_CODE" "$VERSION_NAME" "$TARGET_SDK" | tee reports/android-manifest.txt
+          test "$APP_ID" = "com.divyanexus.app"
+          test "$VERSION_CODE" = "4"
+          test "$VERSION_NAME" = "1.0.3"
+          test "$TARGET_SDK" = "36"
+
+      - name: Record checksums and package audit
+        working-directory: _mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          sha256sum \
+            android/app/build/outputs/apk/debug/app-debug.apk \
+            android/app/build/outputs/bundle/release/app-release.aab \
+            > reports/artifact-sha256.txt
+          npm audit --omit=dev --json > reports/npm-audit.json || true
+          du -h \
+            android/app/build/outputs/apk/debug/app-debug.apk \
+            android/app/build/outputs/bundle/release/app-release.aab \
+            | tee reports/artifact-sizes.txt
+
+      - name: Upload compile-validation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: divyanexus-v1.0.3-code4-compile-validation
+          if-no-files-found: error
+          retention-days: 14
+          path: |
+            _mobile/android/app/build/outputs/apk/debug/app-debug.apk
+            _mobile/android/app/build/outputs/bundle/release/app-release.aab
+            _mobile/android/app/build/reports/lint-results-release.html
+            _mobile/reports/
+            _mobile/package-lock.json
+
+  eas-preview:
+    name: Queue signed EAS preview APK
+    if: github.event_name == 'workflow_dispatch' && inputs.run_eas_preview == true
+    needs: validate-and-compile
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Reconstruct source and assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          cat \
+            mobile-recovery/payload/source-build.tar.xz.part-00 \
+            mobile-recovery/payload/source-build.tar.xz.part-01 \
+            mobile-recovery/payload/source-build.tar.xz.part-02 \
+            mobile-recovery/payload/source-build.tar.xz.part-03.00 \
+            mobile-recovery/payload/source-build.tar.xz.part-03.01 \
+            mobile-recovery/payload/source-build.tar.xz.part-03.02 \
+            mobile-recovery/payload/source-build.tar.xz.part-03.03 \
+            mobile-recovery/payload/source-build.tar.xz.part-03.04 \
+            mobile-recovery/payload/source-build.tar.xz.part-04 \
+            > /tmp/source-build.tar.xz
+          echo "${SOURCE_SHA256}  /tmp/source-build.tar.xz" | sha256sum --check --strict -
+          mkdir -p _mobile
+          tar -xJf /tmp/source-build.tar.xz -C _mobile
+          python3 mobile-recovery/generate_assets.py _mobile/assets/images
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+
+      - name: Require existing Expo authentication
+        shell: bash
+        run: |
+          test -n "${EXPO_TOKEN:-}" || { echo 'EXPO_TOKEN secret is missing; refusing to create or replace credentials.' >&2; exit 1; }
+
+      - name: Queue signed preview without modifying credentials
+        working-directory: _mobile
+        shell: bash
+        run: |
+          set -euo pipefail
+          npm install --no-audit --no-fund
+          npx eas-cli@latest build \
+            --platform android \
+            --profile preview \
+            --clear-cache \
+            --non-interactive \
+            --freeze-credentials \
+            --json | tee eas-preview-build.json
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: divyanexus-eas-preview-build-record
+          path: _mobile/eas-preview-build.json
+          if-no-files-found: error
