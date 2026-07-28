@@ -17,6 +17,7 @@ const requiredFiles = [
   "deities/murugan/index.html",
   "ask-divya/index.html",
   "life-guidance/index.html",
+  "collection-status/index.html",
   "library/index.html",
   "sources/index.html",
   "privacy/index.html",
