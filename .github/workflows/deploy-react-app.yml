@@ -92,6 +92,7 @@ jobs:
         uses: actions/upload-pages-artifact@v4
         with:
           path: ./dist/public
+          include-hidden-files: true
 
   deploy:
     environment:

@@ -4,6 +4,7 @@ import { join, relative, resolve } from "node:path";
 const root = resolve(process.cwd());
 const scanRoots = [resolve(root, "client/src"), resolve(root, "client/public")];
 const indexPath = resolve(root, "client/index.html");
+const deploymentWorkflowPath = resolve(root, ".github/workflows/deploy-react-app.yml");
 const expectedRelease = "stage-b-wave4";
 const forbiddenPatterns = [
   "manus-storage",
@@ -42,7 +43,20 @@ else {
   }
 }
 
+if (!existsSync(deploymentWorkflowPath)) failures.push("Pages deployment workflow is missing");
+else {
+  const workflow = readFileSync(deploymentWorkflowPath, "utf8");
+  if (!workflow.includes("uses: actions/upload-pages-artifact@v4")) {
+    failures.push("Pages deployment must use actions/upload-pages-artifact@v4");
+  }
+  if (!workflow.includes("include-hidden-files: true")) {
+    failures.push("Pages deployment must include hidden files so .nojekyll and .well-known are published");
+  }
+}
+
 if (existsSync(resolve(root, "client/public/__manus__"))) failures.push("client/public/__manus__ must not exist");
+if (!existsSync(resolve(root, "client/public/.nojekyll"))) failures.push("client/public/.nojekyll must exist");
+if (!existsSync(resolve(root, "client/public/.well-known/security.txt"))) failures.push("client/public/.well-known/security.txt must exist");
 
 if (failures.length) {
   console.error("Source-boundary validation failed:\n- " + failures.join("\n- "));

@@ -14,26 +14,42 @@ Production verification passed:
 - direct application routes, including `/collection-status`;
 - robots and sitemap retrieval.
 
-The final operational endpoint check failed because GitHub Pages returned:
+The final operational endpoint check failed because production returned:
 
 ```text
 404 /.well-known/security.txt
 ```
 
-The file existed in the built artifact, but Pages applied Jekyll-style filtering to the dot-prefixed `.well-known` directory.
+The file and `.nojekyll` both existed in `dist/public`. The GitHub Pages upload action excludes hidden files and hidden directories unless `include-hidden-files: true` is explicitly enabled. Consequently, `.nojekyll` and `.well-known/security.txt` were omitted from the deployable Pages artifact.
 
 ## Repair
 
-`client/public/.nojekyll` is now included in the deployed artifact. This instructs GitHub Pages to publish the static artifact without Jekyll filtering, allowing `.well-known/security.txt` to remain available.
+The deployment workflow now configures:
 
-## Preventive control
+```yaml
+- uses: actions/upload-pages-artifact@v4
+  with:
+    path: ./dist/public
+    include-hidden-files: true
+```
 
-The build-artifact validator now requires both:
+This publishes the reviewed hidden assets together with the rest of the static application.
+
+## Preventive controls
+
+The build-artifact validator requires:
 
 - `.nojekyll`
 - `.well-known/security.txt`
 
-A future build cannot pass the deployable-artifact gate when either file is missing.
+The source-boundary validator also requires:
+
+- `actions/upload-pages-artifact@v4`;
+- `include-hidden-files: true`;
+- the source `.nojekyll` marker;
+- the source security disclosure file.
+
+A future pull request cannot pass the source and artifact gates if the files exist locally but the deployment configuration would omit them.
 
 ## Completion criteria
 
