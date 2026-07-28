@@ -83,7 +83,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          tar --dereference --hard-dereference --directory dist/public -cvf "$RUNNER_TEMP/artifact.tar" .
+          tar \
+            --dereference \
+            --hard-dereference \
+            --directory dist/public \
+            -cvf "$RUNNER_TEMP/artifact.tar" \
+            .
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './.nojekyll'
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './.well-known/security.txt'
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './collection-status/index.html'
