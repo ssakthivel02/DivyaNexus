@@ -1,226 +1,494 @@
 /* DivyaNexus Readability & Audio Wave 8 */
 
-:root {
-  --muted: #b8bdd4;
-  --pearl-dim: #e7e6e2;
-  --line: rgba(236, 213, 139, 0.28);
-  --panel: rgba(25, 32, 78, 0.9);
+:root:not(.dawn) {
+  --ink-950: #0d1438;
+  --ink-900: #141d4b;
+  --ink-850: #1a2459;
+  --ink-800: #222d68;
+  --ink-700: #303c78;
+  --pearl: #fffdf6;
+  --pearl-dim: #ececf2;
+  --muted: #c0c6de;
+  --line: rgba(244, 220, 145, 0.29);
+  --line-strong: rgba(255, 184, 73, 0.58);
+  --panel: rgba(31, 42, 91, 0.9);
+  --panel-solid: #202b63;
+  --glass: rgba(17, 25, 66, 0.8);
+}
+
+body {
+  font-size: 16px;
+  line-height: 1.68;
 }
 
 body::before {
   background:
-    radial-gradient(circle at 10% 7%, rgba(113, 106, 221, 0.23), transparent 26rem),
-    radial-gradient(circle at 86% 38%, rgba(240, 164, 58, 0.13), transparent 34rem),
-    linear-gradient(140deg, #0c1030, #121944 48%, #182052);
+    radial-gradient(circle at 10% 7%, rgba(127, 121, 255, 0.28), transparent 28rem),
+    radial-gradient(circle at 84% 28%, rgba(255, 174, 55, 0.2), transparent 36rem),
+    radial-gradient(circle at 52% 88%, rgba(108, 201, 189, 0.11), transparent 32rem),
+    linear-gradient(140deg, var(--ink-950), var(--ink-900) 44%, var(--ink-850));
 }
 
-.site-header {
-  background: color-mix(in srgb, #0b0f2c 84%, transparent);
-}
-
-/* Promote the owner-approved visual into the first homepage hero scene. */
-.cinema-hero > .cinema-hero__image:first-child {
-  content: url("/assets/divyanexus/owner-selected-vision.webp");
-  object-fit: cover;
-  object-position: center;
-  filter: brightness(1.12) saturate(1.08) contrast(1.03);
-}
-
-.cinema-hero__image {
-  filter: brightness(1.08) saturate(1.06);
-}
-
-.cinema-hero__veil {
-  background:
-    linear-gradient(90deg, rgba(4, 7, 23, 0.9) 0%, rgba(6, 10, 31, 0.67) 46%, rgba(7, 11, 32, 0.18) 76%, rgba(5, 8, 25, 0.54) 100%),
-    linear-gradient(0deg, rgba(8, 11, 31, 0.78), transparent 36%);
-}
-
-/* Tamil must remain comfortably readable at normal browser zoom. */
 [lang="ta"] {
-  font-family: "Noto Sans Tamil", "Noto Serif Tamil", system-ui, sans-serif;
+  font-family: "Noto Sans Tamil", "Nirmala UI", "Latha", "Tamil Sangam MN", "Noto Sans", sans-serif;
   font-weight: 500;
-  line-height: 1.82;
+  font-variant-ligatures: common-ligatures;
   letter-spacing: 0.005em;
+  line-height: 1.82;
+  overflow-wrap: anywhere;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
 }
 
-.reader-manuscript [lang="ta"],
-.scripture-reader [lang="ta"],
-.reader-copy [lang="ta"],
-.cinema-wisdom [lang="ta"],
-.directory-trail-card [lang="ta"] {
-  font-size: max(1rem, 16px);
-  color: #2a1708;
-  font-weight: 550;
+.site-header {
+  background: color-mix(in srgb, var(--ink-900) 88%, transparent);
+  border-bottom-color: rgba(244, 220, 145, 0.32);
 }
 
-.reader-manuscript,
-.scripture-reader__paper,
-.reader-paper {
-  color: #2b180a;
-  background: linear-gradient(145deg, #fff1c9, #f3dda8);
-}
-
-.reader-manuscript p,
-.scripture-reader__paper p,
-.reader-paper p {
-  color: #38200d;
-}
-
-.reader-manuscript .record-source,
-.scripture-reader__paper .record-source,
-.reader-paper .record-source {
-  color: #7c3d0d;
-}
-
-.audio-cinema--wave8 .audio-cinema__console,
-.audio-cinema--wave8 .audio-cinema__deck,
-.audio-cinema--wave8 .audio-cinema__room-list button,
-.audio-cinema--wave8 .audio-cinema__collection-grid article {
-  background-color: rgba(22, 28, 68, 0.88);
-  border-color: rgba(236, 213, 139, 0.28);
-}
-
-.audio-cinema--wave8 .audio-cinema__deck-detail,
-.audio-cinema--wave8 .audio-cinema__console-copy > p,
-.audio-cinema--wave8 .audio-cinema__collection-grid p {
-  color: #d9dce8;
-}
-
-.audio-cinema--wave8 .audio-cinema__deck-top [lang="ta"],
-.audio-cinema--wave8 .audio-cinema__room-list [lang="ta"],
-.audio-cinema--wave8 .audio-wave8__transcript [lang="ta"] {
-  color: #ffe09a;
-  font-size: 1rem;
-}
-
-.audio-wave8__language {
-  display: flex;
-  gap: 0.55rem;
-  margin: 1rem 0;
-}
-
-.audio-wave8__language button {
-  min-height: 44px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  padding: 0.55rem 1rem;
-  background: rgba(255, 255, 255, 0.04);
+.site-header__nav a,
+.icon-button,
+.header-search,
+.muted {
   color: var(--pearl-dim);
+}
+
+.cinema-hero__image {
+  filter: saturate(1.13) brightness(1.18) contrast(1.02);
+}
+
+.cinema-hero__image.is-active {
+  opacity: 1;
+}
+
+.cinema-hero__veil {
+  background:
+    linear-gradient(90deg, rgba(4, 7, 24, 0.84) 0%, rgba(7, 10, 30, 0.66) 38%, rgba(7, 10, 30, 0.12) 72%, rgba(7, 10, 30, 0.38) 100%),
+    linear-gradient(0deg, rgba(13, 20, 56, 0.86) 0%, rgba(13, 20, 56, 0.02) 48%, rgba(13, 20, 56, 0.13) 100%);
+}
+
+.cinema-hero__tamil {
+  color: #ffe39a;
+  font-size: clamp(1.18rem, 2.1vw, 1.7rem);
+  font-weight: 650;
+  text-shadow: 0 2px 16px rgba(0, 0, 0, 0.34);
+}
+
+.cinema-hero__description,
+.cinema-hero__source-line {
+  color: rgba(255, 253, 246, 0.94);
+}
+
+.cinema-path-panel {
+  background:
+    linear-gradient(145deg, rgba(34, 46, 103, 0.94), rgba(15, 22, 59, 0.9)),
+    radial-gradient(circle at 90% 4%, rgba(255, 177, 57, 0.2), transparent 12rem);
+}
+
+.cinema-path-panel__links p,
+.home-trust-ribbon small,
+.site-footer__intro p,
+.site-footer__group a {
+  color: var(--muted);
+}
+
+.portal-artwork {
+  scroll-margin-top: 7rem;
+  box-shadow: 0 34px 95px rgba(0, 0, 0, 0.34), 0 0 0 1px rgba(255, 198, 92, 0.12);
+}
+
+.portal-artwork__visual img {
+  filter: brightness(1.1) saturate(1.07) contrast(1.01);
+}
+
+.portal-artwork__copy p[lang="ta"] {
+  color: #ffe39a;
+  font-size: clamp(1.08rem, 1.8vw, 1.42rem);
+  font-weight: 650;
+}
+
+/* Reader brightness and language focus */
+.reader-cinema-body {
+  background:
+    radial-gradient(circle at 16% 12%, rgba(255, 191, 82, 0.12), transparent 30rem),
+    linear-gradient(145deg, #101945, #0d1438 58%, #151f50);
+}
+
+.reader-console {
+  box-shadow: 0 26px 80px rgba(0, 0, 0, 0.28);
+}
+
+.reader-paper--cinema,
+.reader-paper {
+  background:
+    radial-gradient(circle at 92% 7%, rgba(255, 255, 255, 0.38), transparent 24rem),
+    linear-gradient(145deg, #fff3ce, #f8e3ae 62%, #f0d392);
+  color: #2d1b0c;
+  box-shadow: inset 0 0 0 1px rgba(118, 75, 20, 0.16);
+}
+
+.reader-paper--cinema h1,
+.reader-paper--cinema h2,
+.reader-paper--cinema h3,
+.reader-paper--cinema h4 {
+  color: #1f140b;
+}
+
+.reader-paper--cinema .chip,
+.reader-paper--cinema .reader-label,
+.reader-paper--cinema .reader-paper__section {
+  color: #7b3e0a;
+  border-color: rgba(123, 62, 10, 0.24);
+  background: rgba(255, 250, 231, 0.38);
+}
+
+.reader-paper__tamil {
+  color: #8b430b;
+  font-size: clamp(1.18rem, 2vw, 1.55rem);
+  font-weight: 650;
+}
+
+.reader-scripture {
+  color: #301b08;
+  font-size: clamp(1.28rem, 2vw, 1.72rem);
+  line-height: 1.78;
+}
+
+.reader-transliteration {
+  color: #70431f;
+  font-size: clamp(1.03rem, 1.5vw, 1.25rem);
+  line-height: 1.75;
+}
+
+.reader-translation {
+  color: #2b1b0e;
+  font-size: 1.05rem;
+  line-height: 1.72;
+}
+
+.reader-translation[lang="ta"],
+.reader-language-panel--tamil .reader-translation {
+  color: #3b210b;
+  font-size: clamp(1.18rem, 1.8vw, 1.42rem);
+  font-weight: 600;
+  line-height: 1.95;
+}
+
+.reader-word-note__tamil {
+  display: block;
+  margin-top: 0.42rem;
+  color: #64380f;
+  font-size: 1rem;
+  line-height: 1.8;
+}
+
+.reader-commentary {
+  color: #3e2b18;
+  background: rgba(255, 252, 238, 0.52);
+  border-color: rgba(123, 62, 10, 0.2);
+}
+
+.reader-sidebar__panel {
+  background: linear-gradient(145deg, rgba(34, 45, 98, 0.96), rgba(18, 26, 67, 0.95));
+  border-color: rgba(244, 220, 145, 0.31);
+}
+
+.reader-toolbar {
+  background: rgba(24, 34, 81, 0.96);
+}
+
+.reader-language-switch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.38rem;
+}
+
+.reader-language-switch button {
+  min-height: 38px;
+  border: 1px solid rgba(244, 220, 145, 0.24);
+  border-radius: 999px;
+  padding: 0.48rem 0.7rem;
+  background: rgba(255, 255, 255, 0.035);
+  color: var(--pearl-dim);
+  font-size: 0.72rem;
+  font-weight: 800;
   cursor: pointer;
 }
 
-.audio-wave8__language button.is-active {
+.reader-language-switch button:hover,
+.reader-language-switch button:focus-visible,
+.reader-language-switch button.is-active {
   border-color: var(--saffron);
-  background: var(--saffron);
-  color: #241504;
+  background: rgba(240, 164, 58, 0.16);
+  color: var(--gold-bright);
+}
+
+.reader-meaning-grid[data-reader-language="tamil"] .reader-language-panel--english,
+.reader-meaning-grid[data-reader-language="english"] .reader-language-panel--tamil {
+  display: none;
+}
+
+.reader-meaning-grid[data-reader-language="tamil"],
+.reader-meaning-grid[data-reader-language="english"] {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+#reader-audio {
+  scroll-margin-top: 7rem;
+  margin-top: 1.4rem;
+}
+
+/* Working speech controls */
+.speech-controls {
+  display: grid;
+  gap: 1rem;
+  border: 1px solid rgba(244, 220, 145, 0.28);
+  border-radius: 0.9rem;
+  padding: clamp(1rem, 2.5vw, 1.35rem);
+  background: linear-gradient(145deg, rgba(39, 50, 108, 0.9), rgba(18, 26, 66, 0.94));
+  color: var(--pearl);
+}
+
+.reader-paper--cinema .speech-controls {
+  margin-top: 1.2rem;
+  background: linear-gradient(145deg, rgba(64, 39, 17, 0.94), rgba(87, 48, 13, 0.9));
+  border-color: rgba(255, 204, 110, 0.45);
+  color: #fff8e9;
+}
+
+.speech-controls__heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.speech-controls__heading h3 {
+  margin: 0.3rem 0 0;
+  color: inherit;
+  font-size: clamp(1.35rem, 2.4vw, 2rem);
+}
+
+.speech-controls__status {
+  border: 1px solid rgba(244, 220, 145, 0.25);
+  border-radius: 999px;
+  padding: 0.35rem 0.56rem;
+  color: var(--pearl-dim);
+  font-size: 0.68rem;
   font-weight: 850;
 }
 
-.audio-wave8__rate {
+.speech-controls__status.is-speaking {
+  border-color: rgba(108, 201, 189, 0.55);
+  color: #bff5ed;
+}
+
+.speech-controls__status.is-error {
+  border-color: rgba(255, 135, 149, 0.65);
+  color: #ffd2d8;
+}
+
+.speech-controls__languages {
   display: grid;
-  grid-template-columns: 1fr auto;
-  gap: 0.5rem 1rem;
-  margin: 1rem 0;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.speech-controls__languages button {
+  display: grid;
+  gap: 0.2rem;
+  min-height: 70px;
+  border: 1px solid rgba(244, 220, 145, 0.2);
+  border-radius: 0.65rem;
+  padding: 0.7rem;
+  background: rgba(255, 255, 255, 0.035);
   color: var(--pearl-dim);
-  font-weight: 700;
-}
-
-.audio-wave8__rate input {
-  grid-column: 1 / -1;
-  width: 100%;
-  accent-color: var(--saffron);
-}
-
-.audio-wave8__play {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.45rem;
-  min-height: 46px;
-  border-radius: 0.8rem;
-  padding: 0.72rem 1rem;
-  background: var(--saffron);
-  color: #211403;
-  font-weight: 900;
+  text-align: left;
   cursor: pointer;
 }
 
-.audio-wave8__play:disabled {
-  opacity: 0.55;
-  cursor: not-allowed;
+.speech-controls__languages button:hover,
+.speech-controls__languages button:focus-visible,
+.speech-controls__languages button.is-active {
+  border-color: var(--saffron);
+  background: rgba(240, 164, 58, 0.14);
+  color: #fffaf0;
 }
 
-.audio-wave8__status {
-  min-height: 1.6em;
-  margin: 0.8rem 0;
-  color: #c7eee8;
-  font-size: 0.78rem;
+.speech-controls__languages span {
+  color: var(--gold-bright);
+  font-size: 0.76rem;
 }
 
-.audio-wave8__transcript {
-  margin-top: 1rem;
-  border: 1px solid rgba(236, 213, 139, 0.2);
+.speech-controls__transcript {
+  max-height: 220px;
+  overflow: auto;
   border-left: 3px solid var(--saffron);
-  border-radius: 0.65rem;
-  padding: 1rem;
-  background: rgba(255, 255, 255, 0.035);
+  padding: 0.85rem 1rem;
+  background: rgba(0, 0, 0, 0.14);
 }
 
-.audio-wave8__transcript > p:last-child {
-  margin: 0;
-  color: var(--pearl);
+.speech-controls__transcript > span {
+  display: block;
+  color: var(--gold-bright);
+  font-size: 0.68rem;
+  font-weight: 850;
+}
+
+.speech-controls__transcript > p {
+  margin: 0.55rem 0 0;
+  color: inherit;
   font-size: 1rem;
   line-height: 1.75;
 }
 
-.audio-cinema__waveform.is-playing i {
-  animation: wave8-pulse 650ms ease-in-out infinite alternate;
+.speech-controls__transcript[lang="ta"] > p {
+  font-size: 1.18rem;
+  line-height: 1.9;
 }
 
-.audio-cinema__waveform.is-playing i:nth-child(3n) { animation-delay: 120ms; }
-.audio-cinema__waveform.is-playing i:nth-child(4n) { animation-delay: 240ms; }
+.speech-controls__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
 
-@keyframes wave8-pulse {
-  from { transform: scaleY(0.55); opacity: 0.65; }
-  to { transform: scaleY(1.05); opacity: 1; }
+.speech-controls__rate {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.speech-controls__rate > span {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--pearl-dim);
+  font-size: 0.72rem;
+}
+
+.speech-controls__rate input {
+  width: 100%;
+  accent-color: var(--saffron);
+}
+
+.speech-controls__boundary,
+.speech-controls__voice,
+.speech-controls__error {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.7rem;
+  line-height: 1.55;
+}
+
+.speech-controls__voice {
+  min-height: 1.1rem;
+}
+
+.speech-controls__error {
+  color: #ffc2c9;
+}
+
+/* Audio page */
+.audio-cinema--live {
+  background:
+    radial-gradient(circle at 15% 10%, rgba(116, 108, 238, 0.22), transparent 28rem),
+    linear-gradient(145deg, #101945, #0d1438 60%, #172153);
+}
+
+.audio-cinema--live .audio-cinema__hero > img {
+  filter: brightness(1.2) saturate(1.12);
+}
+
+.audio-cinema--live .audio-cinema__veil {
+  background: linear-gradient(90deg, rgba(5, 8, 27, 0.82), rgba(7, 11, 33, 0.52) 55%, rgba(7, 11, 33, 0.2));
+}
+
+.audio-cinema--live .audio-cinema__hero-copy > p,
+.audio-cinema--live .audio-cinema__console-copy > p,
+.audio-cinema--live .audio-cinema__deck-detail,
+.audio-cinema--live .audio-cinema__collection-grid p {
+  color: var(--pearl-dim);
+}
+
+.audio-cinema--live .audio-cinema__deck,
+.audio-cinema--live .audio-cinema__console-copy,
+.audio-cinema--live .audio-cinema__room-list button,
+.audio-cinema--live .audio-cinema__collection-grid article {
+  background: linear-gradient(145deg, rgba(39, 50, 108, 0.84), rgba(18, 26, 66, 0.9));
+  border-color: rgba(244, 220, 145, 0.28);
+}
+
+.audio-cinema__source-card {
+  display: flex;
+  gap: 0.75rem;
+  border-left: 3px solid var(--saffron);
+  padding: 0.9rem 1rem;
+  background: rgba(0, 0, 0, 0.14);
+}
+
+.audio-cinema__source-card > svg {
+  flex: 0 0 auto;
+  color: var(--saffron-soft);
+}
+
+.audio-cinema__source-card strong {
+  color: var(--pearl);
+}
+
+.audio-cinema__source-card p {
+  margin: 0.25rem 0;
+  color: var(--muted);
+  font-size: 0.72rem;
+}
+
+.audio-cinema__source-card a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  color: var(--gold-bright);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.audio-mini-player__panel {
+  background: linear-gradient(145deg, rgba(42, 54, 117, 0.98), rgba(17, 25, 66, 0.98));
 }
 
 :root.dawn body::before {
   background: linear-gradient(140deg, #fffaf1, #f5ead8 52%, #eadcc8);
 }
 
-:root.dawn .audio-cinema--wave8 .audio-cinema__deck,
-:root.dawn .audio-cinema--wave8 .audio-cinema__room-list button,
-:root.dawn .audio-cinema--wave8 .audio-cinema__collection-grid article {
-  background-color: rgba(255, 252, 246, 0.94);
+@media (max-width: 900px) {
+  .speech-controls__languages {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
-@media (max-width: 700px) {
-  .cinema-hero > .cinema-hero__image:first-child {
-    object-position: 64% center;
-  }
+@media (max-width: 620px) {
+  body { font-size: 15.5px; }
+  [lang="ta"] { line-height: 1.9; }
+  .speech-controls__heading { flex-direction: column; }
+  .speech-controls__languages { grid-template-columns: 1fr; }
+  .speech-controls__actions .button { flex: 1 1 calc(50% - 0.5rem); }
+  .reader-toolbar { align-items: stretch; }
+  .reader-language-switch { width: 100%; }
+  .reader-language-switch button { flex: 1 1 auto; }
+  .reader-translation[lang="ta"] { font-size: 1.16rem; }
+}
 
-  [lang="ta"] {
-    line-height: 1.9;
+@media (prefers-contrast: more) {
+  :root:not(.dawn) {
+    --muted: #e1e4f2;
+    --line: rgba(255, 229, 155, 0.5);
   }
-
-  .audio-wave8__language,
-  .audio-cinema__deck-controls {
-    display: grid;
-  }
-
-  .audio-wave8__language button,
-  .audio-wave8__play,
-  .audio-cinema__metadata-button {
-    width: 100%;
-  }
+  .reader-paper--cinema { background: #fff1c6; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .audio-cinema__waveform.is-playing i {
-    animation: none;
+  .speech-controls *,
+  .portal-artwork__visual img {
+    scroll-behavior: auto;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
 }
