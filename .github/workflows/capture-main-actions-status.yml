@@ -32,6 +32,9 @@ jobs:
           gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/production-smoke.yml/runs?branch=main&per_page=20" > smoke-runs.json 2> smoke-runs.err
           echo "smoke_exit=$?" >> diagnostic-status.txt
 
+          gh run view 30351055390 --repo "$GITHUB_REPOSITORY" --log-failed > smoke-failed.log 2> smoke-failed.err
+          echo "smoke_log_exit=$?" >> diagnostic-status.txt
+
           gh api -X GET "repos/$GITHUB_REPOSITORY/pages" > pages-site.json 2> pages-site.err
           echo "pages_exit=$?" >> diagnostic-status.txt
 
@@ -52,6 +55,8 @@ jobs:
             deploy-runs.err
             smoke-runs.json
             smoke-runs.err
+            smoke-failed.log
+            smoke-failed.err
             pages-site.json
             pages-site.err
             pages-deployments.json
