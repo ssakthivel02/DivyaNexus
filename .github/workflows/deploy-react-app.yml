@@ -45,13 +45,14 @@ jobs:
       - name: TypeScript check
         run: pnpm run check
 
-      - name: Validate source, route, metadata, editorial and PWA contracts
+      - name: Validate source, route, metadata, editorial, PWA and artwork contracts
         run: |
           node scripts/validate-source-boundaries.mjs
           pnpm exec tsx scripts/validate-route-manifest.ts
           pnpm exec tsx scripts/validate-route-metadata.ts
           pnpm exec tsx scripts/validate-editorial-registry.ts
           node scripts/validate-pwa-assets.mjs
+          node scripts/validate-owner-artwork.mjs
 
       - name: Build production application
         env:
@@ -105,6 +106,7 @@ jobs:
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './.well-known/security.txt'
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './collection-status/index.html'
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './offline.html'
+          tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './assets/divyanexus/owner-selected-vision.webp'
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './release.json'
 
       - name: Upload GitHub Pages artifact
