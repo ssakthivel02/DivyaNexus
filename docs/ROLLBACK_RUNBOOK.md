@@ -16,7 +16,7 @@ Use rollback when the current production release causes a material regression th
 1. Identify the last verified production merge commit.
 2. Create a dedicated rollback branch from current `main`.
 3. Revert the faulty merge commit; do not rewrite `main` history.
-4. Run the complete pull-request quality gates.
+4. Run the complete pull-request quality gates, including direct-route materialization.
 5. Open a rollback pull request that names the faulty and target commits.
 6. Merge only after TypeScript, build, static validation, and Playwright are green.
 7. Watch the Pages deployment and production verification workflows.
@@ -36,6 +36,7 @@ pnpm run check
 node scripts/validate-source-boundaries.mjs
 pnpm exec tsx scripts/validate-route-manifest.ts
 pnpm run build
+pnpm exec tsx scripts/materialize-pages-routes.ts
 node scripts/validate-build-artifact.mjs
 pnpm exec playwright test
 git push -u origin rollback/divyanexus-<incident-id>
@@ -57,5 +58,6 @@ Rollback is complete when:
 - production verification is green;
 - the release and root markers match;
 - `release.json` matches the rollback merge commit;
-- critical direct routes and assets pass;
+- critical direct routes return HTTP 200 with the current shell;
+- linked assets pass;
 - the incident record contains cause, impact, action, and follow-up owner.
