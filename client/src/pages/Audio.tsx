@@ -13,6 +13,7 @@ const listeningRooms = [
   {
     id: "agni",
     recordId: "rig-veda-1-1-1",
+    route: "/rig-veda",
     label: "Agni opening verse",
     tamil: "அக்னி தொடக்க மந்திரம்",
     detail: "Hear the verified source text, transliteration, Tamil translation, or English translation using a voice installed on this device.",
@@ -21,6 +22,7 @@ const listeningRooms = [
   {
     id: "pusan",
     recordId: "rig-veda-1-42",
+    route: "/rig-veda",
     label: "Pūṣan path verse",
     tamil: "பூஷன் வழிகாட்டும் மந்திரம்",
     detail: "Compare the original text with a readable transliteration and bilingual editorial translation.",
@@ -29,6 +31,7 @@ const listeningRooms = [
   {
     id: "gita",
     recordId: "gita-2-47",
+    route: "/bhagavad-gita",
     label: "Gita action verse",
     tamil: "கீதை செயல் வழிகாட்டல்",
     detail: "Listen to the verified Sanskrit text and the clearly labelled Tamil and English editorial translations.",
@@ -143,7 +146,7 @@ export default function Audio() {
             <div>
               <strong>Source and voice boundary</strong>
               <p>The displayed primary text is verified against the linked source. The spoken sound is generated locally by the browser or operating system and is not a reviewed recitation.</p>
-              <Link href={`${record ? "/rig-veda" : "/scriptures"}?record=${selected.recordId}`}>Open the full reader <ChevronRight size={14} aria-hidden="true" /></Link>
+              <Link href={`${selected.route}?record=${selected.recordId}`}>Open the full reader <ChevronRight size={14} aria-hidden="true" /></Link>
             </div>
           </div>
         </div>
