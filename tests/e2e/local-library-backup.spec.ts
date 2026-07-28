@@ -34,13 +34,14 @@ test.describe("browser-local library backup", () => {
       buffer: Buffer.from(JSON.stringify(payload)),
     });
 
-    await expect(page.getByRole("status")).toContainText("Local data restored");
+    const libraryStatus = page.locator(".library-cinema__status");
+    await expect(libraryStatus).toContainText("Local data restored");
     await expect(page.getByText("Imported study question", { exact: true })).toBeVisible();
     await expect(page.getByRole("link", { name: /Bhagavad Gita 2.47/ })).toBeVisible();
     await expect(page.getByRole("link", { name: "dharma" })).toBeVisible();
 
     await page.getByRole("button", { name: "Delete note Imported study question" }).click();
-    await expect(page.getByRole("status")).toContainText("Local note deleted");
+    await expect(libraryStatus).toContainText("Local note deleted");
     await expect(page.getByText("Imported study question", { exact: true })).toHaveCount(0);
   });
 
@@ -51,7 +52,7 @@ test.describe("browser-local library backup", () => {
       mimeType: "application/json",
       buffer: Buffer.from("{not-valid-json"),
     });
-    await expect(page.getByRole("status")).toHaveText("The selected file is not valid JSON.");
+    await expect(page.locator(".library-cinema__status")).toHaveText("The selected file is not valid JSON.");
     await expect(page.locator(".library-cinema__stat").nth(0)).toContainText("0");
     await expect(page.locator(".library-cinema__stat").nth(3)).toContainText("0");
   });
