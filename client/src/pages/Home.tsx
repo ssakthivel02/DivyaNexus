@@ -159,7 +159,8 @@ export default function Home({ onAsk, onSearch }: HomeProps) {
 
             <div className="cinema-hero__actions">
               <button className="button button--primary button--glow" onClick={onAsk}><Sparkles size={17} aria-hidden="true" />Ask Divya</button>
-              <Link className="button button--glass" href="/explore"><Compass size={17} aria-hidden="true" />Explore the universe</Link><a className="button button--glass" href="#owner-portal-vision"><Stars size={17} aria-hidden="true" />View portal vision</a>
+              <Link className="button button--glass" href="/explore"><Compass size={17} aria-hidden="true" />Explore the universe</Link>
+              <a className="button button--glass" href="#owner-portal-vision"><Stars size={17} aria-hidden="true" />View portal vision</a>
             </div>
             <div className="cinema-hero__source-line"><span />A vivid learning experience, with primary sources, editorial translation, and generated reflection visibly distinguished.</div>
           </div>
@@ -256,7 +257,7 @@ export default function Home({ onAsk, onSearch }: HomeProps) {
               </div>
               <div className="cinema-wisdom__actions">
                 <Link className="button button--compact" href={`${daily.route}?record=${daily.id}`}><BookOpenText size={15} aria-hidden="true" />Read source</Link>
-                <Link className="button button--compact" href="/audio"><Headphones size={15} aria-hidden="true" />Listen later</Link>
+                <Link className="button button--compact" href="/audio"><Headphones size={15} aria-hidden="true" />Listen now</Link>
                 <button className="button button--compact" onClick={onAsk}><CircleHelp size={15} aria-hidden="true" />Ask for context</button>
                 <button className="button button--compact" onClick={() => setBookmarked(toggleBookmark(daily.id).includes(daily.id))}>{bookmarked ? <Check size={15} aria-hidden="true" /> : <Bookmark size={15} aria-hidden="true" />}{bookmarked ? "Saved" : "Save locally"}</button>
                 <button className="button button--icon" onClick={shareWisdom} aria-label="Share daily wisdom"><Share2 size={15} aria-hidden="true" /></button>
@@ -335,7 +336,7 @@ export default function Home({ onAsk, onSearch }: HomeProps) {
         <section className="cinema-section cinema-section--family" aria-labelledby="family-title">
           <div className="family-grid">
             <Reveal className="family-card family-card--kids"><img src={ASSETS.kids} alt="Children sharing an illuminated folio in a warm storybook scene" loading="lazy" /><div><p className="scene-kicker">Kids universe</p><h2 id="family-title">Big stories for curious minds.</h2><p>Bright story routes, values-led prompts, and respectful cultural learning for shared discovery.</p><Link href="/kids" className="button button--glass">Explore kids <ArrowRight size={16} aria-hidden="true" /></Link></div></Reveal>
-            <Reveal className="family-card family-card--audio"><img src={ASSETS.audio} alt="Lamp and resonant vessel with soft arcs of golden sound" loading="lazy" /><div><p className="scene-kicker">Audio experiences</p><h3>Pause, listen, and return when a reviewed recording is ready.</h3><Link href="/audio" className="inline-arrow"><Play size={15} aria-hidden="true" />Open audio <ArrowRight size={16} aria-hidden="true" /></Link></div></Reveal>
+            <Reveal className="family-card family-card--audio"><img src={ASSETS.audio} alt="Lamp and resonant vessel with soft arcs of golden sound" loading="lazy" /><div><p className="scene-kicker">Audio experiences</p><h3>Listen to Tamil, Sanskrit, transliteration, and English with the text kept visible.</h3><Link href="/audio" className="inline-arrow"><Play size={15} aria-hidden="true" />Open audio <ArrowRight size={16} aria-hidden="true" /></Link></div></Reveal>
           </div>
         </section>
 
