@@ -1,0 +1,92 @@
+name: Capture DivyaNexus Wave 6 Production
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  pages: read
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      WEBSITE_URL: https://divyanexus.omsaravanabhava.org
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Capture deployment and production evidence
+        shell: bash
+        run: |
+          set +e
+
+          gh api -X GET "repos/$GITHUB_REPOSITORY/actions/runs?branch=main&per_page=60" > main-runs.json 2> main-runs.err
+          echo "main_runs_exit=$?" > diagnostic-status.txt
+
+          gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/deploy-react-app.yml/runs?branch=main&per_page=20" > deploy-runs.json 2> deploy-runs.err
+          echo "deploy_runs_exit=$?" >> diagnostic-status.txt
+
+          gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/production-smoke.yml/runs?branch=main&per_page=20" > smoke-runs.json 2> smoke-runs.err
+          echo "smoke_runs_exit=$?" >> diagnostic-status.txt
+
+          gh api -X GET "repos/$GITHUB_REPOSITORY/pages" > pages-site.json 2> pages-site.err
+          echo "pages_site_exit=$?" >> diagnostic-status.txt
+
+          gh api -X GET "repos/$GITHUB_REPOSITORY/deployments?environment=github-pages&per_page=30" > pages-deployments.json 2> pages-deployments.err
+          echo "pages_deployments_exit=$?" >> diagnostic-status.txt
+
+          endpoints=(
+            ""
+            "release.json"
+            "health.json"
+            "manifest.webmanifest"
+            "sw.js"
+            "offline.html"
+            ".well-known/security.txt"
+            "glossary"
+            "learning"
+            "kids"
+            "collection-status"
+            "library"
+          )
+
+          : > endpoint-status.txt
+          for endpoint in "${endpoints[@]}"; do
+            safe_name="$(echo "${endpoint:-home}" | tr '/.' '__')"
+            code=$(curl --connect-timeout 10 --max-time 30 -L -sS \
+              -H 'Cache-Control: no-cache, no-store, max-age=0' \
+              -H 'Pragma: no-cache' \
+              -o "endpoint-$safe_name.txt" \
+              -w '%{http_code}' \
+              "$WEBSITE_URL/${endpoint}?wave6-check=${GITHUB_RUN_ID}-$(date +%s)") || code=000
+            printf '%s /%s\n' "$code" "$endpoint" >> endpoint-status.txt
+          done
+
+          cat diagnostic-status.txt
+          cat endpoint-status.txt
+
+      - name: Upload production diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: divyanexus-wave6-production-diagnostics
+          path: |
+            diagnostic-status.txt
+            endpoint-status.txt
+            endpoint-*.txt
+            main-runs.json
+            main-runs.err
+            deploy-runs.json
+            deploy-runs.err
+            smoke-runs.json
+            smoke-runs.err
+            pages-site.json
+            pages-site.err
+            pages-deployments.json
+            pages-deployments.err
+          if-no-files-found: error
+          retention-days: 2
