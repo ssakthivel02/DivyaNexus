@@ -1,0 +1,60 @@
+name: Capture DivyaNexus Main Actions Status
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  pages: read
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Capture recent main workflow runs
+        shell: bash
+        run: |
+          set +e
+          gh api -X GET "repos/$GITHUB_REPOSITORY/actions/runs?branch=main&per_page=50" > main-actions-runs.json 2> main-actions-runs.err
+          echo "actions_exit=$?" > diagnostic-status.txt
+
+          gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/deploy-react-app.yml/runs?branch=main&per_page=20" > deploy-runs.json 2> deploy-runs.err
+          echo "deploy_exit=$?" >> diagnostic-status.txt
+
+          gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/production-smoke.yml/runs?branch=main&per_page=20" > smoke-runs.json 2> smoke-runs.err
+          echo "smoke_exit=$?" >> diagnostic-status.txt
+
+          gh api -X GET "repos/$GITHUB_REPOSITORY/pages" > pages-site.json 2> pages-site.err
+          echo "pages_exit=$?" >> diagnostic-status.txt
+
+          gh api -X GET "repos/$GITHUB_REPOSITORY/deployments?environment=github-pages&per_page=20" > pages-deployments.json 2> pages-deployments.err
+          echo "deployments_exit=$?" >> diagnostic-status.txt
+
+          cat diagnostic-status.txt
+
+      - name: Upload deployment diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: divyanexus-main-actions-status
+          path: |
+            diagnostic-status.txt
+            main-actions-runs.json
+            main-actions-runs.err
+            deploy-runs.json
+            deploy-runs.err
+            smoke-runs.json
+            smoke-runs.err
+            pages-site.json
+            pages-site.err
+            pages-deployments.json
+            pages-deployments.err
+          if-no-files-found: error
+          retention-days: 2
