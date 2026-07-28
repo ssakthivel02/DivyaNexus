@@ -8,7 +8,7 @@ Expand weak or placeholder portal sections without hiding uncertainty, inventing
 
 ## Delivered scope
 
-- 36 bilingual editorial records across six collections.
+- 38 bilingual editorial records across six collections.
 - Rishi and lineage orientation records.
 - Festival pathways with regional and calendar boundaries.
 - Context-sensitive glossary records.
