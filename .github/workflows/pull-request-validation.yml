@@ -45,8 +45,14 @@ jobs:
       - name: Validate router, manifest and sitemap
         run: pnpm exec tsx scripts/validate-route-manifest.ts
 
+      - name: Validate route metadata and canonical contracts
+        run: pnpm exec tsx scripts/validate-route-metadata.ts
+
       - name: Validate editorial depth registry
         run: pnpm exec tsx scripts/validate-editorial-registry.ts
+
+      - name: Validate PWA and offline contracts
+        run: node scripts/validate-pwa-assets.mjs
 
       - name: Build production application
         env:
