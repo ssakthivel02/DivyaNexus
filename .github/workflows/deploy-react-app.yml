@@ -13,6 +13,7 @@ permissions:
 
 env:
   PRODUCTION_DOMAIN: divyanexus.omsaravanabhava.org
+  RELEASE_ID: stage-b-wave4
 
 concurrency:
   group: divyanexus-pages-production
@@ -21,6 +22,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -43,20 +45,41 @@ jobs:
       - name: TypeScript check
         run: pnpm run check
 
+      - name: Validate source portability and route contracts
+        run: |
+          pnpm run verify:source-boundaries
+          pnpm run verify:routes
+
       - name: Build production application
         env:
           VITE_BASE_PATH: /
         run: pnpm run build
 
-      - name: Validate Pages artifact
+      - name: Validate deployable build artifact
+        run: pnpm run verify:build
+
+      - name: Attach custom-domain and release evidence
+        shell: bash
         run: |
           set -euo pipefail
-          test -f dist/public/index.html
-          test -d dist/public/assets
           test -f CNAME
           test "$(tr -d '\r\n' < CNAME)" = "$PRODUCTION_DOMAIN"
           cp CNAME dist/public/CNAME
-          ! grep -R -E "manus-storage|__manus__|BUILT_IN_FORGE|filebin\.net|%VITE_ANALYTICS_" dist/public
+
+          built_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          cat > dist/public/release.json <<EOF
+          {
+            "release": "$RELEASE_ID",
+            "commit": "$GITHUB_SHA",
+            "runId": "$GITHUB_RUN_ID",
+            "repository": "$GITHUB_REPOSITORY",
+            "builtAt": "$built_at"
+          }
+          EOF
+
+          grep -Fq '"release": "stage-b-wave4"' dist/public/release.json
+          grep -Fq '"commit": "'"$GITHUB_SHA"'"' dist/public/release.json
+          test -f dist/public/CNAME
 
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
