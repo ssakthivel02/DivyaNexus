@@ -113,7 +113,7 @@ export function SpeechControls({
           type="range"
           min="0.55"
           max="1.2"
-          step="0.05"
+          step="0.01"
           value={rate}
           aria-label={`Reading speed for ${selected.label}`}
           aria-valuetext={`${rate.toFixed(2)} times normal speed`}
