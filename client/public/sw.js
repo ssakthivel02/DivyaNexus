@@ -1,11 +1,12 @@
 /* DivyaNexus offline shell: cache safe public assets; never cache account or API data. */
-const CACHE = "divyanexus-stage-b-wave6-v1";
+const CACHE = "divyanexus-stage-b-wave7-v1";
 const SHELL_URL = new URL("./", self.registration.scope).toString();
 const MANIFEST_URL = new URL("./manifest.webmanifest", self.registration.scope).toString();
 const OFFLINE_URL = new URL("./offline.html", self.registration.scope).toString();
 const ICON_192_URL = new URL("./assets/divyanexus/app-icon-192.png", self.registration.scope).toString();
 const ICON_512_URL = new URL("./assets/divyanexus/app-icon-512.png", self.registration.scope).toString();
-const APP_SHELL = [SHELL_URL, MANIFEST_URL, OFFLINE_URL, ICON_192_URL, ICON_512_URL];
+const OWNER_ARTWORK_URL = new URL("./assets/divyanexus/owner-selected-vision.webp", self.registration.scope).toString();
+const APP_SHELL = [SHELL_URL, MANIFEST_URL, OFFLINE_URL, ICON_192_URL, ICON_512_URL, OWNER_ARTWORK_URL];
 
 self.addEventListener("install", (event) => {
   event.waitUntil(
