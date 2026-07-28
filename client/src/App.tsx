@@ -48,7 +48,7 @@ function AppRoutes({ onAsk, onSearch }: { onAsk: () => void; onSearch: () => voi
       <Route path="/bhagavad-gita">{() => <ScriptureReader kind="bhagavad-gita" />}</Route>
       <Route path="/rig-veda">{() => <ScriptureReader kind="rig-veda" />}</Route>
       <Route path="/upanishads">{() => <ScriptureReader kind="upanishads" />}</Route>
-      <Route path="/deities/:slug">{(params) => <DeityDetail slug={params.slug} />}</Route>
+      <Route path="/deities/:slug">{(params) => <DeityDetail slug={params?.slug ?? ""} />}</Route>
       <Route path="/deities" component={DeityDirectory} />
       <Route path="/temples">{() => <ContentDirectory kind="temples" />}</Route>
       <Route path="/rishis">{() => <ContentDirectory kind="rishis" />}</Route>
