@@ -1,0 +1,8 @@
+{
+  "status": "ok",
+  "service": "DivyaNexus Web",
+  "release": "stage-b-wave4",
+  "scope": "static application shell",
+  "reviewedAt": "2026-07-28",
+  "note": "This endpoint confirms deployment content only; it is not a global uptime guarantee."
+}

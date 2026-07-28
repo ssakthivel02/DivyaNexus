@@ -26,6 +26,7 @@ const Library = lazy(() => import("@/pages/Library"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const ScriptureReader = lazy(() => import("@/pages/ScriptureReader"));
 const SearchPage = lazy(() => import("@/pages/SearchPage"));
+const Status = lazy(() => import("@/pages/Status"));
 
 function RestoreLegacyPath() {
   const [location, setLocation] = useLocation();
@@ -68,6 +69,7 @@ function AppRoutes({ onAsk, onSearch }: { onAsk: () => void; onSearch: () => voi
       <Route path="/delete-data">{() => <LegalPage page="delete-data" />}</Route>
       <Route path="/disclaimer">{() => <LegalPage page="disclaimer" />}</Route>
       <Route path="/contact" component={Contact} />
+      <Route path="/status" component={Status} />
       <Route component={NotFound} />
     </Switch>
   );
