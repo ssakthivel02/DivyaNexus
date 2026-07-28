@@ -192,7 +192,32 @@ jobs:
           grep -Fq 'https://divyanexus.omsaravanabhava.org/status' /tmp/sitemap_xml
           grep -Fq 'https://divyanexus.omsaravanabhava.org/collection-status' /tmp/sitemap_xml
           grep -Fq '"shortcuts"' /tmp/manifest_webmanifest
-          grep -Fq 'divyanexus-stage-b-wave6-v1' /tmp/sw_js
+          grep -Fq 'divyanexus-stage-b-wave7-v1' /tmp/sw_js
+          grep -Fq 'owner-selected-vision.webp' /tmp/sw_js
           grep -Fq 'This path is not cached yet.' /tmp/offline_html
           grep -Fq 'Canonical: https://divyanexus.omsaravanabhava.org/.well-known/security.txt' /tmp/_well-known_security_txt
           echo "Robots, sitemap, manifest, service worker, offline fallback and coordinated disclosure endpoints verified."
+
+      - name: Verify owner-selected artwork asset
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          artwork_url="$WEBSITE_URL/assets/divyanexus/owner-selected-vision.webp?artwork-check=${GITHUB_RUN_ID}"
+          artwork_code=$(curl --connect-timeout 10 --max-time 30 -L -sS \
+            -D /tmp/owner-artwork.headers \
+            -o /tmp/owner-selected-vision.webp \
+            -w '%{http_code}' \
+            "$artwork_url") || artwork_code=000
+
+          echo "$artwork_code /assets/divyanexus/owner-selected-vision.webp"
+          test "$artwork_code" = "200"
+          grep -Eiq '^content-type:[[:space:]]*image/webp' /tmp/owner-artwork.headers
+
+          artwork_bytes=$(wc -c < /tmp/owner-selected-vision.webp)
+          test "$artwork_bytes" -ge 100000
+          test "$artwork_bytes" -le 900000
+          test "$(head -c 4 /tmp/owner-selected-vision.webp)" = "RIFF"
+          test "$(dd if=/tmp/owner-selected-vision.webp bs=1 skip=8 count=4 status=none)" = "WEBP"
+
+          echo "Owner-selected WebP verified in production: ${artwork_bytes} bytes."
