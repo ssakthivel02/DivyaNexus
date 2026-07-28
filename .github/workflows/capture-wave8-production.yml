@@ -1,0 +1,62 @@
+name: Capture DivyaNexus Wave 8 Production
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  pages: read
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      GH_TOKEN: ${{ github.token }}
+      WEBSITE_URL: https://divyanexus.omsaravanabhava.org
+      EXPECTED_COMMIT: d8e34c6a4032a4cad70e417f5bd92491c1a6b70a
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Require successful deployment and production smoke
+        shell: bash
+        run: |
+          set -euo pipefail
+          verified=0
+          for attempt in {1..60}; do
+            deploy_json=$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/deploy-react-app.yml/runs?branch=main&per_page=20")
+            smoke_json=$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/production-smoke.yml/runs?branch=main&per_page=20")
+            deploy_state=$(jq -r --arg sha "$EXPECTED_COMMIT" '.workflow_runs[] | select(.head_sha == $sha) | [.id, .status, (.conclusion // "pending")] | @tsv' <<<"$deploy_json" | head -n 1)
+            smoke_state=$(jq -r --arg sha "$EXPECTED_COMMIT" '.workflow_runs[] | select(.head_sha == $sha) | [.id, .status, (.conclusion // "pending")] | @tsv' <<<"$smoke_json" | head -n 1)
+            echo "Attempt $attempt deploy=${deploy_state:-not-found} smoke=${smoke_state:-not-found}"
+            if grep -q $'completed\tsuccess$' <<<"$deploy_state" && grep -q $'completed\tsuccess$' <<<"$smoke_state"; then verified=1; break; fi
+            if grep -q $'completed\tfailure$' <<<"$deploy_state" || grep -q $'completed\tfailure$' <<<"$smoke_state"; then exit 1; fi
+            sleep 10
+          done
+          test "$verified" = "1"
+
+      - name: Verify live Wave 8 application evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          fetch() {
+            local endpoint="$1"; local name="$2"; local code
+            code=$(curl --connect-timeout 10 --max-time 30 -L -sS -H 'Cache-Control: no-cache, no-store, max-age=0' -o "/tmp/$name" -w '%{http_code}' "$WEBSITE_URL$endpoint?wave8-check=${GITHUB_RUN_ID}-$(date +%s)")
+            echo "$code $endpoint"
+            test "$code" = "200"
+          }
+          fetch / homepage
+          fetch /release.json release
+          fetch /audio audio
+          fetch /rig-veda rigveda
+          fetch /assets/divyanexus/owner-selected-vision.webp artwork
+          grep -Fq '"commit": "'"$EXPECTED_COMMIT"'"' /tmp/release
+          grep -Fq 'data-divyanexus-version="stage-b-wave4"' /tmp/homepage
+          grep -Fq 'data-divyanexus-version="stage-b-wave4"' /tmp/audio
+          grep -Fq 'data-divyanexus-version="stage-b-wave4"' /tmp/rigveda
+          test "$(head -c 4 /tmp/artwork)" = "RIFF"
+          echo "Wave 8 production evidence passed."
