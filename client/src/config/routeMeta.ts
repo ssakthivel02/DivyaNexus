@@ -27,7 +27,7 @@ export const routeMetaByPath: Readonly<Record<string, RouteMeta>> = {
     label: "Explore",
   },
   "/ask-divya": {
-    title: "Ask Divya — Source-Aware Local Guidance",
+    title: "Ask Divya — Source-Aware Local Guidance — DivyaNexus",
     description: "Ask a bounded question and receive a local learning response that keeps source text, editorial translation, interpretation and generated explanation distinct.",
     schemaType: "WebPage",
     label: "Ask Divya",
