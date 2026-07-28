@@ -17,6 +17,7 @@ import {
   Stars,
 } from "lucide-react";
 import { Link } from "wouter";
+import { SpeechControls, type SpeechItem } from "@/components/SpeechControls";
 import { ASSETS, records, type KnowledgeRecord } from "@/data/content";
 import { getVerifiedScriptureRecord } from "@/data/verifiedScripture";
 import {
@@ -72,7 +73,8 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
   const initialIndex = Math.max(0, set.records.findIndex((record) => record.id === requested));
   const [index, setIndex] = useState(initialIndex);
   const [showCommentary, setShowCommentary] = useState(true);
-  const [fontScale, setFontScale] = useState(Number(getPreference("fontSize", "1")) || 1);
+  const [fontScale, setFontScale] = useState(Number(getPreference("fontSize", "1.08")) || 1.08);
+  const [readerLanguage, setReaderLanguage] = useState<"both" | "tamil" | "english">("both");
   const record = set.records[index] ?? set.records[0];
   const [saved, setSaved] = useState(() => (record ? getBookmarks().includes(record.id) : false));
 
@@ -99,9 +101,20 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
   const displayTamilTitle = verified?.tamilTitle ?? record.tamilTitle;
   const displayReference = verified?.reference ?? record.reference;
   const displayStatus = verified?.status ?? record.reviewStatus;
+  const speechItems: SpeechItem[] = verified
+    ? [
+        { id: `${record.id}-tamil`, label: "Tamil meaning", tamilLabel: "தமிழ் பொருள்", text: verified.tamilTranslation, lang: "ta-IN", rate: 0.82, sourceLabel: `${displayTitle} · Tamil editorial translation` },
+        { id: `${record.id}-sanskrit`, label: "Sanskrit text", tamilLabel: "சமஸ்கிருத மூலம்", text: verified.originalText, lang: "sa-IN", rate: 0.72, sourceLabel: `${displayTitle} · verified primary text; device speech does not preserve Vedic accents` },
+        { id: `${record.id}-iast`, label: "IAST transliteration", tamilLabel: "ஒலிப்பெயர்ப்பு", text: verified.transliteration, lang: "en-GB", rate: 0.7, sourceLabel: `${displayTitle} · readable transliteration` },
+        { id: `${record.id}-english`, label: "English meaning", tamilLabel: "ஆங்கில பொருள்", text: verified.englishTranslation, lang: "en-GB", rate: 0.88, sourceLabel: `${displayTitle} · English editorial translation` },
+      ]
+    : [
+        { id: `${record.id}-tamil`, label: "Tamil overview", tamilLabel: "தமிழ் சுருக்கம்", text: record.tamilMeaning, lang: "ta-IN", rate: 0.82, sourceLabel: `${displayTitle} · educational overview` },
+        { id: `${record.id}-english`, label: "English overview", tamilLabel: "ஆங்கில சுருக்கம்", text: record.englishMeaning, lang: "en-GB", rate: 0.88, sourceLabel: `${displayTitle} · educational overview` },
+      ];
 
   const changeScale = (next: number) => {
-    const value = Math.min(1.25, Math.max(0.87, next));
+    const value = Math.min(1.45, Math.max(0.95, next));
     setFontScale(value);
     setPreference("fontSize", String(value));
   };
@@ -129,26 +142,14 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
           fetchPriority="high"
         />
         <div className="reader-cinema-hero__veil" />
-        <div className="reader-cinema-hero__glyph" aria-hidden="true">
-          ॐ
-        </div>
+        <div className="reader-cinema-hero__glyph" aria-hidden="true">ॐ</div>
         <div className="reader-cinema-hero__inner">
-          <p className="scene-kicker">
-            <Stars size={14} aria-hidden="true" />Source-aware reading room
-          </p>
-          <p className="reader-cinema-hero__crumb">
-            <Link href="/scriptures">Scriptures</Link> / {set.title}
-          </p>
-          <p className="reader-cinema-hero__tamil" lang="ta">
-            {set.tamil}
-          </p>
+          <p className="scene-kicker"><Stars size={14} aria-hidden="true" />Source-aware reading room</p>
+          <p className="reader-cinema-hero__crumb"><Link href="/scriptures">Scriptures</Link> / {set.title}</p>
+          <p className="reader-cinema-hero__tamil" lang="ta">{set.tamil}</p>
           <h1>{set.title}</h1>
           <p>{set.description}</p>
-          <div>
-            <span>{set.scene}</span>
-            <span>{record.source}</span>
-            <span>{displayStatus}</span>
-          </div>
+          <div><span>{set.scene}</span><span>{record.source}</span><span>{displayStatus}</span></div>
         </div>
       </section>
 
@@ -157,74 +158,40 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
           <article className="reader-console">
             <div className="reader-toolbar">
               <div className="reader-toolbar__group">
-                <button
-                  className="reader-tool"
-                  onClick={() => setIndex((current) => Math.max(0, current - 1))}
-                  disabled={index === 0}
-                >
-                  <ChevronLeft size={15} aria-hidden="true" />Previous
-                </button>
-                <button
-                  className="reader-tool"
-                  onClick={() => setIndex((current) => Math.min(set.records.length - 1, current + 1))}
-                  disabled={index === set.records.length - 1}
-                >
-                  Next<ChevronRight size={15} aria-hidden="true" />
-                </button>
+                <button className="reader-tool" onClick={() => setIndex((current) => Math.max(0, current - 1))} disabled={index === 0}><ChevronLeft size={15} aria-hidden="true" />Previous</button>
+                <button className="reader-tool" onClick={() => setIndex((current) => Math.min(set.records.length - 1, current + 1))} disabled={index === set.records.length - 1}>Next<ChevronRight size={15} aria-hidden="true" /></button>
               </div>
               <div className="reader-toolbar__group">
-                <button
-                  className="reader-tool"
-                  onClick={() => changeScale(fontScale - 0.06)}
-                  aria-label="Decrease reader font size"
-                >
-                  <Minus size={14} aria-hidden="true" />
-                </button>
-                <button
-                  className="reader-tool"
-                  onClick={() => changeScale(fontScale + 0.06)}
-                  aria-label="Increase reader font size"
-                >
-                  <Plus size={14} aria-hidden="true" />
-                </button>
-                <button
-                  className={`reader-tool ${showCommentary ? "is-active" : ""}`}
-                  onClick={() => setShowCommentary((value) => !value)}
-                >
-                  Commentary
-                </button>
+                <button className="reader-tool" onClick={() => changeScale(fontScale - 0.06)} aria-label="Decrease reader font size"><Minus size={14} aria-hidden="true" /></button>
+                <button className="reader-tool" onClick={() => changeScale(fontScale + 0.06)} aria-label="Increase reader font size"><Plus size={14} aria-hidden="true" /></button>
+                <button className={`reader-tool ${showCommentary ? "is-active" : ""}`} onClick={() => setShowCommentary((value) => !value)}>Commentary</button>
+              </div>
+              <div className="reader-language-switch" role="group" aria-label="Reader language focus">
+                <button type="button" className={readerLanguage === "both" ? "is-active" : ""} aria-pressed={readerLanguage === "both"} onClick={() => setReaderLanguage("both")}>Tamil + English</button>
+                <button type="button" className={readerLanguage === "tamil" ? "is-active" : ""} aria-pressed={readerLanguage === "tamil"} onClick={() => setReaderLanguage("tamil")}>தமிழ் மட்டும்</button>
+                <button type="button" className={readerLanguage === "english" ? "is-active" : ""} aria-pressed={readerLanguage === "english"} onClick={() => setReaderLanguage("english")}>English only</button>
               </div>
             </div>
 
             <div className="reader-paper reader-paper--cinema" style={{ fontSize: `${fontScale}rem` }}>
-              <div className="reader-meta">
-                <span className="chip">{record.source}</span>
-                <span className="chip">{displayReference}</span>
-                <span className="chip">{displayStatus}</span>
-              </div>
+              <div className="reader-meta"><span className="chip">{record.source}</span><span className="chip">{displayReference}</span><span className="chip">{displayStatus}</span></div>
               <p className="reader-paper__section">Current study record</p>
               <h1>{displayTitle}</h1>
-              <p className="reader-paper__tamil" lang="ta">
-                {displayTamilTitle}
-              </p>
+              <p className="reader-paper__tamil" lang="ta">{displayTamilTitle}</p>
 
               {verified ? (
                 <>
                   <p className="reader-label">Original-language text · verified primary text</p>
-                  <p className="reader-scripture" lang="sa" style={{ whiteSpace: "pre-line" }}>
-                    {verified.originalText}
-                  </p>
+                  <p className="reader-scripture" lang="sa" style={{ whiteSpace: "pre-line" }}>{verified.originalText}</p>
                   <p className="reader-label">Readable IAST transliteration</p>
                   <p className="reader-transliteration">{verified.transliteration}</p>
 
-                  <div className="reader-meaning-grid">
-                    <div>
+                  <div className="reader-meaning-grid" data-reader-language={readerLanguage}>
+                    <div className="reader-language-panel reader-language-panel--tamil">
                       <p className="reader-label">Tamil · DivyaNexus editorial translation</p>
-                      <p className="reader-translation" lang="ta">
-                        {verified.tamilTranslation}
-                      </p>
+                      <p className="reader-translation" lang="ta">{verified.tamilTranslation}</p>
                     </div>
-                    <div>
+                    <div className="reader-language-panel reader-language-panel--english">
                       <p className="reader-label">English · DivyaNexus editorial translation</p>
                       <p className="reader-translation">{verified.englishTranslation}</p>
                     </div>
@@ -233,101 +200,51 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
                   <p className="reader-label">Key terms · concise study notes</p>
                   <div className="reader-meaning-grid">
                     {verified.wordNotes.map((note) => (
-                      <div key={note.term}>
-                        <p className="reader-translation">
-                          <strong>{note.term}</strong><br />{note.meaning}
-                        </p>
-                      </div>
+                      <div key={note.term}><p className="reader-translation"><strong>{note.term}</strong><br />{note.meaning}{note.tamilMeaning && <span className="reader-word-note__tamil" lang="ta">{note.tamilMeaning}</span>}</p></div>
                     ))}
                   </div>
 
                   <p className="reader-label">Source and editorial status</p>
                   <div className="reader-commentary">
-                    <p><strong>{verified.sourceName}</strong></p>
-                    <p>{verified.sourceNote}</p>
-                    <p>Reviewed: {verified.reviewedDate}</p>
-                    <a href={verified.sourceUrl} target="_blank" rel="noreferrer">
-                      Open the source text in a new tab
-                    </a>
+                    <p><strong>{verified.sourceName}</strong></p><p>{verified.sourceNote}</p><p>Reviewed: {verified.reviewedDate}</p>
+                    <a href={verified.sourceUrl} target="_blank" rel="noreferrer">Open the source text in a new tab</a>
                   </div>
                 </>
               ) : (
                 <>
                   <p className="reader-label">Original-language text · source edition still required</p>
-                  <p className="reader-scripture" lang="ta">
-                    இந்த பதிவிற்கான சரிபார்க்கப்பட்ட மூல மொழிப் பாடம் இன்னும் இணைக்கப்படவில்லை.
-                  </p>
-                  <p className="reader-transliteration">
-                    This overview remains available for discovery, but it does not display an unverified quotation.
-                  </p>
-                  <div className="reader-meaning-grid">
-                    <div>
-                      <p className="reader-label">Tamil meaning · educational overview</p>
-                      <p className="reader-translation" lang="ta">{record.tamilMeaning}</p>
-                    </div>
-                    <div>
-                      <p className="reader-label">English meaning · educational overview</p>
-                      <p className="reader-translation">{record.englishMeaning}</p>
-                    </div>
+                  <p className="reader-scripture" lang="ta">இந்த பதிவிற்கான சரிபார்க்கப்பட்ட மூல மொழிப் பாடம் இன்னும் இணைக்கப்படவில்லை.</p>
+                  <p className="reader-transliteration">This overview remains available for discovery, but it does not display an unverified quotation.</p>
+                  <div className="reader-meaning-grid" data-reader-language={readerLanguage}>
+                    <div className="reader-language-panel reader-language-panel--tamil"><p className="reader-label">Tamil meaning · educational overview</p><p className="reader-translation" lang="ta">{record.tamilMeaning}</p></div>
+                    <div className="reader-language-panel reader-language-panel--english"><p className="reader-label">English meaning · educational overview</p><p className="reader-translation">{record.englishMeaning}</p></div>
                   </div>
                 </>
               )}
 
-              {showCommentary && (
-                <>
-                  <p className="reader-label">Reflective explanation · clearly not scripture</p>
-                  <p className="reader-commentary">{record.explanation}</p>
-                </>
-              )}
+              {showCommentary && <><p className="reader-label">Reflective explanation · clearly not scripture</p><p className="reader-commentary">{record.explanation}</p></>}
+
+              <div id="reader-audio"><SpeechControls items={speechItems} title={`Listen to ${displayTitle}`} compact /></div>
 
               <div className="reader-actions">
-                <Link className="button" href="/audio">
-                  <Headphones size={15} aria-hidden="true" />Listen
-                </Link>
-                <Link className="button" href={`/ask-divya?context=${encodeURIComponent(record.id)}`}>
-                  <MessageCircleQuestion size={15} aria-hidden="true" />Ask Divya
-                </Link>
-                <button
-                  className="button"
-                  onClick={() => setSaved(toggleBookmark(record.id).includes(record.id))}
-                >
-                  {saved ? <Check size={15} aria-hidden="true" /> : <Bookmark size={15} aria-hidden="true" />}
-                  {saved ? "Saved locally" : "Bookmark"}
-                </button>
-                <button className="button" onClick={copyReference}>
-                  <Copy size={15} aria-hidden="true" />Copy reference
-                </button>
-                <button className="button" onClick={share}>
-                  <Share2 size={15} aria-hidden="true" />Share
-                </button>
+                <a className="button" href="#reader-audio"><Headphones size={15} aria-hidden="true" />Listen here</a>
+                <Link className="button" href={`/ask-divya?context=${encodeURIComponent(record.id)}`}><MessageCircleQuestion size={15} aria-hidden="true" />Ask Divya</Link>
+                <button className="button" onClick={() => setSaved(toggleBookmark(record.id).includes(record.id))}>{saved ? <Check size={15} aria-hidden="true" /> : <Bookmark size={15} aria-hidden="true" />}{saved ? "Saved locally" : "Bookmark"}</button>
+                <button className="button" onClick={copyReference}><Copy size={15} aria-hidden="true" />Copy reference</button>
+                <button className="button" onClick={share}><Share2 size={15} aria-hidden="true" />Share</button>
               </div>
             </div>
           </article>
 
           <aside className="reader-sidebar reader-sidebar--cinema">
             <div className="reader-sidebar__panel">
-              <p className="scene-kicker">In this collection</p>
-              <h2>Follow a record trail</h2>
+              <p className="scene-kicker">In this collection</p><h2>Follow a record trail</h2>
               {set.records.map((item, itemIndex) => {
                 const itemVerified = getVerifiedScriptureRecord(item.id);
-                return (
-                  <button
-                    key={item.id}
-                    className={itemIndex === index ? "is-active" : ""}
-                    onClick={() => setIndex(itemIndex)}
-                  >
-                    <span>0{itemIndex + 1}</span>
-                    {itemVerified?.title ?? item.title}
-                  </button>
-                );
+                return <button key={item.id} className={itemIndex === index ? "is-active" : ""} onClick={() => setIndex(itemIndex)}><span>0{itemIndex + 1}</span>{itemVerified?.title ?? item.title}</button>;
               })}
             </div>
-            <div className="reader-sidebar__panel">
-              <p className="scene-kicker">Reader context</p>
-              <p className="muted" style={{ fontSize: ".74rem", margin: 0 }}>
-                Primary text, editorial translation, word notes, and reflective explanation are displayed as separate layers. Source links remain visible for independent study.
-              </p>
-            </div>
+            <div className="reader-sidebar__panel"><p className="scene-kicker">Reader context</p><p className="muted" style={{ fontSize: ".74rem", margin: 0 }}>Primary text, editorial translation, word notes, and reflective explanation are displayed as separate layers. Source links remain visible for independent study.</p></div>
           </aside>
         </div>
       </section>
