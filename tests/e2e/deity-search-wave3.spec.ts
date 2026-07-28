@@ -41,8 +41,10 @@ test.describe("deity discovery search", () => {
     await page.goto("/deities", { waitUntil: "domcontentloaded" });
     await waitForApp(page);
     await page.getByRole("button", { name: "Tamil", exact: true }).click();
-    await expect(page.locator(".deity-directory-card")).toHaveCount(1);
+    await expect(page.locator(".deity-directory-card")).toHaveCount(3);
+    await expect(page.locator(".deity-directory-card").filter({ hasText: "Shiva" })).toBeVisible();
     await expect(page.locator(".deity-directory-card").filter({ hasText: "Murugan" })).toBeVisible();
+    await expect(page.locator(".deity-directory-card").filter({ hasText: "Nataraja" })).toBeVisible();
     await page.getByRole("button", { name: "All", exact: true }).click();
     await expect(page.locator(".deity-directory-card")).toHaveCount(10);
   });
