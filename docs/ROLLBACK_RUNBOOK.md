@@ -32,7 +32,11 @@ git pull --ff-only
 git switch -c rollback/divyanexus-<incident-id>
 git revert -m 1 <faulty-merge-commit>
 pnpm install --frozen-lockfile
-pnpm run verify:quality
+pnpm run check
+node scripts/validate-source-boundaries.mjs
+pnpm exec tsx scripts/validate-route-manifest.ts
+pnpm run build
+node scripts/validate-build-artifact.mjs
 pnpm exec playwright test
 git push -u origin rollback/divyanexus-<incident-id>
 ```
