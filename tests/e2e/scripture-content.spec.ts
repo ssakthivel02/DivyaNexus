@@ -43,7 +43,7 @@ test.describe("verified scripture reader", () => {
       expect(response?.status()).toBeLessThan(400);
       await expect(page.locator(".route-loading")).toHaveCount(0, { timeout: 15_000 });
       await expect(page.getByRole("heading", { name: record.heading, exact: true })).toBeVisible();
-      await expect(page.getByText(record.original, { exact: false })).toBeVisible();
+      await expect(page.locator(".reader-scripture").filter({ hasText: record.original })).toBeVisible();
       await expect(page.getByText("Original-language text · verified primary text")).toBeVisible();
       await expect(page.getByText("Tamil · DivyaNexus editorial translation")).toBeVisible();
       await expect(page.getByText("English · DivyaNexus editorial translation")).toBeVisible();
@@ -66,10 +66,12 @@ test.describe("verified scripture reader", () => {
 
     await page.getByRole("button", { name: /Rig Veda 1\.50\.1 · Sūrya/ }).click();
     await expect(page.getByRole("heading", { name: "Rig Veda 1.50.1 · Sūrya", exact: true })).toBeVisible();
-    await expect(page.getByText("उदु त्यं जातवेदसं", { exact: false })).toBeVisible();
+    await expect(page.locator(".reader-scripture").filter({ hasText: "उदु त्यं जातवेदसं" })).toBeVisible();
 
     await page.getByRole("button", { name: /Bhagavad Gita 2\.47/ }).click();
     await expect(page.getByRole("heading", { name: "Bhagavad Gita 2.47", exact: true })).toBeVisible();
-    await expect(page.getByText("உனக்குரிய உரிமை செயலில் மட்டுமே", { exact: false })).toBeVisible();
+    await expect(
+      page.locator(".reader-language-panel--tamil .reader-translation").filter({ hasText: "உனக்குரிய உரிமை செயலில் மட்டுமே" }),
+    ).toBeVisible();
   });
 });
