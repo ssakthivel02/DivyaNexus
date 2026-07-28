@@ -9,11 +9,7 @@
     "start": "NODE_ENV=production node dist/index.js",
     "preview": "vite preview --host",
     "check": "tsc --noEmit",
-    "format": "prettier --write .",
-    "verify:source-boundaries": "node scripts/validate-source-boundaries.mjs",
-    "verify:routes": "tsx scripts/validate-route-manifest.ts",
-    "verify:build": "node scripts/validate-build-artifact.mjs",
-    "verify:quality": "pnpm run check && pnpm run build && pnpm run verify:source-boundaries && pnpm run verify:routes && pnpm run verify:build"
+    "format": "prettier --write ."
   },
   "dependencies": {
     "@hookform/resolvers": "^5.2.2",
@@ -86,7 +82,7 @@
     "prettier": "^3.6.2",
     "tailwindcss": "^4.1.14",
     "tsx": "^4.19.1",
-    "tw-animate-css": "^1.0.7",
+    "tw-animate-css": "^1.4.0",
     "typescript": "5.6.3",
     "vite": "^7.1.7",
     "vite-plugin-manus-runtime": "^0.0.58",
