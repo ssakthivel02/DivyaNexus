@@ -24,7 +24,7 @@ jobs:
     timeout-minutes: 15
     env:
       WEBSITE_URL: https://divyanexus.omsaravanabhava.org
-      EXPECTED_RELEASE: stage-b-wave4
+      EXPECTED_RELEASE: stage-b-wave8
       EXPECTED_TITLE: DivyaNexus — Vedic Knowledge & Learning
       EXPECTED_COMMIT: ${{ github.event.workflow_run.head_sha }}
     steps:
@@ -42,6 +42,7 @@ jobs:
               && grep -Fq '<div id="root" data-divyanexus-version="'"$EXPECTED_RELEASE"'">' /tmp/site.html \
               && grep -Fq "<title>$EXPECTED_TITLE</title>" /tmp/site.html \
               && grep -Fq '"release": "'"$EXPECTED_RELEASE"'"' /tmp/release.json \
+              && grep -Fq '"release": "'"$EXPECTED_RELEASE"'"' /tmp/health.json \
               && grep -Fq '"status": "ok"' /tmp/health.json; then
               if [[ -z "${EXPECTED_COMMIT:-}" ]] || grep -Fq '"commit": "'"$EXPECTED_COMMIT"'"' /tmp/release.json; then
                 success=1
