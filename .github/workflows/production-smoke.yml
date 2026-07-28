@@ -21,13 +21,14 @@ jobs:
       github.event_name == 'workflow_dispatch' ||
       github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
-    timeout-minutes: 12
+    timeout-minutes: 15
     env:
       WEBSITE_URL: https://divyanexus.omsaravanabhava.org
-      EXPECTED_RELEASE: stage-b-wave2
+      EXPECTED_RELEASE: stage-b-wave4
       EXPECTED_TITLE: DivyaNexus — Vedic Knowledge & Learning
+      EXPECTED_COMMIT: ${{ github.event.workflow_run.head_sha }}
     steps:
-      - name: Verify current React release and deployed assets
+      - name: Verify release, commit, health and linked assets
         shell: bash
         run: |
           set -euo pipefail
@@ -41,9 +42,24 @@ jobs:
             ! grep -Eq 'manus-storage|__manus__|BUILT_IN_FORGE|filebin\.net|%VITE_ANALYTICS_' "$file"
           }
 
+          verify_release_json() {
+            local file="$1"
+            grep -Fq '"release": "'"$EXPECTED_RELEASE"'"' "$file"
+            if [[ -n "${EXPECTED_COMMIT:-}" ]]; then
+              grep -Fq '"commit": "'"$EXPECTED_COMMIT"'"' "$file"
+            fi
+          }
+
+          verify_health_json() {
+            local file="$1"
+            grep -Fq '"status": "ok"' "$file"
+            grep -Fq '"release": "'"$EXPECTED_RELEASE"'"' "$file"
+          }
+
           success=0
-          for attempt in {1..36}; do
+          for attempt in {1..48}; do
             cache_key="${GITHUB_RUN_ID}-${attempt}-$(date +%s)"
+
             site_code=$(curl --connect-timeout 10 --max-time 30 -L -sS \
               -H 'Cache-Control: no-cache, no-store, max-age=0' \
               -H 'Pragma: no-cache' \
@@ -51,7 +67,23 @@ jobs:
               -w '%{http_code}' \
               "$WEBSITE_URL/?deployment-check=$cache_key") || site_code=000
 
-            if [[ "$site_code" == "200" ]] && verify_release_html /tmp/site.html; then
+            release_code=$(curl --connect-timeout 10 --max-time 30 -L -sS \
+              -H 'Cache-Control: no-cache, no-store, max-age=0' \
+              -o /tmp/release.json \
+              -w '%{http_code}' \
+              "$WEBSITE_URL/release.json?deployment-check=$cache_key") || release_code=000
+
+            health_code=$(curl --connect-timeout 10 --max-time 30 -L -sS \
+              -H 'Cache-Control: no-cache, no-store, max-age=0' \
+              -o /tmp/health.json \
+              -w '%{http_code}' \
+              "$WEBSITE_URL/health.json?deployment-check=$cache_key") || health_code=000
+
+            if [[ "$site_code" == "200" && "$release_code" == "200" && "$health_code" == "200" ]] \
+              && verify_release_html /tmp/site.html \
+              && verify_release_json /tmp/release.json \
+              && verify_health_json /tmp/health.json; then
+
               mapfile -t assets < <(
                 grep -Eo '(src|href)="[^"]+\.(js|mjs|css)(\?[^\"]*)?"' /tmp/site.html \
                   | sed -E 's/^(src|href)="//; s/"$//' \
@@ -88,35 +120,71 @@ jobs:
               fi
             fi
 
-            echo "Attempt $attempt: homepage HTTP $site_code or release marker mismatch; waiting 10 seconds."
+            echo "Attempt $attempt: site=$site_code release=$release_code health=$health_code; waiting 10 seconds."
             sleep 10
           done
 
           if [[ "$success" != "1" ]]; then
-            echo "Production verification failed. The custom domain is not serving release $EXPECTED_RELEASE with all linked JS/CSS assets available."
-            echo "First 40 lines returned by production:"
+            echo "Production verification failed for release $EXPECTED_RELEASE and commit ${EXPECTED_COMMIT:-manual-check}."
+            echo "Homepage evidence:"
             sed -n '1,40p' /tmp/site.html || true
+            echo "Release evidence:"
+            cat /tmp/release.json || true
+            echo "Health evidence:"
+            cat /tmp/health.json || true
             exit 1
           fi
 
-          echo "DivyaNexus production release $EXPECTED_RELEASE and linked assets verified."
+          echo "Release $EXPECTED_RELEASE, commit evidence, health contract and linked assets verified."
 
       - name: Verify direct application routes
         shell: bash
         run: |
           set -euo pipefail
 
-          for route in scriptures deities ask-divya; do
+          routes=(
+            scriptures
+            deities
+            deities/murugan
+            ask-divya
+            life-guidance
+            library
+            sources
+            privacy
+            status
+          )
+
+          for route in "${routes[@]}"; do
+            safe_name="$(echo "$route" | tr '/' '_')"
             route_code=$(curl --connect-timeout 10 --max-time 30 -L -sS \
               -H 'Cache-Control: no-cache, no-store, max-age=0' \
-              -o "/tmp/$route.html" \
+              -o "/tmp/$safe_name.html" \
               -w '%{http_code}' \
               "$WEBSITE_URL/$route?route-check=${GITHUB_RUN_ID}") || route_code=000
 
             echo "$route_code /$route"
             test "$route_code" = "200"
-            grep -Fq 'data-divyanexus-version="'"$EXPECTED_RELEASE"'"' "/tmp/$route.html"
-            ! grep -Fq 'Ancient Wisdom. Modern Intelligence.' "/tmp/$route.html"
+            grep -Fq 'data-divyanexus-version="'"$EXPECTED_RELEASE"'"' "/tmp/$safe_name.html"
+            ! grep -Fq 'Ancient Wisdom. Modern Intelligence.' "/tmp/$safe_name.html"
           done
 
           echo "Direct routes verified against the current React application shell."
+
+      - name: Verify public operational endpoints
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          for endpoint in robots.txt sitemap.xml .well-known/security.txt; do
+            code=$(curl --connect-timeout 10 --max-time 30 -L -sS \
+              -o "/tmp/$(echo "$endpoint" | tr '/.' '__')" \
+              -w '%{http_code}' \
+              "$WEBSITE_URL/$endpoint?endpoint-check=${GITHUB_RUN_ID}") || code=000
+            echo "$code /$endpoint"
+            test "$code" = "200"
+          done
+
+          grep -Fq 'Sitemap: https://divyanexus.omsaravanabhava.org/sitemap.xml' /tmp/robots_txt
+          grep -Fq 'https://divyanexus.omsaravanabhava.org/status' /tmp/sitemap_xml
+          grep -Fq 'Canonical: https://divyanexus.omsaravanabhava.org/.well-known/security.txt' /tmp/_well-known_security_txt
+          echo "Robots, sitemap and coordinated disclosure endpoints verified."
