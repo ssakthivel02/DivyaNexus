@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#080b1f" />
+    <meta name="robots" content="noindex,nofollow" />
+    <title>Offline — DivyaNexus</title>
+    <style>
+      :root { color-scheme: dark; font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; background: #080b1f; color: #f5edda; }
+      * { box-sizing: border-box; }
+      body { margin: 0; min-height: 100vh; display: grid; place-items: center; padding: 24px; background: radial-gradient(circle at top, #1a2148, #080b1f 60%); }
+      main { width: min(680px, 100%); padding: clamp(28px, 6vw, 56px); border: 1px solid rgba(226, 188, 105, .35); border-radius: 28px; background: rgba(10, 14, 38, .88); box-shadow: 0 24px 80px rgba(0,0,0,.35); }
+      p:first-child { letter-spacing: .16em; text-transform: uppercase; font-size: .78rem; color: #dfbd75; }
+      h1 { font-family: Georgia, serif; font-size: clamp(2rem, 7vw, 4rem); line-height: 1; margin: 18px 0; }
+      p { line-height: 1.7; color: #d9d7e4; }
+      nav { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 28px; }
+      a, button { min-height: 44px; display: inline-flex; align-items: center; justify-content: center; border-radius: 999px; padding: 0 20px; font: inherit; font-weight: 700; text-decoration: none; cursor: pointer; }
+      a { color: #151022; background: #e4bd70; }
+      button { color: #f5edda; background: transparent; border: 1px solid rgba(245, 237, 218, .38); }
+      small { display: block; margin-top: 28px; color: #a9a7b7; line-height: 1.6; }
+    </style>
+  </head>
+  <body>
+    <main id="main-content">
+      <p>DivyaNexus offline mode</p>
+      <h1>This path is not cached yet.</h1>
+      <p>Your connection appears to be unavailable. Pages and assets opened previously may still work. DivyaNexus does not claim that the complete collection is available offline in this release.</p>
+      <nav aria-label="Offline actions">
+        <a href="./">Open cached home</a>
+        <button type="button" onclick="window.location.reload()">Try connection again</button>
+      </nav>
+      <small>Browser-local bookmarks, searches and notes remain on this device. No account or cloud data is changed by this offline screen.</small>
+    </main>
+  </body>
+</html>
