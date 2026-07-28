@@ -3,15 +3,31 @@
   <url><loc>https://divyanexus.omsaravanabhava.org/</loc></url>
   <url><loc>https://divyanexus.omsaravanabhava.org/explore</loc></url>
   <url><loc>https://divyanexus.omsaravanabhava.org/ask-divya</loc></url>
+  <url><loc>https://divyanexus.omsaravanabhava.org/search</loc></url>
   <url><loc>https://divyanexus.omsaravanabhava.org/scriptures</loc></url>
   <url><loc>https://divyanexus.omsaravanabhava.org/bhagavad-gita</loc></url>
   <url><loc>https://divyanexus.omsaravanabhava.org/rig-veda</loc></url>
   <url><loc>https://divyanexus.omsaravanabhava.org/upanishads</loc></url>
   <url><loc>https://divyanexus.omsaravanabhava.org/deities</loc></url>
+  <url><loc>https://divyanexus.omsaravanabhava.org/deities/shiva</loc></url>
+  <url><loc>https://divyanexus.omsaravanabhava.org/deities/parvati</loc></url>
+  <url><loc>https://divyanexus.omsaravanabhava.org/deities/vishnu</loc></url>
+  <url><loc>https://divyanexus.omsaravanabhava.org/deities/lakshmi</loc></url>
+  <url><loc>https://divyanexus.omsaravanabhava.org/deities/ganesha</loc></url>
+  <url><loc>https://divyanexus.omsaravanabhava.org/deities/murugan</loc></url>
+  <url><loc>https://divyanexus.omsaravanabhava.org/deities/saraswati</loc></url>
+  <url><loc>https://divyanexus.omsaravanabhava.org/deities/rama</loc></url>
+  <url><loc>https://divyanexus.omsaravanabhava.org/deities/krishna</loc></url>
+  <url><loc>https://divyanexus.omsaravanabhava.org/deities/nataraja</loc></url>
   <url><loc>https://divyanexus.omsaravanabhava.org/temples</loc></url>
+  <url><loc>https://divyanexus.omsaravanabhava.org/rishis</loc></url>
+  <url><loc>https://divyanexus.omsaravanabhava.org/festivals</loc></url>
+  <url><loc>https://divyanexus.omsaravanabhava.org/glossary</loc></url>
+  <url><loc>https://divyanexus.omsaravanabhava.org/life-guidance</loc></url>
   <url><loc>https://divyanexus.omsaravanabhava.org/learning</loc></url>
   <url><loc>https://divyanexus.omsaravanabhava.org/kids</loc></url>
   <url><loc>https://divyanexus.omsaravanabhava.org/audio</loc></url>
+  <url><loc>https://divyanexus.omsaravanabhava.org/library</loc></url>
   <url><loc>https://divyanexus.omsaravanabhava.org/about</loc></url>
   <url><loc>https://divyanexus.omsaravanabhava.org/sources</loc></url>
   <url><loc>https://divyanexus.omsaravanabhava.org/privacy</loc></url>
@@ -20,4 +36,5 @@
   <url><loc>https://divyanexus.omsaravanabhava.org/delete-data</loc></url>
   <url><loc>https://divyanexus.omsaravanabhava.org/disclaimer</loc></url>
   <url><loc>https://divyanexus.omsaravanabhava.org/contact</loc></url>
+  <url><loc>https://divyanexus.omsaravanabhava.org/status</loc></url>
 </urlset>
