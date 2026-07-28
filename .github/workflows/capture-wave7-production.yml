@@ -1,0 +1,70 @@
+name: Capture DivyaNexus Wave 7 Production
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+  pages: read
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      WEBSITE_URL: https://divyanexus.omsaravanabhava.org
+      EXPECTED_COMMIT: 9f049ef08d57669ecfc48bb70031064962fc7eef
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Capture deployment and live evidence
+        shell: bash
+        run: |
+          set +e
+          gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/deploy-react-app.yml/runs?branch=main&per_page=10" > deploy-runs.json 2> deploy-runs.err
+          echo "deploy_runs_exit=$?" > status.txt
+
+          gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/production-smoke.yml/runs?branch=main&per_page=10" > smoke-runs.json 2> smoke-runs.err
+          echo "smoke_runs_exit=$?" >> status.txt
+
+          gh api -X GET "repos/$GITHUB_REPOSITORY/pages" > pages.json 2> pages.err
+          echo "pages_exit=$?" >> status.txt
+
+          for endpoint in "/" "/release.json" "/health.json" "/assets/divyanexus/owner-selected-vision.webp" "/manifest.webmanifest" "/sw.js" "/.well-known/security.txt"; do
+            safe_name=$(echo "$endpoint" | tr '/.' '__')
+            curl --connect-timeout 10 --max-time 30 -L -sS -D "${safe_name}.headers" -o "${safe_name}.body" -w "%{http_code}\n" "$WEBSITE_URL$endpoint?wave7-check=$GITHUB_RUN_ID" > "${safe_name}.status" 2> "${safe_name}.err"
+          done
+
+          grep -F "$EXPECTED_COMMIT" __release_json.body > release-commit-match.txt 2>&1
+          echo "release_commit_match_exit=$?" >> status.txt
+          grep -F 'owner-selected-vision.webp' __sw_js.body > sw-artwork-match.txt 2>&1
+          echo "sw_artwork_match_exit=$?" >> status.txt
+          grep -Eiq '^content-type:[[:space:]]*image/webp' __assets_divyanexus_owner-selected-vision_webp.headers
+          echo "artwork_mime_exit=$?" >> status.txt
+          wc -c __assets_divyanexus_owner-selected-vision_webp.body > artwork-size.txt
+          cat status.txt
+
+      - name: Upload production diagnostics
+        uses: actions/upload-artifact@v4
+        with:
+          name: divyanexus-wave7-production
+          path: |
+            status.txt
+            deploy-runs.json
+            deploy-runs.err
+            smoke-runs.json
+            smoke-runs.err
+            pages.json
+            pages.err
+            *.status
+            *.headers
+            *.err
+            release-commit-match.txt
+            sw-artwork-match.txt
+            artwork-size.txt
+          if-no-files-found: error
+          retention-days: 2
