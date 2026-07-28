@@ -27,11 +27,11 @@ for (const marker of ["PortalArtworkPanel", "<PortalArtworkPanel />", "owner-por
   if (!text.home.includes(marker)) failures.push(`Homepage is missing owner-artwork marker: ${marker}`);
 }
 
-for (const marker of ["SpeechControls", "synthetic device speech", "Tamil meaning", "Sanskrit text", "IAST transliteration", "English meaning"]) {
+for (const marker of ["audio-cinema--live", "SpeechControls", "synthetic device speech", "Tamil meaning", "Sanskrit text", "IAST transliteration", "English meaning"]) {
   if (!text.audio.includes(marker)) failures.push(`Audio page is missing working speech marker: ${marker}`);
 }
 
-for (const forbidden of ["no audio delivered", "No playback yet", "Playback is unavailable"] ) {
+for (const forbidden of ["no audio delivered", "No playback yet", "Playback is unavailable"]) {
   if (text.audio.includes(forbidden)) failures.push(`Audio page still contains disabled placeholder language: ${forbidden}`);
 }
 
@@ -43,7 +43,7 @@ for (const marker of ["speechSynthesis.speak", "SpeechSynthesisUtterance", "voic
   if (!text.hook.includes(marker)) failures.push(`Speech hook is missing lifecycle marker: ${marker}`);
 }
 
-for (const marker of ["synthetic speech", "On-device speech", "Reading speed", "No autoplay"] ) {
+for (const marker of ["synthetic speech", "On-device speech", "Reading speed", "No autoplay"]) {
   if (!text.speech.includes(marker)) failures.push(`Speech controls are missing trust or control marker: ${marker}`);
 }
 
@@ -52,9 +52,9 @@ if (tamilWordNotes < 15) failures.push(`Expected at least 15 Tamil word-note mea
 
 for (const marker of [
   'font-family: "Noto Sans Tamil"',
-  ".reader-translation[lang=\"ta\"]",
+  '.reader-translation[lang="ta"]',
   ".speech-controls",
-  ".audio-cinema--live",
+  ".audio-cinema {",
   ".reader-language-switch",
 ]) {
   if (!text.css.includes(marker)) failures.push(`Wave 8 CSS is missing marker: ${marker}`);
