@@ -54,6 +54,9 @@ jobs:
       - name: Validate PWA and offline contracts
         run: node scripts/validate-pwa-assets.mjs
 
+      - name: Validate owner-selected artwork
+        run: node scripts/validate-owner-artwork.mjs
+
       - name: Build production application
         env:
           VITE_BASE_PATH: /

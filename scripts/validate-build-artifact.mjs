@@ -14,6 +14,7 @@ const requiredFiles = [
   "sitemap.xml",
   ".nojekyll",
   ".well-known/security.txt",
+  "assets/divyanexus/owner-selected-vision.webp",
   "scriptures/index.html",
   "deities/index.html",
   "deities/murugan/index.html",
