@@ -27,6 +27,7 @@ export const APP_ROUTES: readonly AppRoute[] = [
   { path: "/guidance", label: "Guidance alias", section: "study", sitemap: false, smoke: false },
   { path: "/learning", label: "Learning", section: "study", sitemap: true, smoke: false },
   { path: "/kids", label: "Kids", section: "study", sitemap: true, smoke: false },
+  { path: "/collection-status", label: "Collection Status", section: "study", sitemap: true, smoke: true },
   { path: "/audio", label: "Audio", section: "library", sitemap: true, smoke: false },
   { path: "/library", label: "Local Library", section: "library", sitemap: true, smoke: true },
   { path: "/about", label: "About", section: "legal", sitemap: true, smoke: false },
