@@ -4,8 +4,10 @@ import { join, relative, resolve } from "node:path";
 const root = resolve(process.cwd());
 const scanRoots = [resolve(root, "client/src"), resolve(root, "client/public")];
 const indexPath = resolve(root, "client/index.html");
+const releaseConfigPath = resolve(root, "client/src/config/release.ts");
+const healthPath = resolve(root, "client/public/health.json");
 const deploymentWorkflowPath = resolve(root, ".github/workflows/deploy-react-app.yml");
-const expectedRelease = "stage-b-wave4";
+const expectedRelease = "stage-b-wave8";
 const forbiddenPatterns = [
   "manus-storage",
   "__manus__",
@@ -35,18 +37,18 @@ for (const file of scanRoots.flatMap(collectFiles)) {
 if (!existsSync(indexPath)) failures.push("client/index.html is missing");
 else {
   const index = readFileSync(indexPath, "utf8");
-  if (!index.includes(`meta name="divyanexus-release" content="${expectedRelease}"`)) {
-    failures.push(`client/index.html does not declare release ${expectedRelease}`);
-  }
-  if (!index.includes(`data-divyanexus-version="${expectedRelease}"`)) {
-    failures.push(`client/index.html does not expose root release ${expectedRelease}`);
-  }
+  if (!index.includes(`meta name="divyanexus-release" content="${expectedRelease}"`)) failures.push(`client/index.html does not declare release ${expectedRelease}`);
+  if (!index.includes(`data-divyanexus-version="${expectedRelease}"`)) failures.push(`client/index.html does not expose root release ${expectedRelease}`);
 }
+
+if (!existsSync(releaseConfigPath) || !readFileSync(releaseConfigPath, "utf8").includes(`id: "${expectedRelease}"`)) failures.push(`Release configuration does not declare ${expectedRelease}`);
+if (!existsSync(healthPath) || !readFileSync(healthPath, "utf8").includes(`"release": "${expectedRelease}"`)) failures.push(`Health endpoint does not declare ${expectedRelease}`);
 
 if (!existsSync(deploymentWorkflowPath)) failures.push("Pages deployment workflow is missing");
 else {
   const workflow = readFileSync(deploymentWorkflowPath, "utf8");
   const requiredWorkflowEvidence = [
+    `RELEASE_ID: ${expectedRelease}`,
     "tar \\",
     "--directory dist/public",
     'tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx \'./.nojekyll\'',
@@ -55,12 +57,8 @@ else {
     "name: github-pages",
     "path: ${{ runner.temp }}/artifact.tar",
   ];
-  for (const evidence of requiredWorkflowEvidence) {
-    if (!workflow.includes(evidence)) failures.push(`Pages deployment is missing deterministic packaging evidence: ${evidence}`);
-  }
-  if (workflow.includes("uses: actions/upload-pages-artifact@")) {
-    failures.push("Pages deployment must not rely on upload-pages-artifact hidden-file filtering");
-  }
+  for (const evidence of requiredWorkflowEvidence) if (!workflow.includes(evidence)) failures.push(`Pages deployment is missing deterministic packaging evidence: ${evidence}`);
+  if (workflow.includes("uses: actions/upload-pages-artifact@")) failures.push("Pages deployment must not rely on upload-pages-artifact hidden-file filtering");
 }
 
 if (existsSync(resolve(root, "client/public/__manus__"))) failures.push("client/public/__manus__ must not exist");
