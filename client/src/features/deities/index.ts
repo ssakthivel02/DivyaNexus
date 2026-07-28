@@ -38,9 +38,16 @@ export function normaliseDeitySearch(value: string) {
     .trim();
 }
 
+function discoveryNames(record: DeityRecord) {
+  return [record.name, record.tamilName, ...record.transliterations].map(normaliseDeitySearch);
+}
+
 export function searchDeityRecords(query: string) {
   const needle = normaliseDeitySearch(query);
   if (!needle) return deityRecords;
+
+  const exactMatches = deityRecords.filter((record) => discoveryNames(record).includes(needle));
+  if (exactMatches.length) return exactMatches;
 
   return deityRecords.filter((record) => {
     const searchable = normaliseDeitySearch([
