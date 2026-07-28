@@ -50,5 +50,8 @@ jobs:
           VITE_BASE_PATH: /
         run: pnpm run build
 
+      - name: Materialize GitHub Pages direct routes
+        run: pnpm exec tsx scripts/materialize-pages-routes.ts
+
       - name: Validate deployable build artifact
         run: node scripts/validate-build-artifact.mjs
