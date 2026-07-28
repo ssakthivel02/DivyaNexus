@@ -34,7 +34,7 @@ export function normaliseDeitySearch(value: string) {
     .normalize("NFKD")
     .replace(/[\u0300-\u036f]/g, "")
     .toLocaleLowerCase("en-GB")
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .replace(/[^a-z0-9\u0900-\u097f\u0b80-\u0bff]+/gi, " ")
     .trim();
 }
 
