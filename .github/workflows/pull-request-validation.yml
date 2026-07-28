@@ -45,6 +45,9 @@ jobs:
       - name: Validate router, manifest and sitemap
         run: pnpm exec tsx scripts/validate-route-manifest.ts
 
+      - name: Validate editorial depth registry
+        run: pnpm exec tsx scripts/validate-editorial-registry.ts
+
       - name: Build production application
         env:
           VITE_BASE_PATH: /
