@@ -42,7 +42,7 @@ function writeJson<T>(key: string, value: T) {
 }
 
 function unique(values: string[], limit?: number) {
-  const result = [...new Set(values.map((value) => value.trim()).filter(Boolean))];
+  const result = Array.from(new Set(values.map((value) => value.trim()).filter(Boolean)));
   return typeof limit === "number" ? result.slice(0, limit) : result;
 }
 
