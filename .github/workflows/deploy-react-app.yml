@@ -45,10 +45,11 @@ jobs:
       - name: TypeScript check
         run: pnpm run check
 
-      - name: Validate source portability and route contracts
+      - name: Validate source, route and editorial contracts
         run: |
           node scripts/validate-source-boundaries.mjs
           pnpm exec tsx scripts/validate-route-manifest.ts
+          pnpm exec tsx scripts/validate-editorial-registry.ts
 
       - name: Build production application
         env:

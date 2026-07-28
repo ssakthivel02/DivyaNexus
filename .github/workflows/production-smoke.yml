@@ -148,6 +148,7 @@ jobs:
             deities/murugan
             ask-divya
             life-guidance
+            collection-status
             library
             sources
             privacy
@@ -186,5 +187,6 @@ jobs:
 
           grep -Fq 'Sitemap: https://divyanexus.omsaravanabhava.org/sitemap.xml' /tmp/robots_txt
           grep -Fq 'https://divyanexus.omsaravanabhava.org/status' /tmp/sitemap_xml
+          grep -Fq 'https://divyanexus.omsaravanabhava.org/collection-status' /tmp/sitemap_xml
           grep -Fq 'Canonical: https://divyanexus.omsaravanabhava.org/.well-known/security.txt' /tmp/_well-known_security_txt
           echo "Robots, sitemap and coordinated disclosure endpoints verified."
