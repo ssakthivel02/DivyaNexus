@@ -39,12 +39,10 @@ if (manifest) {
 
 if (existsSync(serviceWorkerPath)) {
   const serviceWorker = readFileSync(serviceWorkerPath, "utf8");
-  for (const marker of ["divyanexus-stage-b-wave7-v1", "owner-selected-vision.webp", "offline.html", "SKIP_WAITING", "request.mode === \"navigate\""]) {
+  for (const marker of ["divyanexus-stage-b-wave8-v1", "owner-selected-vision.webp", "offline.html", "SKIP_WAITING", 'request.mode === "navigate"']) {
     if (!serviceWorker.includes(marker)) failures.push(`Service worker is missing reliability marker: ${marker}`);
   }
-  if (serviceWorker.includes("api-divyanexus") || serviceWorker.includes("/api/")) {
-    failures.push("Service worker must not cache API or account traffic");
-  }
+  if (serviceWorker.includes("api-divyanexus") || serviceWorker.includes("/api/")) failures.push("Service worker must not cache API or account traffic");
 }
 
 if (existsSync(offlinePath)) {

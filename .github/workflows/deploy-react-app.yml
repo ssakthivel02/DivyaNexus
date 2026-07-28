@@ -26,26 +26,21 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
           run_install: false
-
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
           node-version: 22
           cache: pnpm
           cache-dependency-path: pnpm-lock.yaml
-
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-
       - name: TypeScript check
         run: pnpm run check
-
-      - name: Validate source, route, metadata, editorial, PWA and artwork contracts
+      - name: Validate source, route, metadata, editorial, PWA, artwork, readability and audio contracts
         run: |
           node scripts/validate-source-boundaries.mjs
           pnpm exec tsx scripts/validate-route-manifest.ts
@@ -53,18 +48,15 @@ jobs:
           pnpm exec tsx scripts/validate-editorial-registry.ts
           node scripts/validate-pwa-assets.mjs
           node scripts/validate-owner-artwork.mjs
-
+          node scripts/validate-readability-audio.mjs
       - name: Build production application
         env:
           VITE_BASE_PATH: /
         run: pnpm run build
-
       - name: Materialize GitHub Pages direct routes
         run: pnpm exec tsx scripts/materialize-pages-routes.ts
-
       - name: Validate deployable build artifact
         run: node scripts/validate-build-artifact.mjs
-
       - name: Attach custom-domain and release evidence
         shell: bash
         run: |
@@ -72,7 +64,6 @@ jobs:
           test -f CNAME
           test "$(tr -d '\r\n' < CNAME)" = "$PRODUCTION_DOMAIN"
           cp CNAME dist/public/CNAME
-
           built_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
           cat > dist/public/release.json <<EOF
           {
@@ -83,14 +74,11 @@ jobs:
             "builtAt": "$built_at"
           }
           EOF
-
           grep -Fq '"release": "stage-b-wave4"' dist/public/release.json
           grep -Fq '"commit": "'"$GITHUB_SHA"'"' dist/public/release.json
           test -f dist/public/CNAME
-
       - name: Configure GitHub Pages
         uses: actions/configure-pages@v5
-
       - name: Package GitHub Pages artifact
         shell: bash
         run: |
@@ -101,14 +89,12 @@ jobs:
             --directory dist/public \
             -cvf "$RUNNER_TEMP/artifact.tar" \
             .
-
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './.nojekyll'
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './.well-known/security.txt'
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './collection-status/index.html'
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './offline.html'
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './assets/divyanexus/owner-selected-vision.webp'
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './release.json'
-
       - name: Upload GitHub Pages artifact
         uses: actions/upload-artifact@v4
         with:

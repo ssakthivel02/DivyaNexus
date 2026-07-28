@@ -13,6 +13,7 @@ export function PortalArtworkPanel() {
 
   return (
     <section
+      id="owner-portal-vision"
       className={`portal-artwork ${loaded ? "is-loaded" : "is-loading"}`}
       aria-labelledby="portal-artwork-title"
       aria-describedby="portal-artwork-description portal-artwork-note"
@@ -22,9 +23,9 @@ export function PortalArtworkPanel() {
         <img
           src={displayedAsset}
           alt={ownerSelectedArtwork.alt}
-          loading="lazy"
+          loading="eager"
           decoding="async"
-          fetchPriority="low"
+          fetchPriority="high"
           onLoad={() => setLoaded(true)}
           onError={() => {
             if (!usingFallback) {

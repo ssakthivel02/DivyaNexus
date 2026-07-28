@@ -11,7 +11,6 @@ import { AppErrorBoundary } from "@/components/AppErrorBoundary";
 import { AudioMiniPlayer } from "@/components/AudioMiniPlayer";
 import { CollectionCoverage } from "@/components/CollectionCoverage";
 import { DocumentMeta } from "@/components/DocumentMeta";
-import { PortalArtworkPanel } from "@/components/PortalArtworkPanel";
 import { RouteExperience } from "@/components/RouteExperience";
 import { SearchOverlay } from "@/components/SearchOverlay";
 import { SiteFooter } from "@/components/SiteFooter";
@@ -100,7 +99,6 @@ function AppShell() {
         <SiteHeader theme={theme} onToggleTheme={() => setTheme((current) => current === "night" ? "dawn" : "night")} onSearch={() => setSearchOpen(true)} onAsk={openAsk} />
         <div className="page-shell"><Suspense fallback={<div className="route-loading" role="status"><span />Opening a study path…</div>}><AppRoutes onAsk={openAsk} onSearch={() => setSearchOpen(true)} /></Suspense></div>
         {location === "/" && <CollectionCoverage />}
-        {location === "/" && <PortalArtworkPanel />}
         <SiteFooter />
         <AudioMiniPlayer />
       </div>
