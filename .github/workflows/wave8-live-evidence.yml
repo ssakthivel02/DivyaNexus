@@ -1,0 +1,118 @@
+name: DivyaNexus Wave 8 Live Evidence
+
+on:
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: divyanexus-wave8-live-evidence
+  cancel-in-progress: true
+
+jobs:
+  live-evidence:
+    if: ${{ github.head_ref == 'diagnostics/divyanexus-wave8-live-evidence' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      WEBSITE_URL: https://divyanexus.omsaravanabhava.org
+      EXPECTED_RELEASE: stage-b-wave8
+      EXPECTED_COMMIT: 2d74949b7079cfe8f4af755366e564eca4519648
+    steps:
+      - name: Checkout diagnostic tests
+        uses: actions/checkout@v4
+
+      - name: Wait for exact Wave 8 deployment evidence
+        shell: bash
+        run: |
+          set -euo pipefail
+          matched=0
+          for attempt in {1..60}; do
+            key="${GITHUB_RUN_ID}-${attempt}-$(date +%s)"
+            site_code=$(curl --connect-timeout 10 --max-time 30 -L -sS -H 'Cache-Control: no-cache, no-store' -o /tmp/site.html -w '%{http_code}' "$WEBSITE_URL/?evidence=$key") || site_code=000
+            release_code=$(curl --connect-timeout 10 --max-time 30 -L -sS -H 'Cache-Control: no-cache, no-store' -o /tmp/release.json -w '%{http_code}' "$WEBSITE_URL/release.json?evidence=$key") || release_code=000
+            health_code=$(curl --connect-timeout 10 --max-time 30 -L -sS -H 'Cache-Control: no-cache, no-store' -o /tmp/health.json -w '%{http_code}' "$WEBSITE_URL/health.json?evidence=$key") || health_code=000
+            if [[ "$site_code" == 200 && "$release_code" == 200 && "$health_code" == 200 ]] \
+              && grep -Fq 'data-divyanexus-version="'"$EXPECTED_RELEASE"'"' /tmp/site.html \
+              && grep -Fq '"release": "'"$EXPECTED_RELEASE"'"' /tmp/release.json \
+              && grep -Fq '"commit": "'"$EXPECTED_COMMIT"'"' /tmp/release.json \
+              && grep -Fq '"release": "'"$EXPECTED_RELEASE"'"' /tmp/health.json \
+              && grep -Fq '"status": "ok"' /tmp/health.json; then
+              matched=1
+              break
+            fi
+            echo "Attempt $attempt: site=$site_code release=$release_code health=$health_code"
+            sleep 10
+          done
+          if [[ "$matched" != 1 ]]; then
+            echo "Expected Wave 8 deployment was not observed."
+            echo "Homepage:"; sed -n '1,50p' /tmp/site.html || true
+            echo "Release:"; cat /tmp/release.json || true
+            echo "Health:"; cat /tmp/health.json || true
+            exit 1
+          fi
+          echo "Exact Wave 8 release and commit observed."
+          cat /tmp/release.json
+          cat /tmp/health.json
+
+      - name: Verify direct routes, service worker and owner artwork bytes
+        shell: bash
+        run: |
+          set -euo pipefail
+          routes=(audio rig-veda bhagavad-gita privacy status)
+          for route in "${routes[@]}"; do
+            file="/tmp/${route}.html"
+            code=$(curl --connect-timeout 10 --max-time 30 -L -sS -H 'Cache-Control: no-cache, no-store' -o "$file" -w '%{http_code}' "$WEBSITE_URL/$route?evidence=${GITHUB_RUN_ID}") || code=000
+            echo "$code /$route"
+            test "$code" = 200
+            grep -Fq 'data-divyanexus-version="'"$EXPECTED_RELEASE"'"' "$file"
+          done
+          sw_code=$(curl --connect-timeout 10 --max-time 30 -L -sS -o /tmp/sw.js -w '%{http_code}' "$WEBSITE_URL/sw.js?evidence=${GITHUB_RUN_ID}") || sw_code=000
+          test "$sw_code" = 200
+          grep -Fq 'divyanexus-stage-b-wave8-v1' /tmp/sw.js
+          grep -Fq 'owner-selected-vision.webp' /tmp/sw.js
+          art_code=$(curl --connect-timeout 10 --max-time 30 -L -sS -D /tmp/art.headers -o /tmp/owner.webp -w '%{http_code}' "$WEBSITE_URL/assets/divyanexus/owner-selected-vision.webp?evidence=${GITHUB_RUN_ID}") || art_code=000
+          test "$art_code" = 200
+          grep -Eiq '^content-type:[[:space:]]*image/webp' /tmp/art.headers
+          bytes=$(wc -c < /tmp/owner.webp)
+          test "$bytes" -ge 100000
+          test "$bytes" -le 900000
+          test "$(head -c 4 /tmp/owner.webp)" = RIFF
+          test "$(dd if=/tmp/owner.webp bs=1 skip=8 count=4 status=none)" = WEBP
+          echo "Wave 8 routes, service worker and owner artwork verified; owner artwork bytes=$bytes."
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install application and production-test dependencies
+        run: |
+          pnpm install --frozen-lockfile
+          pnpm add --save-dev --lockfile=false @playwright/test@1.55.0
+          pnpm exec playwright install --with-deps chromium
+
+      - name: Run live Wave 8 browser evidence
+        run: pnpm exec playwright test --config=playwright.production.config.ts
+
+      - name: Upload live evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: wave8-live-evidence-${{ github.run_id }}
+          path: |
+            test-results/
+            playwright-report/
+          if-no-files-found: ignore
+          retention-days: 14
