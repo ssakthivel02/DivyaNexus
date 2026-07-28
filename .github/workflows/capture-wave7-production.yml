@@ -14,6 +14,7 @@ permissions:
 jobs:
   diagnostics:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       GH_TOKEN: ${{ github.token }}
       WEBSITE_URL: https://divyanexus.omsaravanabhava.org
@@ -21,50 +22,76 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Capture deployment and live evidence
+      - name: Require successful main deployment and production smoke
         shell: bash
         run: |
-          set +e
-          gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/deploy-react-app.yml/runs?branch=main&per_page=10" > deploy-runs.json 2> deploy-runs.err
-          echo "deploy_runs_exit=$?" > status.txt
+          set -euo pipefail
 
-          gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/production-smoke.yml/runs?branch=main&per_page=10" > smoke-runs.json 2> smoke-runs.err
-          echo "smoke_runs_exit=$?" >> status.txt
+          verified=0
+          for attempt in {1..60}; do
+            deploy_json=$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/deploy-react-app.yml/runs?branch=main&per_page=20")
+            smoke_json=$(gh api -X GET "repos/$GITHUB_REPOSITORY/actions/workflows/production-smoke.yml/runs?branch=main&per_page=20")
 
-          gh api -X GET "repos/$GITHUB_REPOSITORY/pages" > pages.json 2> pages.err
-          echo "pages_exit=$?" >> status.txt
+            deploy_state=$(jq -r --arg sha "$EXPECTED_COMMIT" '.workflow_runs[] | select(.head_sha == $sha) | [.id, .status, (.conclusion // "pending")] | @tsv' <<<"$deploy_json" | head -n 1)
+            smoke_state=$(jq -r --arg sha "$EXPECTED_COMMIT" '.workflow_runs[] | select(.head_sha == $sha) | [.id, .status, (.conclusion // "pending")] | @tsv' <<<"$smoke_json" | head -n 1)
 
-          for endpoint in "/" "/release.json" "/health.json" "/assets/divyanexus/owner-selected-vision.webp" "/manifest.webmanifest" "/sw.js" "/.well-known/security.txt"; do
-            safe_name=$(echo "$endpoint" | tr '/.' '__')
-            curl --connect-timeout 10 --max-time 30 -L -sS -D "${safe_name}.headers" -o "${safe_name}.body" -w "%{http_code}\n" "$WEBSITE_URL$endpoint?wave7-check=$GITHUB_RUN_ID" > "${safe_name}.status" 2> "${safe_name}.err"
+            echo "Attempt $attempt deploy=${deploy_state:-not-found} smoke=${smoke_state:-not-found}"
+
+            if grep -q $'completed\tsuccess$' <<<"$deploy_state" && grep -q $'completed\tsuccess$' <<<"$smoke_state"; then
+              verified=1
+              break
+            fi
+
+            if grep -q $'completed\tfailure$' <<<"$deploy_state" || grep -q $'completed\tfailure$' <<<"$smoke_state"; then
+              echo "Wave 7 deployment or production smoke failed."
+              exit 1
+            fi
+
+            sleep 10
           done
 
-          grep -F "$EXPECTED_COMMIT" __release_json.body > release-commit-match.txt 2>&1
-          echo "release_commit_match_exit=$?" >> status.txt
-          grep -F 'owner-selected-vision.webp' __sw_js.body > sw-artwork-match.txt 2>&1
-          echo "sw_artwork_match_exit=$?" >> status.txt
-          grep -Eiq '^content-type:[[:space:]]*image/webp' __assets_divyanexus_owner-selected-vision_webp.headers
-          echo "artwork_mime_exit=$?" >> status.txt
-          wc -c __assets_divyanexus_owner-selected-vision_webp.body > artwork-size.txt
-          cat status.txt
+          test "$verified" = "1"
+          echo "Wave 7 deployment and production smoke are successful for $EXPECTED_COMMIT."
 
-      - name: Upload production diagnostics
-        uses: actions/upload-artifact@v4
-        with:
-          name: divyanexus-wave7-production
-          path: |
-            status.txt
-            deploy-runs.json
-            deploy-runs.err
-            smoke-runs.json
-            smoke-runs.err
-            pages.json
-            pages.err
-            *.status
-            *.headers
-            *.err
-            release-commit-match.txt
-            sw-artwork-match.txt
-            artwork-size.txt
-          if-no-files-found: error
-          retention-days: 2
+      - name: Verify live release and owner artwork
+        shell: bash
+        run: |
+          set -euo pipefail
+
+          fetch_endpoint() {
+            local endpoint="$1"
+            local name="$2"
+            local code
+            code=$(curl --connect-timeout 10 --max-time 30 -L -sS \
+              -H 'Cache-Control: no-cache, no-store, max-age=0' \
+              -D "/tmp/$name.headers" \
+              -o "/tmp/$name.body" \
+              -w '%{http_code}' \
+              "$WEBSITE_URL$endpoint?wave7-check=${GITHUB_RUN_ID}-$(date +%s)")
+            echo "$code $endpoint"
+            test "$code" = "200"
+          }
+
+          fetch_endpoint "/" homepage
+          fetch_endpoint "/release.json" release
+          fetch_endpoint "/health.json" health
+          fetch_endpoint "/assets/divyanexus/owner-selected-vision.webp" artwork
+          fetch_endpoint "/manifest.webmanifest" manifest
+          fetch_endpoint "/sw.js" service_worker
+          fetch_endpoint "/.well-known/security.txt" security
+
+          grep -Fq 'data-divyanexus-version="stage-b-wave4"' /tmp/homepage.body
+          grep -Fq '"commit": "'"$EXPECTED_COMMIT"'"' /tmp/release.body
+          grep -Fq '"status": "ok"' /tmp/health.body
+          grep -Fq 'owner-selected-vision.webp' /tmp/service_worker.body
+          grep -Fq 'divyanexus-stage-b-wave7-v1' /tmp/service_worker.body
+          grep -Fq 'Canonical: https://divyanexus.omsaravanabhava.org/.well-known/security.txt' /tmp/security.body
+          grep -Eiq '^content-type:[[:space:]]*image/webp' /tmp/artwork.headers
+
+          artwork_bytes=$(wc -c < /tmp/artwork.body)
+          test "$artwork_bytes" -ge 100000
+          test "$artwork_bytes" -le 900000
+          test "$(head -c 4 /tmp/artwork.body)" = "RIFF"
+          test "$(dd if=/tmp/artwork.body bs=1 skip=8 count=4 status=none)" = "WEBP"
+
+          echo "Live owner-selected artwork verified: ${artwork_bytes} bytes."
