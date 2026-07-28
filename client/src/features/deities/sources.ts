@@ -83,6 +83,8 @@ export const deitySources: Record<string, DeitySourceReference> = {
   },
 };
 
-export function resolveDeitySources(ids: readonly string[]) {
-  return ids.map((id) => deitySources[id]).filter(Boolean);
+export function resolveDeitySources(ids: readonly string[]): DeitySourceReference[] {
+  return ids
+    .map((id) => deitySources[id])
+    .filter((source): source is DeitySourceReference => Boolean(source));
 }
