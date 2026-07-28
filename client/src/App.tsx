@@ -17,6 +17,8 @@ const AskDivya = lazy(() => import("@/pages/AskDivya"));
 const Audio = lazy(() => import("@/pages/Audio"));
 const Contact = lazy(() => import("@/pages/Contact"));
 const ContentDirectory = lazy(() => import("@/pages/ContentDirectory"));
+const DeityDetail = lazy(() => import("@/pages/DeityDetail"));
+const DeityDirectory = lazy(() => import("@/pages/DeityDirectory"));
 const Explore = lazy(() => import("@/pages/Explore"));
 const Home = lazy(() => import("@/pages/Home"));
 const LegalPage = lazy(() => import("@/pages/LegalPage"));
@@ -46,7 +48,8 @@ function AppRoutes({ onAsk, onSearch }: { onAsk: () => void; onSearch: () => voi
       <Route path="/bhagavad-gita">{() => <ScriptureReader kind="bhagavad-gita" />}</Route>
       <Route path="/rig-veda">{() => <ScriptureReader kind="rig-veda" />}</Route>
       <Route path="/upanishads">{() => <ScriptureReader kind="upanishads" />}</Route>
-      <Route path="/deities">{() => <ContentDirectory kind="deities" />}</Route>
+      <Route path="/deities/:slug">{(params) => <DeityDetail slug={params.slug} />}</Route>
+      <Route path="/deities" component={DeityDirectory} />
       <Route path="/temples">{() => <ContentDirectory kind="temples" />}</Route>
       <Route path="/rishis">{() => <ContentDirectory kind="rishis" />}</Route>
       <Route path="/festivals">{() => <ContentDirectory kind="festivals" />}</Route>
