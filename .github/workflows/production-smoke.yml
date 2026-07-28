@@ -103,7 +103,7 @@ jobs:
 
                   asset_code=$(curl --connect-timeout 10 --max-time 30 -L -sS \
                     -H 'Cache-Control: no-cache' \
-                    -o /dev/null \
+                    -o /tmp/linked-asset \
                     -w '%{http_code}' \
                     "$asset_url") || asset_code=000
 
@@ -126,11 +126,8 @@ jobs:
 
           if [[ "$success" != "1" ]]; then
             echo "Production verification failed for release $EXPECTED_RELEASE and commit ${EXPECTED_COMMIT:-manual-check}."
-            echo "Homepage evidence:"
             sed -n '1,40p' /tmp/site.html || true
-            echo "Release evidence:"
             cat /tmp/release.json || true
-            echo "Health evidence:"
             cat /tmp/health.json || true
             exit 1
           fi
@@ -144,6 +141,9 @@ jobs:
 
           routes=(
             scriptures
+            rig-veda
+            bhagavad-gita
+            audio
             deities
             deities/murugan
             ask-divya
@@ -192,11 +192,11 @@ jobs:
           grep -Fq 'https://divyanexus.omsaravanabhava.org/status' /tmp/sitemap_xml
           grep -Fq 'https://divyanexus.omsaravanabhava.org/collection-status' /tmp/sitemap_xml
           grep -Fq '"shortcuts"' /tmp/manifest_webmanifest
-          grep -Fq 'divyanexus-stage-b-wave7-v1' /tmp/sw_js
+          grep -Fq 'divyanexus-stage-b-wave8-v1' /tmp/sw_js
           grep -Fq 'owner-selected-vision.webp' /tmp/sw_js
           grep -Fq 'This path is not cached yet.' /tmp/offline_html
           grep -Fq 'Canonical: https://divyanexus.omsaravanabhava.org/.well-known/security.txt' /tmp/_well-known_security_txt
-          echo "Robots, sitemap, manifest, service worker, offline fallback and coordinated disclosure endpoints verified."
+          echo "Wave 8 service worker, offline fallback and operational endpoints verified."
 
       - name: Verify owner-selected artwork asset
         shell: bash
