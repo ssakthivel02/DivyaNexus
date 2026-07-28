@@ -5,7 +5,9 @@ function normalize(value: string) {
     .normalize("NFKD")
     .toLocaleLowerCase("en-GB")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    // Use an explicit punctuation set so Tamil and other Unicode letters remain searchable
+    // without requiring an ES6 Unicode-property regular-expression target.
+    .replace(/[\s.,/#!$%^&*;:{}=_~()"'?<>|@+\-]+/g, " ")
     .trim();
 }
 
