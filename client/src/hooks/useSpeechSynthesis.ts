@@ -38,7 +38,9 @@ export function selectSpeechVoice(
 }
 
 export function useSpeechSynthesis() {
-  const supported = typeof window !== "undefined" && "speechSynthesis" in window && "SpeechSynthesisUtterance" in window;
+  const supported = typeof window !== "undefined"
+    && typeof window.speechSynthesis !== "undefined"
+    && typeof window.SpeechSynthesisUtterance !== "undefined";
   const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
   const [state, setState] = useState<SpeechState>(supported ? "loading" : "unsupported");
   const [activeVoice, setActiveVoice] = useState<string>("");
