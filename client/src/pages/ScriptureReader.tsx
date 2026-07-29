@@ -97,11 +97,12 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
     setSaved(getBookmarks().includes(record.id));
 
     const url = new URL(window.location.href);
-    if (url.searchParams.get("record") !== record.id) {
+    const hasRecordQuery = url.searchParams.has("record");
+    if ((hasRecordQuery || index !== 0) && url.searchParams.get("record") !== record.id) {
       url.searchParams.set("record", record.id);
       window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
     }
-  }, [record?.id]);
+  }, [index, record?.id]);
 
   useEffect(() => {
     setPreference("readerLanguage", readerLanguage);
