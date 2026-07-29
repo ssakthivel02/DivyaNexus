@@ -11,8 +11,8 @@ type SpeechMockOptions = {
 async function installSpeechMock(page: Page, options: SpeechMockOptions = {}) {
   await page.addInitScript((configuration) => {
     if (configuration.supported === false) {
-      delete (window as typeof window & { speechSynthesis?: SpeechSynthesis }).speechSynthesis;
-      delete (window as typeof window & { SpeechSynthesisUtterance?: typeof SpeechSynthesisUtterance }).SpeechSynthesisUtterance;
+      Object.defineProperty(window, "speechSynthesis", { configurable: true, value: undefined });
+      Object.defineProperty(window, "SpeechSynthesisUtterance", { configurable: true, value: undefined });
       return;
     }
 
