@@ -54,7 +54,7 @@ for (const marker of ["speech-controls__voice-select", "speech-controls__unsuppo
   if (!text.css.includes(marker)) failures.push(`Wave 9 CSS is missing marker: ${marker}`);
 }
 if (!text.main.includes('import "./speech-reader-wave9.css"')) failures.push("Wave 9 CSS is not loaded by main.tsx");
-if (!text.package.includes('"test:unit": "vitest run tests/unit"')) failures.push("package.json is missing the deterministic unit test command");
+if (!text.package.includes('"test:unit": "vitest run --root . tests/unit"')) failures.push("package.json is missing the repository-root deterministic unit test command");
 for (const marker of ["rejects unknown schema versions", "clamps rates", "normalises finite rates"]) {
   if (!text.unit.includes(marker)) failures.push(`Unit tests are missing case: ${marker}`);
 }
