@@ -2,7 +2,7 @@
  * DivyaNexus audio provides user-initiated synthetic speech for accessible study.
  * It never labels a device voice as a reviewed human recitation.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState, type KeyboardEvent } from "react";
 import { AudioLines, BookOpenText, ChevronRight, Headphones, Languages, ShieldCheck, Sparkles, Volume2 } from "lucide-react";
 import { Link } from "wouter";
 import { SpeechControls, type SpeechItem } from "@/components/SpeechControls";
@@ -85,9 +85,27 @@ function buildSpeechItems(recordId: string): SpeechItem[] {
 
 export default function Audio() {
   const [activeRoom, setActiveRoom] = useState<(typeof listeningRooms)[number]["id"]>("agni");
+  const roomRefs = useRef<Array<HTMLButtonElement | null>>([]);
   const selected = listeningRooms.find((room) => room.id === activeRoom) ?? listeningRooms[0];
   const record = verifiedScriptureRecords[selected.recordId];
   const speechItems = useMemo(() => buildSpeechItems(selected.recordId), [selected.recordId]);
+
+  const activateRoom = (index: number, moveFocus = false) => {
+    const normalisedIndex = (index + listeningRooms.length) % listeningRooms.length;
+    setActiveRoom(listeningRooms[normalisedIndex].id);
+    if (moveFocus) window.requestAnimationFrame(() => roomRefs.current[normalisedIndex]?.focus());
+  };
+
+  const handleRoomKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
+    let nextIndex: number | null = null;
+    if (event.key === "ArrowRight" || event.key === "ArrowDown") nextIndex = index + 1;
+    if (event.key === "ArrowLeft" || event.key === "ArrowUp") nextIndex = index - 1;
+    if (event.key === "Home") nextIndex = 0;
+    if (event.key === "End") nextIndex = listeningRooms.length - 1;
+    if (nextIndex === null) return;
+    event.preventDefault();
+    activateRoom(nextIndex, true);
+  };
 
   return (
     <main id="main-content" className="page-main audio-cinema audio-cinema--live">
@@ -113,14 +131,20 @@ export default function Audio() {
           <p className="scene-kicker"><Sparkles size={14} aria-hidden="true" />Choose a verified study record</p>
           <h2>A listening tool that now works.</h2>
           <p>Select a source-grounded record, choose the language layer, adjust reading speed, and start synthetic device speech. The text remains visible throughout playback.</p>
-          <div className="audio-cinema__room-list" role="tablist" aria-label="Verified study records">
+          <div className="audio-cinema__room-list" role="tablist" aria-label="Verified study records" aria-orientation="vertical">
             {listeningRooms.map((room, index) => (
               <button
                 key={room.id}
+                id={`audio-room-tab-${room.id}`}
+                ref={(element) => { roomRefs.current[index] = element; }}
                 role="tab"
+                type="button"
                 aria-selected={activeRoom === room.id}
+                aria-controls={`audio-room-panel-${room.id}`}
+                tabIndex={activeRoom === room.id ? 0 : -1}
                 className={activeRoom === room.id ? "is-active" : ""}
-                onClick={() => setActiveRoom(room.id)}
+                onClick={() => activateRoom(index)}
+                onKeyDown={(event) => handleRoomKeyDown(event, index)}
               >
                 <span>0{index + 1}</span>
                 <div><strong>{room.label}</strong><small lang="ta">{room.tamil}</small></div>
@@ -130,7 +154,13 @@ export default function Audio() {
           </div>
         </div>
 
-        <div className="audio-cinema__deck audio-cinema__deck--working" aria-live="polite">
+        <div
+          id={`audio-room-panel-${selected.id}`}
+          className="audio-cinema__deck audio-cinema__deck--working"
+          role="tabpanel"
+          aria-labelledby={`audio-room-tab-${selected.id}`}
+          data-active-room={selected.id}
+        >
           <div className="audio-cinema__deck-top">
             <div>
               <p className="audio-cinema__status">Available now · synthetic device speech</p>
