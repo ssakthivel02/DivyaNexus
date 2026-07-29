@@ -93,7 +93,7 @@ export default function Audio() {
   const activateRoom = (index: number, moveFocus = false) => {
     const normalisedIndex = (index + listeningRooms.length) % listeningRooms.length;
     setActiveRoom(listeningRooms[normalisedIndex].id);
-    if (moveFocus) window.requestAnimationFrame(() => roomRefs.current[normalisedIndex]?.focus());
+    if (moveFocus) roomRefs.current[normalisedIndex]?.focus();
   };
 
   const handleRoomKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number) => {
