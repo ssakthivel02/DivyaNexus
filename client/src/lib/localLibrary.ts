@@ -2,6 +2,12 @@
  * Celestial Manuscript Atelier: browser-local utilities with explicit sync limits.
  * No account synchronisation is implied by these helpers.
  */
+import {
+  readSpeechPreferences,
+  sanitiseSpeechPreferences,
+  SPEECH_PREFERENCES_STORAGE_KEY,
+  writeSpeechPreferences,
+} from "@/lib/speechPreferences";
 
 export type LocalNote = {
   id: string;
@@ -24,6 +30,7 @@ const preferenceKeys = {
   searches: "divyanexus.searches",
   theme: "divyanexus.theme",
   fontSize: "divyanexus.fontSize",
+  readerLanguage: "divyanexus.readerLanguage",
   audioPosition: "divyanexus.audioPosition",
 };
 
@@ -147,6 +154,7 @@ export async function deleteNote(noteId: string) {
 
 export async function clearLocalLibrary() {
   Object.values(preferenceKeys).forEach((key) => window.localStorage.removeItem(key));
+  window.localStorage.removeItem(SPEECH_PREFERENCES_STORAGE_KEY);
   try {
     const db = await openNotesDb();
     await new Promise<void>((resolve, reject) => {
@@ -201,11 +209,15 @@ export async function importLocalLibrary(text: string): Promise<LocalLibraryImpo
 
   const preferences = payload.preferences;
   if (preferences && typeof preferences === "object" && !Array.isArray(preferences)) {
-    const allowed = ["theme", "fontSize", "audioPosition"] as const;
+    const allowed = ["theme", "fontSize", "readerLanguage", "audioPosition"] as const;
     for (const key of allowed) {
       const value = (preferences as Record<string, unknown>)[key];
       if (typeof value === "string") window.localStorage.setItem(preferenceKeys[key], value);
     }
+  }
+
+  if (payload.speechPreferences !== undefined) {
+    writeSpeechPreferences(sanitiseSpeechPreferences(payload.speechPreferences));
   }
 
   if (notes.length) {
@@ -241,7 +253,7 @@ export async function getStorageEstimate() {
 export async function exportLocalLibrary() {
   const payload = {
     format: "divyanexus-local-library",
-    version: 1,
+    version: 2,
     exportedAt: new Date().toISOString(),
     notice: "This export contains browser-local DivyaNexus data only. It does not represent synced account data.",
     bookmarks: getBookmarks(),
@@ -249,6 +261,7 @@ export async function exportLocalLibrary() {
     savedSearches: getSavedSearches(),
     notes: await listNotes(),
     preferences: Object.fromEntries(Object.entries(preferenceKeys).map(([key, storageKey]) => [key, window.localStorage.getItem(storageKey)])),
+    speechPreferences: readSpeechPreferences(),
   };
   const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
   const anchor = document.createElement("a");
