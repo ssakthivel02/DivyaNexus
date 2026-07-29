@@ -9,7 +9,7 @@
     "start": "NODE_ENV=production node dist/index.js",
     "preview": "vite preview --host",
     "check": "tsc --noEmit",
-    "test:unit": "vitest run tests/unit",
+    "test:unit": "vitest run --root . tests/unit",
     "format": "prettier --write ."
   },
   "dependencies": {
