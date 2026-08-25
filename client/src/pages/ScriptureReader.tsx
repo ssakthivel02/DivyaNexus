@@ -28,6 +28,8 @@ import {
   toggleBookmark,
 } from "@/lib/localLibrary";
 
+type ReaderLanguage = "both" | "tamil" | "english";
+
 const readerSets: Record<
   string,
   { title: string; tamil: string; description: string; records: KnowledgeRecord[]; scene: string }
@@ -66,6 +68,11 @@ const readerSets: Record<
   },
 };
 
+function readReaderLanguage(): ReaderLanguage {
+  const stored = getPreference("readerLanguage", "both");
+  return stored === "tamil" || stored === "english" ? stored : "both";
+}
+
 export default function ScriptureReader({ kind }: { kind: keyof typeof readerSets }) {
   const set = readerSets[kind];
   const params = new URLSearchParams(window.location.search);
@@ -74,16 +81,32 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
   const [index, setIndex] = useState(initialIndex);
   const [showCommentary, setShowCommentary] = useState(true);
   const [fontScale, setFontScale] = useState(Number(getPreference("fontSize", "1.08")) || 1.08);
-  const [readerLanguage, setReaderLanguage] = useState<"both" | "tamil" | "english">("both");
+  const [readerLanguage, setReaderLanguage] = useState<ReaderLanguage>(readReaderLanguage);
   const record = set.records[index] ?? set.records[0];
   const [saved, setSaved] = useState(() => (record ? getBookmarks().includes(record.id) : false));
 
   useEffect(() => {
-    if (record) {
-      recordHistory(record.id);
-      setSaved(getBookmarks().includes(record.id));
+    const requestedRecord = new URLSearchParams(window.location.search).get("record");
+    const requestedIndex = Math.max(0, set.records.findIndex((item) => item.id === requestedRecord));
+    setIndex(requestedIndex);
+  }, [kind, set.records]);
+
+  useEffect(() => {
+    if (!record) return;
+    recordHistory(record.id);
+    setSaved(getBookmarks().includes(record.id));
+
+    const url = new URL(window.location.href);
+    const hasRecordQuery = url.searchParams.has("record");
+    if ((hasRecordQuery || index !== 0) && url.searchParams.get("record") !== record.id) {
+      url.searchParams.set("record", record.id);
+      window.history.replaceState(window.history.state, "", `${url.pathname}${url.search}${url.hash}`);
     }
-  }, [record?.id]);
+  }, [index, record?.id]);
+
+  useEffect(() => {
+    setPreference("readerLanguage", readerLanguage);
+  }, [readerLanguage]);
 
   if (!record) {
     return (
@@ -120,7 +143,8 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
   };
 
   const copyReference = async () => {
-    const sourceLine = verified?.sourceUrl ? `\nSource: ${verified.sourceUrl}` : "";
+    const sourceLine = verified?.sourceUrl ? `
+Source: ${verified.sourceUrl}` : "";
     await navigator.clipboard.writeText(`${record.source}, ${displayReference}${sourceLine}`);
   };
 
@@ -129,12 +153,13 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
     if (navigator.share) {
       await navigator.share({ title: displayTitle, text, url: window.location.href });
     } else {
-      await navigator.clipboard.writeText(`${text}\n${window.location.href}`);
+      await navigator.clipboard.writeText(`${text}
+${window.location.href}`);
     }
   };
 
   return (
-    <main id="main-content" className="page-main reader-cinema">
+    <main id="main-content" className="page-main reader-cinema" data-reader-language={readerLanguage}>
       <section className="reader-cinema-hero">
         <img
           src={ASSETS.scripture}
@@ -164,7 +189,7 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
               <div className="reader-toolbar__group">
                 <button className="reader-tool" onClick={() => changeScale(fontScale - 0.06)} aria-label="Decrease reader font size"><Minus size={14} aria-hidden="true" /></button>
                 <button className="reader-tool" onClick={() => changeScale(fontScale + 0.06)} aria-label="Increase reader font size"><Plus size={14} aria-hidden="true" /></button>
-                <button className={`reader-tool ${showCommentary ? "is-active" : ""}`} onClick={() => setShowCommentary((value) => !value)}>Commentary</button>
+                <button className={`reader-tool ${showCommentary ? "is-active" : ""}`} onClick={() => setShowCommentary((value) => !value)} aria-pressed={showCommentary}>Commentary</button>
               </div>
               <div className="reader-language-switch" role="group" aria-label="Reader language focus">
                 <button type="button" className={readerLanguage === "both" ? "is-active" : ""} aria-pressed={readerLanguage === "both"} onClick={() => setReaderLanguage("both")}>Tamil + English</button>
@@ -200,7 +225,7 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
                   <p className="reader-label">Key terms · concise study notes</p>
                   <div className="reader-meaning-grid">
                     {verified.wordNotes.map((note) => (
-                      <div key={note.term}><p className="reader-translation"><strong>{note.term}</strong><br />{note.meaning}{note.tamilMeaning && <span className="reader-word-note__tamil" lang="ta">{note.tamilMeaning}</span>}</p></div>
+                      <div key={note.term}><p className="reader-translation"><strong>{note.term}</strong><br />{note.meaning}<span className="reader-word-note__tamil" lang="ta">{note.tamilMeaning}</span></p></div>
                     ))}
                   </div>
 
@@ -241,7 +266,7 @@ export default function ScriptureReader({ kind }: { kind: keyof typeof readerSet
               <p className="scene-kicker">In this collection</p><h2>Follow a record trail</h2>
               {set.records.map((item, itemIndex) => {
                 const itemVerified = getVerifiedScriptureRecord(item.id);
-                return <button key={item.id} className={itemIndex === index ? "is-active" : ""} onClick={() => setIndex(itemIndex)}><span>0{itemIndex + 1}</span>{itemVerified?.title ?? item.title}</button>;
+                return <button key={item.id} className={itemIndex === index ? "is-active" : ""} aria-current={itemIndex === index ? "true" : undefined} onClick={() => setIndex(itemIndex)}><span>0{itemIndex + 1}</span>{itemVerified?.title ?? item.title}</button>;
               })}
             </div>
             <div className="reader-sidebar__panel"><p className="scene-kicker">Reader context</p><p className="muted" style={{ fontSize: ".74rem", margin: 0 }}>Primary text, editorial translation, word notes, and reflective explanation are displayed as separate layers. Source links remain visible for independent study.</p></div>
