@@ -1,6 +1,6 @@
 export const DIVYANEXUS_RELEASE = {
-  id: "legacy-shiva-cutover",
-  name: "Shiva Legacy Knowledge Cutover",
+  id: "stage-b-wave8",
+  name: "Artwork, Tamil Readability & Multilingual Audio Wave 8",
   title: "Shiva — Vedic Knowledge & Learning",
   domain: "https://shiva.omsaravanabhava.org",
   reviewedDate: "28 August 2026",
