@@ -1,6 +1,7 @@
-import { ArrowRight, BookOpenText, Compass, Headphones, Map, Orbit, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpenText, Compass, Headphones, Map, Network, Orbit, Search, ShieldCheck, Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import { records } from "@/data/content";
+import { knowledgeRelations } from "@/data/knowledgeRelations";
 import "@/knowledge-nexus.css";
 
 const constellations = [
@@ -19,9 +20,19 @@ const principles = [
   "The experience remains useful without account creation or autoplay.",
 ] as const;
 
+function resolveTarget(target: string) {
+  if (target.startsWith("/")) return { href: target, title: target.slice(1).replaceAll("-", " ") };
+  const record = records.find((item) => item.id === target);
+  return record ? { href: `${record.route}?record=${record.id}`, title: record.title } : { href: "/nexus", title: "Knowledge Nexus" };
+}
+
 export default function KnowledgeNexus() {
   const scriptureCount = records.filter((record) => record.category === "Scripture").length;
   const editorialCount = records.filter((record) => record.reviewStatus === "Editorial overview").length;
+  const graphRows = knowledgeRelations.slice(0, 6).map((relation) => {
+    const source = records.find((record) => record.id === relation.from);
+    return { relation, source, target: resolveTarget(relation.to) };
+  }).filter((row) => row.source);
 
   return (
     <main id="main-content" className="nexus-page">
@@ -48,6 +59,7 @@ export default function KnowledgeNexus() {
             <div><dt>Source-aware scripture records</dt><dd>{scriptureCount}</dd></div>
             <div><dt>Editorial overview records</dt><dd>{editorialCount}</dd></div>
             <div><dt>Connected knowledge gateways</dt><dd>{constellations.length}</dd></div>
+            <div><dt>Editorial relationship edges</dt><dd>{knowledgeRelations.length}</dd></div>
             <div><dt>Generated-source impersonation</dt><dd>BLOCKED</dd></div>
           </dl>
           <p>Counts reflect the current repository dataset; they are not presented as collection-completeness claims.</p>
@@ -69,6 +81,22 @@ export default function KnowledgeNexus() {
               <p>{detail}</p>
               <small>Enter pathway <ArrowRight size={14} aria-hidden="true" /></small>
             </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="nexus-section nexus-section--graph" aria-labelledby="relationship-title">
+        <div className="nexus-section__head">
+          <div><p className="nexus-kicker"><Network size={15} aria-hidden="true" />Evidence-aware relationships</p><h2 id="relationship-title">Follow a reasoned next step.</h2></div>
+          <p>These edges are transparent editorial navigation links. They do not claim doctrinal equivalence, textual causality, or hidden scriptural provenance.</p>
+        </div>
+        <div className="nexus-relations" role="list" aria-label="Knowledge relationship graph">
+          {graphRows.map(({ relation, source, target }) => (
+            <article className="nexus-relation" role="listitem" key={relation.id}>
+              <div className="nexus-relation__source"><span>{source?.source}</span><strong>{source?.title}</strong></div>
+              <div className="nexus-relation__edge"><span>{relation.kind}</span><ArrowRight size={18} aria-hidden="true" /></div>
+              <div className="nexus-relation__target"><span lang="ta">{relation.tamilLabel}</span><strong>{relation.label}</strong><p>{relation.rationale}</p><Link href={target.href}>Open {target.title}<ArrowRight size={14} aria-hidden="true" /></Link></div>
+            </article>
           ))}
         </div>
       </section>
