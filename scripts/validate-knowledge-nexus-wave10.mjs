@@ -12,7 +12,9 @@ const routes = read("client/src/config/routes.ts");
 const meta = read("client/src/config/routeMeta.ts");
 const header = read("client/src/components/SiteHeader.tsx");
 const sitemap = read("client/public/sitemap.xml");
+const relations = read("client/src/data/knowledgeRelations.ts");
 const browserTest = read("tests/e2e/knowledge-nexus-wave10.spec.ts");
+const relationTest = read("tests/unit/knowledge-relations-wave10.test.ts");
 
 const requireText = (source, text, label) => {
   if (!source.includes(text)) failures.push(`${label} is missing ${JSON.stringify(text)}`);
@@ -34,12 +36,23 @@ for (const boundary of [
   "Primary source and editorial interpretation remain visibly distinct.",
   "No generated answer is allowed to impersonate a verified scripture quotation.",
   "Counts reflect the current repository dataset; they are not presented as collection-completeness claims.",
+  "They are not claims of scriptural equivalence, historical causality, doctrinal identity, or verified quotation provenance.",
 ]) {
-  requireText(page, boundary, "Knowledge Nexus truth boundary");
+  requireText(boundary.includes("scriptural equivalence") ? relations : page, boundary, "Knowledge Nexus truth boundary");
 }
+
+for (const relationKind of ["study-next", "context", "concept", "practice"]) {
+  requireText(relations, relationKind, "relationship model");
+}
+requireText(page, "Evidence-aware relationships", "relationship graph surface");
+requireText(page, "Editorial relationship edges", "integrity console graph count");
+requireText(relationTest, "rejects dangling record relationships", "relationship unit contract");
+requireText(relationTest, "requires unique relationship ids", "relationship unit contract");
+requireText(relationTest, "keeps rationale and Tamil labels explicit", "relationship unit contract");
 
 requireText(css, "@media(max-width:640px)", "mobile layout contract");
 requireText(css, "@media(prefers-reduced-motion:reduce)", "reduced-motion contract");
+requireText(css, ".nexus-relation", "relationship graph styling");
 requireText(browserTest, "preserves mobile layout without horizontal overflow", "browser contract");
 requireText(browserTest, "publishes indexable canonical metadata for the new route", "browser contract");
 
