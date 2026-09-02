@@ -1,0 +1,88 @@
+import { ArrowRight, BookOpenText, Compass, Headphones, Map, Orbit, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { Link } from "wouter";
+import { records } from "@/data/content";
+import "@/knowledge-nexus.css";
+
+const constellations = [
+  { title: "Scripture", tamil: "சாஸ்திரம்", href: "/scriptures", detail: "Rig Veda, Bhagavad Gita and Upanishadic study paths", icon: BookOpenText },
+  { title: "Divine traditions", tamil: "தெய்வ மரபுகள்", href: "/deities", detail: "Source-aware deity orientation and cultural context", icon: Sparkles },
+  { title: "Sacred geography", tamil: "புனித புவியியல்", href: "/temples", detail: "Temple discovery designed for verified context and future intelligence", icon: Map },
+  { title: "Life guidance", tamil: "வாழ்க்கை வழிகாட்டல்", href: "/life-guidance", detail: "Reflection that keeps source, interpretation and generated guidance separate", icon: Compass },
+  { title: "Listen & learn", tamil: "கேட்டு கற்போம்", href: "/audio", detail: "User-controlled multilingual listening with visible transcripts", icon: Headphones },
+  { title: "Ask Divya", tamil: "திவ்யாவிடம் கேளுங்கள்", href: "/ask-divya", detail: "A bounded guide that routes questions back toward inspectable knowledge", icon: Orbit },
+] as const;
+
+const principles = [
+  "Primary source and editorial interpretation remain visibly distinct.",
+  "Tamil-first readability is preserved alongside English discovery.",
+  "No generated answer is allowed to impersonate a verified scripture quotation.",
+  "The experience remains useful without account creation or autoplay.",
+] as const;
+
+export default function KnowledgeNexus() {
+  const scriptureCount = records.filter((record) => record.category === "Scripture").length;
+  const editorialCount = records.filter((record) => record.reviewStatus === "Editorial overview").length;
+
+  return (
+    <main id="main-content" className="nexus-page">
+      <section className="nexus-hero" aria-labelledby="nexus-title">
+        <div className="nexus-hero__grid" aria-hidden="true" />
+        <div className="nexus-hero__orb nexus-hero__orb--one" aria-hidden="true" />
+        <div className="nexus-hero__orb nexus-hero__orb--two" aria-hidden="true" />
+        <div className="nexus-hero__copy">
+          <p className="nexus-kicker"><Orbit size={16} aria-hidden="true" />Wave 10 · Knowledge Nexus</p>
+          <p className="nexus-tamil" lang="ta">அறிவை இணைக்கும் உயிருள்ள தெய்வீக வரைபடம்</p>
+          <h1 id="nexus-title">One intelligent doorway into the whole DivyaNexus universe.</h1>
+          <p>
+            Move from a question to scripture, deity context, temple geography, learning and reflection without losing provenance. This is not a decorative dashboard: it is the beginning of a connected knowledge architecture.
+          </p>
+          <div className="nexus-hero__actions">
+            <Link className="nexus-button nexus-button--primary" href="/search"><Search size={17} aria-hidden="true" />Search the nexus</Link>
+            <Link className="nexus-button" href="/explore"><Compass size={17} aria-hidden="true" />Explore pathways</Link>
+          </div>
+        </div>
+
+        <aside className="nexus-console" aria-label="Knowledge integrity console">
+          <div className="nexus-console__head"><ShieldCheck size={18} aria-hidden="true" /><span>Integrity console</span><strong>ACTIVE</strong></div>
+          <dl>
+            <div><dt>Source-aware scripture records</dt><dd>{scriptureCount}</dd></div>
+            <div><dt>Editorial overview records</dt><dd>{editorialCount}</dd></div>
+            <div><dt>Connected knowledge gateways</dt><dd>{constellations.length}</dd></div>
+            <div><dt>Generated-source impersonation</dt><dd>BLOCKED</dd></div>
+          </dl>
+          <p>Counts reflect the current repository dataset; they are not presented as collection-completeness claims.</p>
+        </aside>
+      </section>
+
+      <section className="nexus-section" aria-labelledby="constellations-title">
+        <div className="nexus-section__head">
+          <div><p className="nexus-kicker">Connected discovery</p><h2 id="constellations-title">Choose a constellation</h2></div>
+          <p>Each gateway preserves its own editorial and truth boundaries while participating in one coherent exploration system.</p>
+        </div>
+        <div className="nexus-grid">
+          {constellations.map(({ title, tamil, href, detail, icon: Icon }, index) => (
+            <Link className="nexus-card" href={href} key={title}>
+              <span className="nexus-card__index">0{index + 1}</span>
+              <span className="nexus-card__icon"><Icon size={20} aria-hidden="true" /></span>
+              <strong>{title}</strong>
+              <span lang="ta">{tamil}</span>
+              <p>{detail}</p>
+              <small>Enter pathway <ArrowRight size={14} aria-hidden="true" /></small>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="nexus-section nexus-section--principles" aria-labelledby="principles-title">
+        <div>
+          <p className="nexus-kicker"><ShieldCheck size={15} aria-hidden="true" />Non-negotiable quality contract</p>
+          <h2 id="principles-title">High-tech without sacrificing trust.</h2>
+          <p>A premium interface is worthless if it blurs source, translation, interpretation and generated explanation. Wave 10 keeps that separation explicit while making discovery faster and more immersive.</p>
+        </div>
+        <ol>
+          {principles.map((principle, index) => <li key={principle}><span>0{index + 1}</span><p>{principle}</p></li>)}
+        </ol>
+      </section>
+    </main>
+  );
+}
