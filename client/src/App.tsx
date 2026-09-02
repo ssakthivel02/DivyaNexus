@@ -26,6 +26,7 @@ const DeityDetail = lazy(() => import("@/pages/DeityDetail"));
 const DeityDirectory = lazy(() => import("@/pages/DeityDirectory"));
 const Explore = lazy(() => import("@/pages/Explore"));
 const Home = lazy(() => import("@/pages/Home"));
+const KnowledgeNexus = lazy(() => import("@/pages/KnowledgeNexus"));
 const LegalPage = lazy(() => import("@/pages/LegalPage"));
 const Library = lazy(() => import("@/pages/Library"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
@@ -46,6 +47,7 @@ function AppRoutes({ onAsk, onSearch }: { onAsk: () => void; onSearch: () => voi
   return (
     <Switch>
       <Route path="/">{() => <Home onAsk={onAsk} onSearch={onSearch} />}</Route>
+      <Route path="/nexus" component={KnowledgeNexus} />
       <Route path="/explore">{() => <Explore onSearch={onSearch} />}</Route>
       <Route path="/ask-divya" component={AskDivya} />
       <Route path="/ask" component={AskDivya} />
