@@ -9,6 +9,7 @@ export type AppRoute = {
 
 export const APP_ROUTES: readonly AppRoute[] = [
   { path: "/", label: "Home", section: "core", sitemap: true, smoke: true },
+  { path: "/nexus", label: "Knowledge Nexus", section: "core", sitemap: true, smoke: true },
   { path: "/explore", label: "Explore", section: "core", sitemap: true, smoke: true },
   { path: "/ask-divya", label: "Ask Divya", section: "core", sitemap: true, smoke: true },
   { path: "/ask", label: "Ask alias", section: "core", sitemap: false, smoke: false },
