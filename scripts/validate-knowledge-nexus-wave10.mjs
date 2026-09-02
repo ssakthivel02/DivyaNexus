@@ -1,0 +1,55 @@
+import { readFileSync } from "node:fs";
+import { resolve } from "node:path";
+
+const root = process.cwd();
+const read = (path) => readFileSync(resolve(root, path), "utf8");
+const failures = [];
+
+const app = read("client/src/App.tsx");
+const page = read("client/src/pages/KnowledgeNexus.tsx");
+const css = read("client/src/knowledge-nexus.css");
+const routes = read("client/src/config/routes.ts");
+const meta = read("client/src/config/routeMeta.ts");
+const header = read("client/src/components/SiteHeader.tsx");
+const sitemap = read("client/public/sitemap.xml");
+const browserTest = read("tests/e2e/knowledge-nexus-wave10.spec.ts");
+
+const requireText = (source, text, label) => {
+  if (!source.includes(text)) failures.push(`${label} is missing ${JSON.stringify(text)}`);
+};
+
+requireText(app, 'path="/nexus"', "App router");
+requireText(app, 'import("@/pages/KnowledgeNexus")', "lazy route");
+requireText(routes, '{ path: "/nexus", label: "Knowledge Nexus", section: "core", sitemap: true, smoke: true }', "route registry");
+requireText(meta, '"/nexus": {', "route metadata");
+requireText(meta, 'title: "Knowledge Nexus — Connected Discovery — DivyaNexus"', "route metadata");
+requireText(header, '["Knowledge Nexus", "A connected high-tech doorway into the whole archive", "/nexus"]', "global navigation");
+requireText(sitemap, "https://divyanexus.omsaravanabhava.org/nexus", "sitemap");
+
+for (const route of ["/scriptures", "/deities", "/temples", "/life-guidance", "/audio", "/ask-divya"]) {
+  requireText(page, `href: "${route}"`, "Knowledge Nexus gateway map");
+}
+
+for (const boundary of [
+  "Primary source and editorial interpretation remain visibly distinct.",
+  "No generated answer is allowed to impersonate a verified scripture quotation.",
+  "Counts reflect the current repository dataset; they are not presented as collection-completeness claims.",
+]) {
+  requireText(page, boundary, "Knowledge Nexus truth boundary");
+}
+
+requireText(css, "@media(max-width:640px)", "mobile layout contract");
+requireText(css, "@media(prefers-reduced-motion:reduce)", "reduced-motion contract");
+requireText(browserTest, "preserves mobile layout without horizontal overflow", "browser contract");
+requireText(browserTest, "publishes indexable canonical metadata for the new route", "browser contract");
+
+if (/auto(play|start)/i.test(page)) {
+  failures.push("Knowledge Nexus page must not introduce autoplay or autostart behaviour");
+}
+
+if (failures.length) {
+  console.error("Wave 10 Knowledge Nexus validation failed:\n- " + failures.join("\n- "));
+  process.exit(1);
+}
+
+console.log("Wave 10 Knowledge Nexus validation passed.");
