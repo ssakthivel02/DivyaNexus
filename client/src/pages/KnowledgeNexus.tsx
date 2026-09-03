@@ -1,7 +1,9 @@
-import { ArrowRight, BookOpenText, Compass, Headphones, Map, Network, Orbit, Search, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpenText, Compass, Database, Headphones, Map, Network, Orbit, Search, ShieldCheck, Sparkles } from "lucide-react";
 import { Link } from "wouter";
 import { records } from "@/data/content";
 import { knowledgeRelations } from "@/data/knowledgeRelations";
+import { provenanceObjects } from "@/data/provenance";
+import { evidenceLabel } from "@/lib/provenanceSearch";
 import "@/knowledge-nexus.css";
 
 const constellations = [
@@ -29,10 +31,15 @@ function resolveTarget(target: string) {
 export default function KnowledgeNexus() {
   const scriptureCount = records.filter((record) => record.category === "Scripture").length;
   const editorialCount = records.filter((record) => record.reviewStatus === "Editorial overview").length;
+  const sourceEditionNeeded = provenanceObjects.filter((item) => item.reviewState === "source-edition-needed").length;
   const graphRows = knowledgeRelations.slice(0, 6).map((relation) => {
     const source = records.find((record) => record.id === relation.from);
     return { relation, source, target: resolveTarget(relation.to) };
   }).filter((row) => row.source);
+  const provenanceRows = provenanceObjects.slice(0, 6).map((provenance) => ({
+    provenance,
+    record: records.find((record) => record.id === provenance.recordId),
+  })).filter((row) => row.record);
 
   return (
     <main id="main-content" className="nexus-page">
@@ -58,6 +65,8 @@ export default function KnowledgeNexus() {
           <dl>
             <div><dt>Source-aware scripture records</dt><dd>{scriptureCount}</dd></div>
             <div><dt>Editorial overview records</dt><dd>{editorialCount}</dd></div>
+            <div><dt>Registered provenance objects</dt><dd>{provenanceObjects.length}</dd></div>
+            <div><dt>Source editions still needed</dt><dd>{sourceEditionNeeded}</dd></div>
             <div><dt>Connected knowledge gateways</dt><dd>{constellations.length}</dd></div>
             <div><dt>Editorial relationship edges</dt><dd>{knowledgeRelations.length}</dd></div>
             <div><dt>Generated-source impersonation</dt><dd>BLOCKED</dd></div>
@@ -83,6 +92,26 @@ export default function KnowledgeNexus() {
             </Link>
           ))}
         </div>
+      </section>
+
+      <section className="nexus-section nexus-section--provenance" aria-labelledby="provenance-title">
+        <div className="nexus-section__head">
+          <div><p className="nexus-kicker"><Database size={15} aria-hidden="true" />Provenance ledger</p><h2 id="provenance-title">See what kind of evidence sits behind a record.</h2></div>
+          <p>DivyaNexus does not convert a citation-shaped label into false authority. A reference can be present while a reviewed source edition is still explicitly missing.</p>
+        </div>
+        <div className="nexus-provenance" role="list" aria-label="Provenance evidence states">
+          {provenanceRows.map(({ provenance, record }) => (
+            <article className="nexus-provenance__item" role="listitem" key={provenance.recordId}>
+              <div className="nexus-provenance__head"><span>{provenance.sourceKind}</span><strong>{evidenceLabel(provenance)}</strong></div>
+              <h3>{record?.title}</h3>
+              <p className="nexus-provenance__reference">{provenance.sourceLabel} · {provenance.reference}</p>
+              <p>{provenance.evidenceNote}</p>
+              <p lang="ta">{provenance.tamilEvidenceNote}</p>
+              <Link href={`${record?.route}?record=${record?.id}`}>Inspect record <ArrowRight size={14} aria-hidden="true" /></Link>
+            </article>
+          ))}
+        </div>
+        <p className="nexus-provenance__boundary"><ShieldCheck size={15} aria-hidden="true" /> No current Wave 10 record is labelled “Primary reference linked” until a reviewed source edition is actually registered and validated.</p>
       </section>
 
       <section className="nexus-section nexus-section--graph" aria-labelledby="relationship-title">
