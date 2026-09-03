@@ -5,6 +5,7 @@ import { knowledgeRelations } from "@/data/knowledgeRelations";
 import { provenanceObjects } from "@/data/provenance";
 import { evidenceLabel } from "@/lib/provenanceSearch";
 import "@/knowledge-nexus.css";
+import "@/knowledge-provenance.css";
 
 const constellations = [
   { title: "Scripture", tamil: "சாஸ்திரம்", href: "/scriptures", detail: "Rig Veda, Bhagavad Gita and Upanishadic study paths", icon: BookOpenText },
