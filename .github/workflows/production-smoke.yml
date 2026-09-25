@@ -61,8 +61,8 @@ jobs:
         run: |
           set -euo pipefail
           routes=(
-            scriptures rig-veda bhagavad-gita audio deities deities/murugan
-            ask-divya life-guidance glossary learning kids collection-status
+            nexus scriptures rig-veda bhagavad-gita audio deities deities/murugan
+            temples ask-divya life-guidance glossary learning kids collection-status
             library sources privacy status
           )
           for route in "${routes[@]}"; do
@@ -73,7 +73,7 @@ jobs:
             grep -Fq 'data-divyanexus-version="'"$EXPECTED_RELEASE"'"' "$file"
           done
 
-      - name: Verify Wave 8 offline and public endpoints
+      - name: Verify Wave 10 offline and public endpoints
         shell: bash
         run: |
           set -euo pipefail
@@ -83,11 +83,13 @@ jobs:
             echo "$code /$endpoint"
             test "$code" = 200
           done
-          grep -Fq 'divyanexus-stage-b-wave8-v1' /tmp/sw_js
+          grep -Fq 'divyanexus-stage-b-wave9-v1' /tmp/sw_js
           grep -Fq 'owner-selected-vision.webp' /tmp/sw_js
           grep -Fq 'This path is not cached yet.' /tmp/offline_html
           grep -Fq '"shortcuts"' /tmp/manifest_webmanifest
           grep -Fq 'https://divyanexus.omsaravanabhava.org/status' /tmp/sitemap_xml
+          grep -Fq 'https://divyanexus.omsaravanabhava.org/nexus' /tmp/sitemap_xml
+          grep -Fq 'https://divyanexus.omsaravanabhava.org/temples' /tmp/sitemap_xml
 
       - name: Verify owner-selected artwork bytes
         shell: bash
