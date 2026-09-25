@@ -43,8 +43,11 @@ for (const marker of ["aria-orientation=\"vertical\"", "tabIndex={activeRoom ===
 for (const marker of ["readReaderLanguage", "readerLanguage", "setPreference(\"readerLanguage\"", "history.replaceState", "data-reader-language", "aria-current"]) {
   if (!text.reader.includes(marker)) failures.push(`Reader is missing persistence/navigation marker: ${marker}`);
 }
-for (const marker of ["SPEECH_PREFERENCES_STORAGE_KEY", "speechPreferences: readSpeechPreferences()", "readerLanguage", "version: 2"]) {
+for (const marker of ["SPEECH_PREFERENCES_STORAGE_KEY", "speechPreferences: readSpeechPreferences()", "readerLanguage"]) {
   if (!text.library.includes(marker)) failures.push(`Local-data lifecycle is missing marker: ${marker}`);
+}
+if (!/version:\s*[23]\b/.test(text.library)) {
+  failures.push("Local-data lifecycle is missing a supported version 2 or 3 marker");
 }
 
 const tamilWordNotes = (text.scripture.match(/tamilMeaning:/g) ?? []).length;

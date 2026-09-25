@@ -3,6 +3,12 @@
  * No account synchronisation is implied by these helpers.
  */
 import {
+  LOCAL_LEARNING_PROGRESS_STORAGE_KEY,
+  readLocalLearningProgress,
+  sanitiseLocalLearningProgress,
+  writeLocalLearningProgress,
+} from "@/lib/localLearningProgress";
+import {
   readSpeechPreferences,
   sanitiseSpeechPreferences,
   SPEECH_PREFERENCES_STORAGE_KEY,
@@ -155,6 +161,7 @@ export async function deleteNote(noteId: string) {
 export async function clearLocalLibrary() {
   Object.values(preferenceKeys).forEach((key) => window.localStorage.removeItem(key));
   window.localStorage.removeItem(SPEECH_PREFERENCES_STORAGE_KEY);
+  window.localStorage.removeItem(LOCAL_LEARNING_PROGRESS_STORAGE_KEY);
   try {
     const db = await openNotesDb();
     await new Promise<void>((resolve, reject) => {
@@ -164,6 +171,7 @@ export async function clearLocalLibrary() {
     });
   } finally {
     window.dispatchEvent(new CustomEvent("divyanexus-library-change"));
+    window.dispatchEvent(new CustomEvent("divyanexus-learning-change"));
   }
 }
 
@@ -220,6 +228,10 @@ export async function importLocalLibrary(text: string): Promise<LocalLibraryImpo
     writeSpeechPreferences(sanitiseSpeechPreferences(payload.speechPreferences));
   }
 
+  if (payload.learningProgress !== undefined) {
+    writeLocalLearningProgress(sanitiseLocalLearningProgress(payload.learningProgress));
+  }
+
   if (notes.length) {
     const db = await openNotesDb();
     await new Promise<void>((resolve, reject) => {
@@ -253,7 +265,7 @@ export async function getStorageEstimate() {
 export async function exportLocalLibrary() {
   const payload = {
     format: "divyanexus-local-library",
-    version: 2,
+    version: 3,
     exportedAt: new Date().toISOString(),
     notice: "This export contains browser-local DivyaNexus data only. It does not represent synced account data.",
     bookmarks: getBookmarks(),
@@ -262,6 +274,7 @@ export async function exportLocalLibrary() {
     notes: await listNotes(),
     preferences: Object.fromEntries(Object.entries(preferenceKeys).map(([key, storageKey]) => [key, window.localStorage.getItem(storageKey)])),
     speechPreferences: readSpeechPreferences(),
+    learningProgress: readLocalLearningProgress(),
   };
   const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
   const anchor = document.createElement("a");
