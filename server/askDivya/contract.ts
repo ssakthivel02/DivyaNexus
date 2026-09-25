@@ -74,6 +74,6 @@ export function validateAskDivyaRequest(input: unknown): AskDivyaRequest {
     question,
     language: value.language as AskDivyaLanguage,
     mode: value.mode as AskDivyaMode,
-    ...(contextRecordIds ? { contextRecordIds: [...new Set(contextRecordIds as string[])] } : {}),
+    ...(contextRecordIds ? { contextRecordIds: Array.from(new Set(contextRecordIds as string[])) } : {}),
   };
 }
