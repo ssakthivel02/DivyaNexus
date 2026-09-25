@@ -60,6 +60,12 @@ jobs:
       - name: Validate readability and bilingual browser audio
         run: node scripts/validate-readability-audio.mjs
 
+      - name: Validate Wave 9 speech and reader hardening
+        run: node scripts/validate-speech-reader-wave9.mjs
+
+      - name: Run deterministic unit tests
+        run: pnpm run test:unit
+
       - name: Build production application
         env:
           VITE_BASE_PATH: /

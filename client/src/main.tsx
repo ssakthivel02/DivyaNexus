@@ -7,6 +7,7 @@ import "./editorial-wave5.css";
 import "./quality-wave6.css";
 import "./owner-artwork-wave7.css";
 import "./readability-audio-wave8.css";
+import "./speech-reader-wave9.css";
 
 createRoot(document.getElementById("root")!).render(<App />);
 markApplicationReady();

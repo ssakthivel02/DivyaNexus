@@ -114,7 +114,7 @@ test.describe("Wave 8 multilingual speech", () => {
     await controls.getByRole("button", { name: "Resume" }).click();
     await expect(controls.getByRole("status")).toHaveText("Speaking");
     await controls.getByRole("button", { name: "Stop" }).click();
-    await expect(controls.getByRole("status")).toHaveText("Ready");
+    await expect(controls.getByRole("status")).toHaveText("Stopped");
   });
 
   test("reader exposes Tamil, Sanskrit, transliteration and English speech with recommended rates", async ({ page }) => {
