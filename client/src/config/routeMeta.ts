@@ -20,6 +20,12 @@ export const routeMetaByPath: Readonly<Record<string, RouteMeta>> = {
     schemaType: "WebPage",
     label: "Home",
   },
+  "/nexus": {
+    title: "Knowledge Nexus — Connected Discovery — DivyaNexus",
+    description: "Explore a connected DivyaNexus discovery surface linking scriptures, deity context, sacred geography, learning, audio and source-aware guidance without losing provenance.",
+    schemaType: "CollectionPage",
+    label: "Knowledge Nexus",
+  },
   "/explore": {
     title: "Explore the Knowledge Universe — DivyaNexus",
     description: "Choose a clearly marked path through scriptures, deities, temples, festivals, glossary records, learning sequences and reflective guidance.",

@@ -10,6 +10,8 @@ import { deityEditorialCards as deities } from "@/data/deityEditorial";
 import { getEditorialRecordsByCollection, type EditorialCollection, type EditorialStatus } from "@/data/editorial";
 import { EditorialStatusBadge } from "@/components/EditorialStatusBadge";
 import { Reveal } from "@/components/Reveal";
+import { TempleIntelligencePanel } from "@/components/TempleIntelligencePanel";
+import { LocalLearningJourneys } from "@/components/LocalLearningJourneys";
 
 type DirectoryKind = "deities" | "temples" | "rishis" | "festivals" | "glossary" | "life-guidance" | "learning" | "kids";
 type Card = { title: string; tamil: string; detail: string; tag?: string; source?: string; status?: EditorialStatus };
@@ -74,6 +76,8 @@ export default function ContentDirectory({ kind }: { kind: DirectoryKind }) {
     </section>
     <section className="directory-passage"><p><Compass size={16} aria-hidden="true" />{data.scene}</p><Link href="/sources">Read the editorial method <ArrowRight size={15} aria-hidden="true" /></Link></section>
     <DirectoryImmersion kind={kind} />
+    {kind === "temples" && <TempleIntelligencePanel />}
+    {kind === "learning" && <LocalLearningJourneys />}
     <section className="directory-contents">
       <Reveal className="directory-contents__intro"><div><p className="scene-kicker">Study leads</p><h2>Choose a <em>well-marked</em> place to begin.</h2></div><p>{data.note}</p></Reveal>
       <div className="directory-trail-grid">{data.cards.map((card, index) => <Link href={primaryDestination} key={`${card.title}-${index}`} className="directory-trail-card"><span className="directory-trail-card__number">{String(index + 1).padStart(2, "0")}</span><div><p className="directory-trail-card__kind">{card.tag || card.source || "Starter context"}</p><h3>{card.title}</h3><p lang="ta">{card.tamil}</p>{card.status && <EditorialStatusBadge status={card.status} />}</div><p className="directory-trail-card__detail">{card.detail}</p><span className="directory-trail-card__arrow">Open context <ArrowRight size={15} aria-hidden="true" /></span></Link>)}</div>

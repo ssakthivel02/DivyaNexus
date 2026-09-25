@@ -40,7 +40,7 @@ jobs:
         run: pnpm install --frozen-lockfile
       - name: TypeScript check
         run: pnpm run check
-      - name: Validate source, route, metadata, editorial, PWA, artwork, readability and audio contracts
+      - name: Validate source, route, metadata, editorial, PWA, artwork, readability and Wave contracts
         run: |
           node scripts/validate-source-boundaries.mjs
           pnpm exec tsx scripts/validate-route-manifest.ts
@@ -49,6 +49,8 @@ jobs:
           node scripts/validate-pwa-assets.mjs
           node scripts/validate-owner-artwork.mjs
           node scripts/validate-readability-audio.mjs
+          node scripts/validate-speech-reader-wave9.mjs
+          node scripts/validate-knowledge-nexus-wave10.mjs
       - name: Build production application
         env:
           VITE_BASE_PATH: /
@@ -92,6 +94,7 @@ jobs:
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './.nojekyll'
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './.well-known/security.txt'
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './collection-status/index.html'
+          tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './nexus/index.html'
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './offline.html'
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './assets/divyanexus/owner-selected-vision.webp'
           tar -tf "$RUNNER_TEMP/artifact.tar" | grep -Fx './release.json'

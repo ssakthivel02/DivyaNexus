@@ -4,6 +4,7 @@ on:
   pull_request:
     branches:
       - main
+      - feature/divyanexus-wave9-speech-reader-hardening
   workflow_dispatch:
 
 permissions:
@@ -62,6 +63,9 @@ jobs:
 
       - name: Validate Wave 9 speech and reader hardening
         run: node scripts/validate-speech-reader-wave9.mjs
+
+      - name: Validate Wave 10 Knowledge Nexus
+        run: node scripts/validate-knowledge-nexus-wave10.mjs
 
       - name: Run deterministic unit tests
         run: pnpm run test:unit
