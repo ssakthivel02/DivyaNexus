@@ -1,4 +1,7 @@
+import { readFile } from "node:fs/promises";
 import { expect, test } from "@playwright/test";
+
+const LEARNING_PROGRESS_KEY = "divyanexus.learningJourneys.v1";
 
 async function openLibrary(page: import("@playwright/test").Page) {
   await page.goto("/library", { waitUntil: "domcontentloaded" });
@@ -43,6 +46,65 @@ test.describe("browser-local library backup", () => {
     await page.getByRole("button", { name: "Delete note Imported study question" }).click();
     await expect(libraryStatus).toContainText("Local note deleted");
     await expect(page.getByText("Imported study question", { exact: true })).toHaveCount(0);
+  });
+
+  test("backs up, sanitises, preserves legacy compatibility and clears learning progress", async ({ page }) => {
+    await openLibrary(page);
+
+    const payload = {
+      format: "divyanexus-local-library",
+      version: 3,
+      bookmarks: [],
+      history: [],
+      savedSearches: [],
+      notes: [],
+      learningProgress: {
+        "gita-context": ["step-1", "step-1", "", "step-2", 42],
+        "invalid-journey": "not-an-array",
+      },
+    };
+
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "divyanexus-local-data-v3.json",
+      mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify(payload)),
+    });
+    await expect(page.locator(".library-cinema__status")).toContainText("Local data restored");
+
+    await expect.poll(() => page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "{}"), LEARNING_PROGRESS_KEY)).toEqual({
+      "gita-context": ["step-1", "step-2"],
+    });
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export local data" }).click();
+    const download = await downloadPromise;
+    const downloadPath = await download.path();
+    expect(downloadPath).not.toBeNull();
+    const exported = JSON.parse(await readFile(downloadPath!, "utf8"));
+    expect(exported.version).toBe(3);
+    expect(exported.learningProgress).toEqual({ "gita-context": ["step-1", "step-2"] });
+
+    await page.evaluate((key) => localStorage.setItem(key, JSON.stringify({ "gita-context": ["legacy-kept"] })), LEARNING_PROGRESS_KEY);
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "divyanexus-local-data-v2.json",
+      mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify({
+        format: "divyanexus-local-library",
+        version: 2,
+        bookmarks: [],
+        history: [],
+        savedSearches: [],
+        notes: [],
+      })),
+    });
+    expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "{}"), LEARNING_PROGRESS_KEY)).toEqual({
+      "gita-context": ["legacy-kept"],
+    });
+
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "Clear local data" }).click();
+    await expect(page.locator(".library-cinema__status")).toHaveText("Browser-local study data cleared");
+    expect(await page.evaluate((key) => localStorage.getItem(key), LEARNING_PROGRESS_KEY)).toBeNull();
   });
 
   test("rejects malformed backup content without changing the library", async ({ page }) => {
