@@ -2,6 +2,7 @@ import express from "express";
 import { createServer } from "http";
 import path from "path";
 import { fileURLToPath } from "url";
+import { createAskDivyaStagingService } from "./askDivya/stagingService";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -9,6 +10,22 @@ const __dirname = path.dirname(__filename);
 async function startServer() {
   const app = express();
   const server = createServer(app);
+
+  app.use(express.json({ limit: "16kb" }));
+
+  if (process.env.ASK_DIVYA_STAGING_ENABLED === "true") {
+    const staging = createAskDivyaStagingService();
+
+    app.get("/api/v1/ask/health", (_req, res) => {
+      res.json(staging.health());
+    });
+
+    app.post("/api/v1/ask", async (req, res) => {
+      const clientKey = req.ip || "anonymous";
+      const result = await staging.ask(req.body, clientKey);
+      res.status(result && typeof result === "object" && "ok" in result && result.ok === true ? 200 : 400).json(result);
+    });
+  }
 
   // Serve static files from dist/public in production
   const staticPath =
