@@ -67,4 +67,8 @@ The Wave 10 static validator and unit tests must fail when:
 - provenance ranking produces a result without lexical relevance;
 - the Knowledge Nexus provenance ledger or truth boundary is removed.
 
+## Integration lineage
+
+Wave 10 is qualified against authoritative `main` only after Wave 9 entered `main` and the production cache-refresh release completed Pages deployment and production smoke successfully. Retargeting PR #32 to `main` requires a fresh current-head pull-request validation cycle before the PR can leave draft state or be considered for merge.
+
 This contract is deliberately conservative. DivyaNexus should become more authoritative by adding inspectable evidence, not by increasing confidence language ahead of the evidence.
