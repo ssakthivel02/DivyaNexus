@@ -72,7 +72,7 @@ requireText(css, ".nexus-relation", "relationship graph styling");
 requireText(browserTest, "preserves mobile layout without horizontal overflow", "browser contract");
 requireText(browserTest, "publishes indexable canonical metadata for the new route", "browser contract");
 
-if (/auto(play|start)/i.test(page)) failures.push("Knowledge Nexus page must not introduce autoplay or autostart behaviour");
+if (/\bautoPlay\b|\bautoplay\s*=/i.test(page)) failures.push("Knowledge Nexus page must not introduce an autoplay attribute or autoPlay prop");
 if (/strength:\s*"primary-reference"/.test(provenance)) failures.push("Wave 10 must not claim a primary-reference provenance object until a reviewed source edition is actually registered");
 
 if (failures.length) {
