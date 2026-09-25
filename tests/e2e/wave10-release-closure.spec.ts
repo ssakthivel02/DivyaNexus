@@ -73,15 +73,18 @@ test.describe("Wave 10 release closure", () => {
   });
 
   test("Wave 10 remains route-lazy rather than importing Knowledge Nexus eagerly", async ({ page }) => {
+    const nexusRequests: string[] = [];
+    page.on("request", (request) => {
+      if (/KnowledgeNexus-[^/]+\.js(?:\?|$)/.test(request.url())) nexusRequests.push(request.url());
+    });
+
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.locator(".route-loading")).toHaveCount(0, { timeout: 15_000 });
+    expect(nexusRequests).toEqual([]);
 
-    const before = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => entry.name));
     await page.goto("/nexus", { waitUntil: "domcontentloaded" });
     await expect(page.locator(".route-loading")).toHaveCount(0, { timeout: 15_000 });
-    const after = await page.evaluate(() => performance.getEntriesByType("resource").map((entry) => entry.name));
-
-    expect(after.length).toBeGreaterThanOrEqual(before.length);
     await expect(page.getByRole("heading", { name: "One intelligent doorway into the whole DivyaNexus universe." })).toBeVisible();
+    expect(nexusRequests.length).toBeGreaterThan(0);
   });
 });
