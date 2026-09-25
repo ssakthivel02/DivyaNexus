@@ -2,7 +2,7 @@ const STORAGE_KEY = "divyanexus.learningJourneys.v1";
 
 export type LocalLearningProgress = Record<string, readonly string[]>;
 
-function sanitise(value: unknown): LocalLearningProgress {
+export function sanitiseLocalLearningProgress(value: unknown): LocalLearningProgress {
   if (!value || typeof value !== "object" || Array.isArray(value)) return {};
   return Object.fromEntries(
     Object.entries(value as Record<string, unknown>).flatMap(([journeyId, stepIds]) => {
@@ -16,14 +16,14 @@ function sanitise(value: unknown): LocalLearningProgress {
 export function readLocalLearningProgress(): LocalLearningProgress {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);
-    return raw ? sanitise(JSON.parse(raw)) : {};
+    return raw ? sanitiseLocalLearningProgress(JSON.parse(raw)) : {};
   } catch {
     return {};
   }
 }
 
 export function writeLocalLearningProgress(progress: LocalLearningProgress) {
-  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitise(progress)));
+  window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sanitiseLocalLearningProgress(progress)));
   window.dispatchEvent(new CustomEvent("divyanexus-learning-change"));
 }
 
