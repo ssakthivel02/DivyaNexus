@@ -41,6 +41,18 @@ test.describe("DivyaNexus Wave 10 Knowledge Nexus", () => {
     await expect(page.getByRole("heading", { name: "One intelligent doorway into the whole DivyaNexus universe." })).toBeVisible();
   });
 
+  test("shows provenance and ranking rationale on knowledge search results", async ({ page }) => {
+    await page.goto("/search?q=dharma", { waitUntil: "domcontentloaded" });
+    await expect(page.locator(".route-loading")).toHaveCount(0, { timeout: 15_000 });
+
+    const ranked = page.locator('[data-provenance-ranked="true"]');
+    await expect(ranked.first()).toBeVisible();
+    await expect(ranked.first().locator(".search-cinema__evidence")).toContainText(/Reference present|Editorial overview|Provenance not yet registered/);
+    await expect(ranked.first().locator(".search-cinema__rank-reason")).toContainText("textual match first");
+    await expect(ranked.first()).toHaveAttribute("data-match-score", /\d+/);
+    await expect(ranked.first()).toHaveAttribute("data-evidence-score", /\d+/);
+  });
+
   test("preserves mobile layout without horizontal overflow", async ({ page }) => {
     await page.setViewportSize({ width: 390, height: 844 });
     await openNexus(page);
