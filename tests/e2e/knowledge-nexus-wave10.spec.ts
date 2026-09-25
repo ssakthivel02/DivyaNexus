@@ -21,17 +21,22 @@ test.describe("DivyaNexus Wave 10 Knowledge Nexus", () => {
   test("connects the six Wave 10 gateways to registered product routes", async ({ page }) => {
     await openNexus(page);
 
+    const gatewayGrid = page.locator(".nexus-grid");
     for (const target of ["/scriptures", "/deities", "/temples", "/life-guidance", "/audio", "/ask-divya"]) {
-      await expect(page.locator(`a[href="${target}"]`).first()).toBeVisible();
+      await expect(gatewayGrid.locator(`a[href="${target}"]`)).toBeVisible();
     }
   });
 
   test("is reachable from the global universe navigation", async ({ page }) => {
     await page.goto("/", { waitUntil: "domcontentloaded" });
     await expect(page.locator(".route-loading")).toHaveCount(0, { timeout: 15_000 });
-    const universe = page.getByRole("button", { name: /Universe/ });
-    await universe.click();
-    await page.getByRole("menuitem", { name: /Knowledge Nexus/ }).click();
+
+    const universe = page.locator(".header-universe");
+    await universe.hover();
+    const menu = page.locator("#universe-navigation-menu");
+    await expect(menu).toHaveClass(/is-open/);
+    await menu.locator('a[href="/nexus"]').click();
+
     await expect(page).toHaveURL(/\/nexus$/);
     await expect(page.getByRole("heading", { name: "One intelligent doorway into the whole DivyaNexus universe." })).toBeVisible();
   });
