@@ -61,8 +61,8 @@ jobs:
         run: |
           set -euo pipefail
           routes=(
-            scriptures rig-veda bhagavad-gita audio deities deities/murugan
-            ask-divya life-guidance glossary learning kids collection-status
+            nexus scriptures rig-veda bhagavad-gita audio deities deities/murugan
+            temples ask-divya life-guidance glossary learning kids collection-status
             library sources privacy status
           )
           for route in "${routes[@]}"; do
