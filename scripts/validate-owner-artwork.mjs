@@ -73,7 +73,7 @@ if (!css.includes("focus-visible")) failures.push("Owner artwork actions lack a 
 
 const serviceWorker = readFileSync(serviceWorkerPath, "utf8");
 if (!serviceWorker.includes("owner-selected-vision.webp")) failures.push("Owner artwork is not included in the offline shell");
-if (!serviceWorker.includes("divyanexus-stage-b-wave8-v1")) failures.push("Service-worker cache was not versioned for Wave 8");
+if (!serviceWorker.includes("divyanexus-stage-b-wave9-v1")) failures.push("Service-worker cache was not refreshed for Wave 9");
 
 if (failures.length) {
   console.error("Owner-artwork validation failed:\n- " + failures.join("\n- "));

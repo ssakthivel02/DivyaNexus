@@ -54,7 +54,7 @@ for (const marker of ['id="owner-portal-vision"', 'loading="eager"', 'fetchPrior
   if (!text.artwork.includes(marker)) failures.push(`Owner artwork component is missing marker: ${marker}`);
 }
 if (!text.main.includes('import "./readability-audio-wave8.css"')) failures.push("Wave 8 CSS is not loaded by the application entry");
-if (!text.worker.includes("divyanexus-stage-b-wave8-v1")) failures.push("Service worker cache is not Wave 8");
+if (!text.worker.includes("divyanexus-stage-b-wave9-v1")) failures.push("Service worker cache is not refreshed for Wave 9");
 
 if (failures.length) {
   console.error("Readability/audio validation failed:\n- " + failures.join("\n- "));
