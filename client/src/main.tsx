@@ -15,8 +15,9 @@ markApplicationReady();
 if ("serviceWorker" in navigator && import.meta.env.PROD) {
   window.addEventListener("load", () => {
     const base = import.meta.env.BASE_URL;
-    navigator.serviceWorker.register(`${base}sw.js`, { scope: base }).then((registration) => {
+    navigator.serviceWorker.register(`${base}sw.js`, { scope: base, updateViaCache: "none" }).then((registration) => {
       document.documentElement.dataset.divyanexusServiceWorker = "registered";
+      void registration.update();
       registration.addEventListener("updatefound", () => {
         const worker = registration.installing;
         worker?.addEventListener("statechange", () => {
