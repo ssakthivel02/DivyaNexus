@@ -73,7 +73,7 @@ jobs:
             grep -Fq 'data-divyanexus-version="'"$EXPECTED_RELEASE"'"' "$file"
           done
 
-      - name: Verify Wave 8 offline and public endpoints
+      - name: Verify Wave 9 offline and public endpoints
         shell: bash
         run: |
           set -euo pipefail
@@ -83,7 +83,7 @@ jobs:
             echo "$code /$endpoint"
             test "$code" = 200
           done
-          grep -Fq 'divyanexus-stage-b-wave8-v1' /tmp/sw_js
+          grep -Fq 'divyanexus-stage-b-wave9-v1' /tmp/sw_js
           grep -Fq 'owner-selected-vision.webp' /tmp/sw_js
           grep -Fq 'This path is not cached yet.' /tmp/offline_html
           grep -Fq '"shortcuts"' /tmp/manifest_webmanifest
