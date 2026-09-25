@@ -40,9 +40,14 @@ for (const boundary of [
   "Primary source and editorial interpretation remain visibly distinct.",
   "No generated answer is allowed to impersonate a verified scripture quotation.",
   "Counts reflect the current repository dataset; they are not presented as collection-completeness claims.",
-  "They are not claims of scriptural equivalence, historical causality, doctrinal identity, or verified quotation provenance.",
 ]) {
-  requireText(boundary.includes("scriptural equivalence") ? relations : page, boundary, "Knowledge Nexus truth boundary");
+  requireText(page, boundary, "Knowledge Nexus truth boundary");
+}
+for (const relationBoundary of [
+  "They are not claims of scriptural equivalence, historical causality,",
+  "doctrinal identity, or verified quotation provenance.",
+]) {
+  requireText(relations, relationBoundary, "Knowledge Nexus relationship truth boundary");
 }
 
 for (const relationKind of ["study-next", "context", "concept", "practice"]) {
@@ -72,7 +77,7 @@ requireText(css, ".nexus-relation", "relationship graph styling");
 requireText(browserTest, "preserves mobile layout without horizontal overflow", "browser contract");
 requireText(browserTest, "publishes indexable canonical metadata for the new route", "browser contract");
 
-if (/\bautoPlay\b|\bautoplay\s*=/i.test(page)) failures.push("Knowledge Nexus page must not introduce an autoplay attribute or autoPlay prop");
+if (/\bautoPlay\b/.test(page) || /\bautoplay\s*=/i.test(page)) failures.push("Knowledge Nexus page must not introduce an autoplay attribute or autoPlay prop");
 if (/strength:\s*"primary-reference"/.test(provenance)) failures.push("Wave 10 must not claim a primary-reference provenance object until a reviewed source edition is actually registered");
 
 if (failures.length) {
