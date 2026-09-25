@@ -7,10 +7,13 @@ import { ArrowUpRight, History, Mic, Search, Sparkles, X } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { ASSETS, searchRecords, type ContentCategory } from "@/data/content";
 import { editorialCollections, type EditorialCollection } from "@/data/editorial";
+import { getProvenanceForRecord } from "@/data/provenance";
 import { searchDeityRecords } from "@/features/deities";
 import { searchEditorialRecords } from "@/lib/editorialSearch";
 import { getSavedSearches, saveSearch } from "@/lib/localLibrary";
+import { evidenceLabel, rankRecordsByProvenance } from "@/lib/provenanceSearch";
 import { EditorialStatusBadge } from "@/components/EditorialStatusBadge";
+import "@/knowledge-provenance.css";
 
 type SearchCategory = ContentCategory | "Kids" | "All";
 
@@ -29,6 +32,20 @@ export default function SearchPage() {
     () => category === "Kids" ? [] : searchRecords(query, category as ContentCategory | "All"),
     [query, category],
   );
+  const rankedBaseResults = useMemo(() => {
+    const ranked = rankRecordsByProvenance(baseResults, query);
+    const rankedIds = new Set(ranked.map(({ record }) => record.id));
+    const aliasOnlyMatches = baseResults
+      .filter((record) => !rankedIds.has(record.id))
+      .map((record) => ({
+        record,
+        provenance: getProvenanceForRecord(record.id),
+        matchScore: 0,
+        evidenceScore: 0,
+        totalScore: 0,
+      }));
+    return [...ranked, ...aliasOnlyMatches];
+  }, [baseResults, query]);
   const deityResults = useMemo(
     () => query && (category === "All" || category === "Deity") ? searchDeityRecords(query) : [],
     [query, category],
@@ -39,7 +56,7 @@ export default function SearchPage() {
     if (!editorialCollectionNames.has(category as EditorialCollection)) return [];
     return searchEditorialRecords(query, category as EditorialCollection);
   }, [query, category]);
-  const totalResults = baseResults.length + deityResults.length + editorialResults.length;
+  const totalResults = rankedBaseResults.length + deityResults.length + editorialResults.length;
 
   useEffect(() => {
     const refresh = () => setRecent(getSavedSearches());
@@ -79,11 +96,14 @@ export default function SearchPage() {
       <div className="search-cinema__utilities"><div className="search-cinema__filters" aria-label="Filter search results">{categories.map((item) => <button key={item} onClick={() => setCategory(item)} className={category === item ? "is-active" : ""} aria-pressed={category === item}>{item}</button>)}</div><button className="search-cinema__voice" type="button" onClick={() => setVoiceNotice(true)}><Mic size={15} aria-hidden="true" />Voice-ready</button></div>
       {voiceNotice && <div className="search-cinema__voice-notice" role="status">Voice search is intentionally not enabled in this static release. Use Tamil, English, or transliteration input above.</div>}
       {!query && <div className="search-cinema__starting-points"><div><p className="scene-kicker"><Sparkles size={14} aria-hidden="true" />Suggested doorways</p><div className="search-cinema__chips">{suggestions.map((term) => <button key={term} onClick={() => runSearch(term)}>{term}</button>)}</div></div>{recent.length > 0 && <div><p className="scene-kicker"><History size={14} aria-hidden="true" />Your browser-local history</p><div className="search-cinema__recent">{recent.slice(0, 5).map((term) => <button key={term} onClick={() => runSearch(term)}><History size={13} aria-hidden="true" />{term}</button>)}</div></div>}</div>}
-      <div className="search-cinema__results-heading"><p className="scene-kicker">Search field</p><h2>{query ? <>{totalResults} {totalResults === 1 ? "record" : "records"} found</> : <>Begin with a <em>question.</em></>}</h2><p>{query ? "Unicode-normalized aliases bring Tamil, English, and transliteration together while preserving record type and review status." : "Choose a suggestion, type a word, or explore the local record collection."}</p><Link href="/collection-status">Review collection coverage <ArrowUpRight size={14} aria-hidden="true" /></Link></div>
+      <div className="search-cinema__results-heading"><p className="scene-kicker">Search field</p><h2>{query ? <>{totalResults} {totalResults === 1 ? "record" : "records"} found</> : <>Begin with a <em>question.</em></>}</h2><p>{query ? "Textual relevance determines whether a record appears. Registered provenance may add only a bounded ranking boost, and the evidence state remains visible on each ranked knowledge record." : "Choose a suggestion, type a word, or explore the local record collection."}</p><Link href="/collection-status">Review collection coverage <ArrowUpRight size={14} aria-hidden="true" /></Link></div>
       {query && <div className="search-cinema__results">
         {deityResults.map((record, index) => <Link key={`deity-${record.slug}`} href={`/deities/${record.slug}`} onClick={() => saveSearch(query)} className="search-cinema__result"><span className="search-cinema__result-index">{String(index + 1).padStart(2, "0")}</span><div><p>Deity encyclopedia · {record.editorialStatus}</p><h3>{record.name}<span lang="ta">{record.tamilName}</span></h3><span>{record.strapline}</span></div><ArrowUpRight size={20} aria-hidden="true" /></Link>)}
-        {baseResults.map((record, index) => <Link key={record.id} href={`${record.route}?record=${record.id}`} onClick={() => saveSearch(query)} className="search-cinema__result"><span className="search-cinema__result-index">{String(deityResults.length + index + 1).padStart(2, "0")}</span><div><p>{record.category}</p><h3>{record.title}<span lang="ta">{record.tamilTitle}</span></h3><span>{record.englishMeaning}</span></div><ArrowUpRight size={20} aria-hidden="true" /></Link>)}
-        {editorialResults.map((record, index) => <Link key={record.id} href={record.route} onClick={() => saveSearch(query)} className="search-cinema__result"><span className="search-cinema__result-index">{String(deityResults.length + baseResults.length + index + 1).padStart(2, "0")}</span><div><p>{record.collection} editorial pathway</p><h3>{record.title}<span lang="ta">{record.tamilTitle}</span></h3><span>{record.summary}</span><EditorialStatusBadge status={record.status} /></div><ArrowUpRight size={20} aria-hidden="true" /></Link>)}
+        {rankedBaseResults.map((result, index) => {
+          const record = result.record;
+          return <Link key={record.id} href={`${record.route}?record=${record.id}`} onClick={() => saveSearch(query)} className="search-cinema__result" data-provenance-ranked="true" data-match-score={result.matchScore} data-evidence-score={result.evidenceScore} data-total-score={result.totalScore}><span className="search-cinema__result-index">{String(deityResults.length + index + 1).padStart(2, "0")}</span><div><p>{record.category}</p><h3>{record.title}<span lang="ta">{record.tamilTitle}</span></h3><span>{record.englishMeaning}</span><div className="search-cinema__evidence" aria-label={`Evidence status for ${record.title}`}><strong>{evidenceLabel(result.provenance)}</strong>{result.provenance && <small>{result.provenance.sourceLabel} · {result.provenance.reference}</small>}<small className="search-cinema__rank-reason">Why this ranks: textual match first{result.evidenceScore > 0 ? " · bounded evidence-context boost" : " · no evidence boost applied"}.</small></div></div><ArrowUpRight size={20} aria-hidden="true" /></Link>;
+        })}
+        {editorialResults.map((record, index) => <Link key={record.id} href={record.route} onClick={() => saveSearch(query)} className="search-cinema__result"><span className="search-cinema__result-index">{String(deityResults.length + rankedBaseResults.length + index + 1).padStart(2, "0")}</span><div><p>{record.collection} editorial pathway</p><h3>{record.title}<span lang="ta">{record.tamilTitle}</span></h3><span>{record.summary}</span><EditorialStatusBadge status={record.status} /></div><ArrowUpRight size={20} aria-hidden="true" /></Link>)}
         {!totalResults && <div className="search-cinema__empty"><div><Search size={24} aria-hidden="true" /><h3>No direct record has surfaced yet.</h3><p>Try “Shiva”, “அகத்தியர்”, “Deepavali”, “Murugan”, “karma”, “peace”, “dharma”, or “gnanam”.</p></div><div className="search-cinema__chips">{suggestions.slice(0, 6).map((term) => <button key={term} onClick={() => runSearch(term)}>{term}</button>)}</div></div>}
       </div>}
     </section>
