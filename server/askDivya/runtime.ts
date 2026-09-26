@@ -1,3 +1,4 @@
+import { randomUUID } from "crypto";
 import type { AskDivyaRequest, AskDivyaResponse } from "./contract";
 import { retrieveAskDivyaContext } from "./retrieval";
 import type { AskDivyaProvider, AskDivyaProviderInput } from "./provider";
@@ -25,6 +26,7 @@ export interface AskDivyaRuntimeOptions {
   failureThreshold?: number;
   cooldownMs?: number;
   now?: () => number;
+  requestIdFactory?: () => string;
 }
 
 export type AskDivyaRuntimeResult =
@@ -43,12 +45,14 @@ export class AskDivyaRuntime {
   private readonly failureThreshold: number;
   private readonly cooldownMs: number;
   private readonly now: () => number;
+  private readonly requestIdFactory: () => string;
 
   constructor(private readonly options: AskDivyaRuntimeOptions) {
     this.timeoutMs = options.timeoutMs ?? 8_000;
     this.failureThreshold = options.failureThreshold ?? 3;
     this.cooldownMs = options.cooldownMs ?? 30_000;
     this.now = options.now ?? Date.now;
+    this.requestIdFactory = options.requestIdFactory ?? (() => `ask-${this.now()}-${randomUUID()}`);
   }
 
   private circuitOpen(): boolean {
@@ -104,7 +108,7 @@ export class AskDivyaRuntime {
       };
     }
 
-    const requestId = `ask-${this.now()}`;
+    const requestId = this.requestIdFactory();
     const providerInput: AskDivyaProviderInput = {
       requestId,
       question: request.question,
@@ -121,9 +125,21 @@ export class AskDivyaRuntime {
     };
 
     const controller = new AbortController();
-    const timer = setTimeout(() => controller.abort(), this.timeoutMs);
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const timeout = new Promise<never>((_resolve, reject) => {
+      timer = setTimeout(() => {
+        controller.abort();
+        const error = new Error("ASK_DIVYA_TIMEOUT");
+        error.name = "AbortError";
+        reject(error);
+      }, this.timeoutMs);
+    });
+
     try {
-      const generated = await this.options.provider.generate(providerInput, controller.signal);
+      const generated = await Promise.race([
+        this.options.provider.generate(providerInput, controller.signal),
+        timeout,
+      ]);
       if (!generated.answer.trim()) throw new ProviderUnavailableError("EMPTY_PROVIDER_ANSWER");
       this.recordSuccess();
       return {
@@ -153,7 +169,7 @@ export class AskDivyaRuntime {
           : "Ask Divya live generation is temporarily unavailable.",
       };
     } finally {
-      clearTimeout(timer);
+      if (timer !== undefined) clearTimeout(timer);
     }
   }
 }
