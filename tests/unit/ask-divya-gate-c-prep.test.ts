@@ -1,5 +1,8 @@
 import { describe, expect, it } from "vitest";
-import { createAskDivyaStagingService } from "../../server/askDivya/stagingService";
+import {
+  createAskDivyaStagingService,
+  statusForAskDivyaResult,
+} from "../../server/askDivya/stagingService";
 
 describe("Ask Divya Gate C staging preparation", () => {
   it("reports mock-only staging readiness", () => {
@@ -16,6 +19,7 @@ describe("Ask Divya Gate C staging preparation", () => {
     const service = createAskDivyaStagingService();
     const result = await service.ask({ question: "", language: "en", mode: "simple" });
     expect(result).toMatchObject({ ok: false, code: "INVALID_REQUEST" });
+    expect(statusForAskDivyaResult(result)).toBe(400);
   });
 
   it("returns a deterministic mock response with repository citations", async () => {
@@ -35,17 +39,12 @@ describe("Ask Divya Gate C staging preparation", () => {
         uncertainty: "STAGING MOCK ONLY — no live AI provider was called.",
       },
     });
+    expect(statusForAskDivyaResult(result)).toBe(200);
 
-    if (!result || typeof result !== "object" || !("ok" in result) || result.ok !== true || !("response" in result)) {
-      throw new Error("expected successful staging response");
-    }
-
-    const response = result.response as {
-      answer: string;
-      citations: Array<{ recordId: string; reviewStatus: string }>;
-    };
-    expect(response.answer).toContain("STAGING MOCK:");
-    expect(response.citations[0]).toMatchObject({
+    if (!result.ok) throw new Error("expected successful staging response");
+    expect(result.response.answer).toContain("STAGING MOCK:");
+    expect(result.response.requestId).toMatch(/^ask-\d+-[0-9a-f-]{36}$/i);
+    expect(result.response.citations[0]).toMatchObject({
       recordId: "glossary-dharma",
       reviewStatus: "Editorial overview",
     });
@@ -59,5 +58,27 @@ describe("Ask Divya Gate C staging preparation", () => {
       mode: "simple",
     });
     expect(result).toMatchObject({ ok: false, code: "BLOCKED" });
+    expect(statusForAskDivyaResult(result)).toBe(422);
+  });
+
+  it("maps runtime failures to explicit transport statuses", () => {
+    expect(statusForAskDivyaResult({
+      ok: false,
+      code: "RATE_LIMITED",
+      message: "Too many requests. Please try again later.",
+      retryAfterMs: 1000,
+    })).toBe(429);
+
+    expect(statusForAskDivyaResult({
+      ok: false,
+      code: "PROVIDER_UNAVAILABLE",
+      message: "Ask Divya live generation is temporarily unavailable.",
+    })).toBe(503);
+
+    expect(statusForAskDivyaResult({
+      ok: false,
+      code: "INSUFFICIENT_REVIEWED_CORPUS",
+      message: "The reviewed DivyaNexus corpus is not sufficient to answer this safely.",
+    })).toBe(422);
   });
 });
