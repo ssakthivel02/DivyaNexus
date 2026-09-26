@@ -19,13 +19,17 @@ describe("Ask Divya Gate B guarded runtime", () => {
       answer: `Dharma study context: ${input.context[0]?.title ?? "reviewed context"}`,
       uncertainty: "Educational explanation from reviewed repository context.",
     }));
-    const runtime = new AskDivyaRuntime({ provider: mockProvider, now: () => 1000 });
+    const runtime = new AskDivyaRuntime({
+      provider: mockProvider,
+      now: () => 1000,
+      requestIdFactory: () => "ask-test-1000",
+    });
 
     const result = await runtime.execute(request, "client-a");
 
     expect(result.ok).toBe(true);
     if (!result.ok) return;
-    expect(result.response.requestId).toBe("ask-1000");
+    expect(result.response.requestId).toBe("ask-test-1000");
     expect(result.response.citations).toHaveLength(1);
     expect(result.response.citations[0]?.recordId).toBe("glossary-dharma");
     expect(result.response.citations[0]?.reviewStatus).toBe("Editorial overview");
@@ -105,6 +109,28 @@ describe("Ask Divya Gate B guarded runtime", () => {
             reject(error);
           });
         })),
+        timeoutMs: 25,
+      });
+
+      const pending = runtime.execute(request);
+      await vi.advanceTimersByTimeAsync(30);
+      const result = await pending;
+
+      expect(result).toEqual({
+        ok: false,
+        code: "PROVIDER_UNAVAILABLE",
+        message: "Ask Divya live generation timed out.",
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
+  it("enforces timeout even when a provider ignores AbortSignal", async () => {
+    vi.useFakeTimers();
+    try {
+      const runtime = new AskDivyaRuntime({
+        provider: provider(() => new Promise(() => undefined)),
         timeoutMs: 25,
       });
 

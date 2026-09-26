@@ -2,7 +2,7 @@ import express from "express";
 import { createServer } from "http";
 import path from "path";
 import { fileURLToPath } from "url";
-import { createAskDivyaStagingService } from "./askDivya/stagingService";
+import { createAskDivyaStagingService, statusForAskDivyaResult } from "./askDivya/stagingService";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -23,7 +23,7 @@ async function startServer() {
     app.post("/api/v1/ask", async (req, res) => {
       const clientKey = req.ip || "anonymous";
       const result = await staging.ask(req.body, clientKey);
-      res.status(result && typeof result === "object" && "ok" in result && result.ok === true ? 200 : 400).json(result);
+      res.status(statusForAskDivyaResult(result)).json(result);
     });
   }
 
