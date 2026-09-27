@@ -1,0 +1,58 @@
+name: Ask Divya Staging Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/ask-divya-staging-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  staging-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Verify staging health
+        shell: bash
+        run: |
+          set -euo pipefail
+          health="$(curl --fail --silent --show-error --max-time 30 \
+            https://divyanexus-ask-staging.onrender.com/api/v1/ask/health)"
+          HEALTH="$health" node <<'NODE'
+          const health = JSON.parse(process.env.HEALTH);
+          if (health.ok !== true) throw new Error('health ok must be true');
+          if (health.stage !== 'gate-c-prep') throw new Error('unexpected staging stage');
+          if (health.provider !== 'staging-mock-v1') throw new Error('unexpected staging provider');
+          if (health.liveProviderEnabled !== false) throw new Error('live provider must remain disabled');
+          console.log('health acceptance passed');
+          NODE
+
+      - name: Verify source-grounded mock POST
+        shell: bash
+        run: |
+          set -euo pipefail
+          response="$(curl --fail --silent --show-error --max-time 30 \
+            -H 'Content-Type: application/json' \
+            -X POST \
+            --data '{"question":"What is dharma?","language":"en","mode":"simple","contextRecordIds":["glossary-dharma"]}' \
+            https://divyanexus-ask-staging.onrender.com/api/v1/ask)"
+          RESPONSE="$response" node <<'NODE'
+          const result = JSON.parse(process.env.RESPONSE);
+          if (result.ok !== true) throw new Error('ask response ok must be true');
+          const response = result.response ?? result;
+          if (typeof response.requestId !== 'string' || !/^ask-\d+-[0-9a-f-]{36}$/i.test(response.requestId)) {
+            throw new Error('requestId is not the hardened timestamp+UUID format');
+          }
+          if (typeof response.answer !== 'string' || !response.answer.includes('STAGING MOCK:')) {
+            throw new Error('staging mock marker missing');
+          }
+          if (!Array.isArray(response.citations) || response.citations.length < 1) {
+            throw new Error('citations missing');
+          }
+          if (typeof response.uncertainty !== 'string' || !response.uncertainty.includes('STAGING MOCK ONLY')) {
+            throw new Error('mock-only uncertainty marker missing');
+          }
+          console.log(`ask acceptance passed: ${response.requestId}`);
+          NODE
