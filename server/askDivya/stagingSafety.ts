@@ -3,6 +3,7 @@ import type { AskDivyaModerationResult, AskDivyaRateLimitResult, AskDivyaRateLim
 
 const TEN_MINUTES_MS = 10 * 60 * 1000;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+const DEFAULT_MAX_TRACKED_CLIENTS = 5_000;
 
 interface CounterWindow {
   startedAt: number;
@@ -20,6 +21,7 @@ export interface StagingRateLimiterOptions {
   shortWindowMs?: number;
   dailyLimit?: number;
   dailyWindowMs?: number;
+  maxTrackedClients?: number;
 }
 
 export function createAskDivyaStagingRateLimiter(options: StagingRateLimiterOptions = {}): AskDivyaRateLimiter {
@@ -28,11 +30,47 @@ export function createAskDivyaStagingRateLimiter(options: StagingRateLimiterOpti
   const shortWindowMs = options.shortWindowMs ?? TEN_MINUTES_MS;
   const dailyLimit = options.dailyLimit ?? 30;
   const dailyWindowMs = options.dailyWindowMs ?? ONE_DAY_MS;
+  const maxTrackedClients = options.maxTrackedClients ?? DEFAULT_MAX_TRACKED_CLIENTS;
   const counters = new Map<string, ClientCounters>();
+
+  if (!Number.isInteger(maxTrackedClients) || maxTrackedClients < 1) {
+    throw new Error("maxTrackedClients must be a positive integer");
+  }
+
+  function pruneExpiredClients(current: number): number | undefined {
+    let earliestExpiry: number | undefined;
+
+    for (const [key, client] of counters) {
+      const expiresAt = client.daily.startedAt + dailyWindowMs;
+      if (current >= expiresAt) {
+        counters.delete(key);
+        continue;
+      }
+
+      if (earliestExpiry === undefined || expiresAt < earliestExpiry) {
+        earliestExpiry = expiresAt;
+      }
+    }
+
+    return earliestExpiry;
+  }
 
   return (clientKey: string): AskDivyaRateLimitResult => {
     const current = now();
-    const existing = counters.get(clientKey);
+    let existing = counters.get(clientKey);
+
+    if (!existing && counters.size >= maxTrackedClients) {
+      const earliestExpiry = pruneExpiredClients(current);
+      existing = counters.get(clientKey);
+
+      if (!existing && counters.size >= maxTrackedClients) {
+        return {
+          allowed: false,
+          retryAfterMs: Math.max(1, (earliestExpiry ?? current + shortWindowMs) - current),
+        };
+      }
+    }
+
     const client = existing ?? {
       short: { startedAt: current, count: 0 },
       daily: { startedAt: current, count: 0 },
