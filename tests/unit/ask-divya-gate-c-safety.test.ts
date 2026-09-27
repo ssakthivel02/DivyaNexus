@@ -58,6 +58,51 @@ describe("Ask Divya Gate C operational safety", () => {
     expect((await limiter("client-b")).allowed).toBe(true);
   });
 
+  it("fails closed for unseen clients when the bounded tracker is full", async () => {
+    let now = 1_000;
+    const limiter = createAskDivyaStagingRateLimiter({
+      now: () => now,
+      maxTrackedClients: 2,
+      dailyWindowMs: 60_000,
+    });
+
+    expect((await limiter("client-a")).allowed).toBe(true);
+    now += 10_000;
+    expect((await limiter("client-b")).allowed).toBe(true);
+
+    const blocked = await limiter("client-c");
+    expect(blocked.allowed).toBe(false);
+    expect(blocked.retryAfterMs).toBe(50_000);
+
+    expect((await limiter("client-a")).allowed).toBe(true);
+  });
+
+  it("prunes stale tracked clients before admitting a new client", async () => {
+    let now = 1_000;
+    const limiter = createAskDivyaStagingRateLimiter({
+      now: () => now,
+      maxTrackedClients: 2,
+      dailyWindowMs: 60_000,
+    });
+
+    expect((await limiter("client-a")).allowed).toBe(true);
+    now += 10_000;
+    expect((await limiter("client-b")).allowed).toBe(true);
+
+    now = 61_000;
+    expect((await limiter("client-c")).allowed).toBe(true);
+    expect((await limiter("client-b")).allowed).toBe(true);
+  });
+
+  it("rejects invalid bounded-tracker capacity", () => {
+    expect(() => createAskDivyaStagingRateLimiter({ maxTrackedClients: 0 })).toThrow(
+      "maxTrackedClients must be a positive integer",
+    );
+    expect(() => createAskDivyaStagingRateLimiter({ maxTrackedClients: 1.5 })).toThrow(
+      "maxTrackedClients must be a positive integer",
+    );
+  });
+
   it("blocks professional-advice and guaranteed-outcome requests while allowing educational questions", () => {
     expect(moderateAskDivyaStagingRequest(safeRequest)).toEqual({ allowed: true });
 
