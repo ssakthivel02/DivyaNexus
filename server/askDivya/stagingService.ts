@@ -3,6 +3,11 @@ import { validateAskDivyaRequest } from "./contract";
 import type { AskDivyaRuntimeResult } from "./runtime";
 import { AskDivyaRuntime } from "./runtime";
 import { AskDivyaStagingMockProvider } from "./mockProvider";
+import {
+  AskDivyaClientConcurrencyGuard,
+  createAskDivyaStagingRateLimiter,
+  moderateAskDivyaStagingRequest,
+} from "./stagingSafety";
 
 export interface AskDivyaStagingHealth {
   ok: true;
@@ -17,6 +22,7 @@ export type AskDivyaStagingResult =
       ok: false;
       code: AskDivyaErrorCode;
       message: string;
+      retryAfterMs?: number;
     };
 
 export interface AskDivyaStagingService {
@@ -60,8 +66,11 @@ export function statusForAskDivyaResult(result: AskDivyaStagingResult): number {
 }
 
 export function createAskDivyaStagingService(): AskDivyaStagingService {
+  const concurrency = new AskDivyaClientConcurrencyGuard();
   const runtime = new AskDivyaRuntime({
     provider: new AskDivyaStagingMockProvider(),
+    moderator: moderateAskDivyaStagingRequest,
+    rateLimiter: createAskDivyaStagingRateLimiter(),
     timeoutMs: 2_000,
     failureThreshold: 2,
     cooldownMs: 5_000,
@@ -78,8 +87,18 @@ export function createAskDivyaStagingService(): AskDivyaStagingService {
     },
 
     async ask(input: unknown, clientKey = "anonymous") {
+      let acquired = false;
       try {
         const request = validateAskDivyaRequest(input);
+        acquired = concurrency.tryAcquire(clientKey);
+        if (!acquired) {
+          return {
+            ok: false,
+            code: "RATE_LIMITED",
+            message: "Another Ask Divya request is already active for this client.",
+            retryAfterMs: 1000,
+          };
+        }
         return await runtime.execute(request, clientKey);
       } catch (error) {
         return {
@@ -87,6 +106,8 @@ export function createAskDivyaStagingService(): AskDivyaStagingService {
           code: validationErrorCode(error),
           message: "Invalid Ask Divya staging request.",
         };
+      } finally {
+        if (acquired) concurrency.release(clientKey);
       }
     },
   };
