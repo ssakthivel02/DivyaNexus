@@ -12,14 +12,25 @@ permissions:
 jobs:
   staging-acceptance:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 6
     steps:
-      - name: Verify staging health
+      - name: Verify staging health with bounded cold-start retry
         shell: bash
         run: |
           set -euo pipefail
-          health="$(curl --fail --silent --show-error --max-time 30 \
-            https://divyanexus-ask-staging.onrender.com/api/v1/ask/health)"
+          url="https://divyanexus-ask-staging.onrender.com/api/v1/ask/health"
+          health=""
+          for attempt in 1 2 3 4 5 6; do
+            echo "health attempt ${attempt}/6"
+            if health="$(curl --fail --silent --show-error --max-time 25 "$url")"; then
+              break
+            fi
+            if [ "$attempt" -eq 6 ]; then
+              echo "staging health did not respond within bounded retry window" >&2
+              exit 1
+            fi
+            sleep 10
+          done
           HEALTH="$health" node <<'NODE'
           const health = JSON.parse(process.env.HEALTH);
           if (health.ok !== true) throw new Error('health ok must be true');
@@ -33,7 +44,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          response="$(curl --fail --silent --show-error --max-time 30 \
+          response="$(curl --fail --silent --show-error --max-time 60 \
             -H 'Content-Type: application/json' \
             -X POST \
             --data '{"question":"What is dharma?","language":"en","mode":"simple","contextRecordIds":["glossary-dharma"]}' \
