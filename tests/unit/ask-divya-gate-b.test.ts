@@ -40,6 +40,41 @@ describe("Ask Divya Gate B guarded runtime", () => {
     });
   });
 
+  it("allows a provider answer at the 800-word boundary", async () => {
+    const answer = Array.from({ length: 800 }, (_, index) => `word${index + 1}`).join(" ");
+    const runtime = new AskDivyaRuntime({
+      provider: provider(async () => ({ answer })),
+      requestIdFactory: () => "ask-word-limit-800",
+    });
+
+    const result = await runtime.execute(request);
+
+    expect(result.ok).toBe(true);
+    if (!result.ok) return;
+    expect(result.response.answer.split(/\s+/)).toHaveLength(800);
+  });
+
+  it("fails closed when provider output exceeds 800 words", async () => {
+    const answer = Array.from({ length: 801 }, (_, index) => `word${index + 1}`).join(" ");
+    const usageRecorder = vi.fn(async () => undefined);
+    const runtime = new AskDivyaRuntime({
+      provider: provider(async () => ({
+        answer,
+        usage: { outputTokens: 900, costMicros: 999 },
+      })),
+      usageRecorder,
+    });
+
+    const result = await runtime.execute(request);
+
+    expect(result).toEqual({
+      ok: false,
+      code: "PROVIDER_UNAVAILABLE",
+      message: "Ask Divya live generation is temporarily unavailable.",
+    });
+    expect(usageRecorder).not.toHaveBeenCalled();
+  });
+
   it("blocks before provider execution when moderation denies a request", async () => {
     const generate = vi.fn(async () => ({ answer: "should not run" }));
     const runtime = new AskDivyaRuntime({
