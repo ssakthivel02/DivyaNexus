@@ -1,7 +1,7 @@
 import { randomUUID } from "crypto";
 import type { AskDivyaRequest, AskDivyaResponse } from "./contract";
 import { retrieveAskDivyaContext } from "./retrieval";
-import type { AskDivyaProvider, AskDivyaProviderInput } from "./provider";
+import type { AskDivyaProvider, AskDivyaProviderInput, AskDivyaProviderUsage } from "./provider";
 import { ProviderUnavailableError } from "./provider";
 
 export interface AskDivyaModerationResult {
@@ -18,10 +18,34 @@ export interface AskDivyaRateLimitResult {
 
 export type AskDivyaRateLimiter = (key: string) => Promise<AskDivyaRateLimitResult> | AskDivyaRateLimitResult;
 
+export interface AskDivyaBudgetContext {
+  providerId: string;
+  clientKey: string;
+  requestId: string;
+  language: AskDivyaRequest["language"];
+  mode: AskDivyaRequest["mode"];
+  contextRecordCount: number;
+}
+
+export interface AskDivyaBudgetResult {
+  allowed: boolean;
+  retryAfterMs?: number;
+}
+
+export type AskDivyaBudgetGuard = (context: AskDivyaBudgetContext) => Promise<AskDivyaBudgetResult> | AskDivyaBudgetResult;
+
+export interface AskDivyaUsageEvent extends AskDivyaBudgetContext {
+  usage: AskDivyaProviderUsage;
+}
+
+export type AskDivyaUsageRecorder = (event: AskDivyaUsageEvent) => Promise<void> | void;
+
 export interface AskDivyaRuntimeOptions {
   provider: AskDivyaProvider;
   moderator?: AskDivyaModerator;
   rateLimiter?: AskDivyaRateLimiter;
+  budgetGuard?: AskDivyaBudgetGuard;
+  usageRecorder?: AskDivyaUsageRecorder;
   timeoutMs?: number;
   failureThreshold?: number;
   cooldownMs?: number;
@@ -33,7 +57,7 @@ export type AskDivyaRuntimeResult =
   | { ok: true; response: AskDivyaResponse }
   | {
       ok: false;
-      code: "BLOCKED" | "RATE_LIMITED" | "INSUFFICIENT_REVIEWED_CORPUS" | "PROVIDER_UNAVAILABLE";
+      code: "BLOCKED" | "RATE_LIMITED" | "BUDGET_EXCEEDED" | "INSUFFICIENT_REVIEWED_CORPUS" | "PROVIDER_UNAVAILABLE";
       message: string;
       retryAfterMs?: number;
     };
@@ -109,6 +133,24 @@ export class AskDivyaRuntime {
     }
 
     const requestId = this.requestIdFactory();
+    const operationalContext: AskDivyaBudgetContext = {
+      providerId: this.options.provider.id,
+      clientKey,
+      requestId,
+      language: request.language,
+      mode: request.mode,
+      contextRecordCount: retrieved.records.length,
+    };
+    const budget = await this.options.budgetGuard?.(operationalContext);
+    if (budget && !budget.allowed) {
+      return {
+        ok: false,
+        code: "BUDGET_EXCEEDED",
+        message: "Ask Divya live generation is temporarily unavailable because its usage budget has been reached.",
+        ...(budget.retryAfterMs !== undefined ? { retryAfterMs: budget.retryAfterMs } : {}),
+      };
+    }
+
     const providerInput: AskDivyaProviderInput = {
       requestId,
       question: request.question,
@@ -141,6 +183,13 @@ export class AskDivyaRuntime {
         timeout,
       ]);
       if (!generated.answer.trim()) throw new ProviderUnavailableError("EMPTY_PROVIDER_ANSWER");
+      if (generated.usage && this.options.usageRecorder) {
+        try {
+          await this.options.usageRecorder({ ...operationalContext, usage: generated.usage });
+        } catch {
+          // Usage reporting is operational telemetry; admission must be enforced by budgetGuard before provider execution.
+        }
+      }
       this.recordSuccess();
       return {
         ok: true,
