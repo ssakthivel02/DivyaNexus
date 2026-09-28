@@ -61,9 +61,9 @@ jobs:
         run: |
           set -euo pipefail
           routes=(
-            nexus scriptures rig-veda bhagavad-gita audio deities deities/murugan
-            temples ask-divya life-guidance glossary learning kids collection-status
-            library sources privacy ai-transparency content-corrections status
+            nexus explore ask-divya search scriptures rig-veda bhagavad-gita upanishads
+            audio deities deities/murugan temples life-guidance glossary learning kids
+            collection-status library sources privacy ai-transparency content-corrections status
           )
           for route in "${routes[@]}"; do
             file="/tmp/$(echo "$route" | tr '/' '_').html"
