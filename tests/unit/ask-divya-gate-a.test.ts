@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { validateAskDivyaRequest } from "../../server/askDivya/contract";
-import { getAskDivyaCorpus } from "../../server/askDivya/corpus";
+import { getAskDivyaCorpus, getAskDivyaCorpusCoverage } from "../../server/askDivya/corpus";
 import { isPromptInjectionAttempt, retrieveAskDivyaContext } from "../../server/askDivya/retrieval";
 
 describe("Ask Divya Gate A", () => {
@@ -29,6 +29,21 @@ describe("Ask Divya Gate A", () => {
     expect(corpus.length).toBeGreaterThan(0);
     expect(corpus.every((record) => record.reviewStatus === "Editorial overview")).toBe(true);
     expect(corpus.some((record) => record.reviewStatus === "Starter record — source edition to be linked")).toBe(false);
+  });
+
+  it("reports reviewed source coverage without inventing unsupported categories", () => {
+    const corpus = getAskDivyaCorpus();
+    const coverage = getAskDivyaCorpusCoverage();
+
+    expect(coverage.totalEligibleRecords).toBe(corpus.length);
+    expect(Object.values(coverage.byCategory).reduce((total, count) => total + count, 0)).toBe(corpus.length);
+    expect(coverage.byCategory.Scripture).toBeGreaterThan(0);
+    expect(coverage.byCategory.Glossary).toBeGreaterThan(0);
+    expect(coverage.byCategory.Guidance).toBeGreaterThan(0);
+    expect(coverage.coveredCategories).toEqual(expect.arrayContaining(["Scripture", "Glossary", "Guidance"]));
+    expect(coverage.byCategory.Deity).toBe(0);
+    expect(coverage.byCategory.Temple).toBe(0);
+    expect(coverage.unavailableCategories).toEqual(expect.arrayContaining(["Deity", "Temple"]));
   });
 
   it("builds citations only from repository records and preserves real review status", () => {
