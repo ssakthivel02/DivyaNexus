@@ -3,7 +3,7 @@
  * Every answer visibly separates source signals, interpretation, generated explanation, and a next study path.
  */
 import { useMemo, useState } from "react";
-import { ArrowRight, ArrowUp, BookOpenCheck, CheckCircle2, CircleHelp, Languages, MessageCircleQuestion, Scale, Sparkles, Stars } from "lucide-react";
+import { ArrowRight, ArrowUp, BookOpenCheck, CheckCircle2, CircleHelp, Flag, Languages, MessageCircleQuestion, Scale, ShieldCheck, Sparkles, Stars } from "lucide-react";
 import { Link } from "wouter";
 import { ASSETS, askPrompts, guidanceResponses, records, type KnowledgeRecord } from "@/data/content";
 
@@ -55,6 +55,7 @@ export default function AskDivya() {
             {modes.map(({ label, detail, Icon }, index) => <button key={label} className={mode === label ? "is-active" : ""} onClick={() => setMode(label)}><span>0{index + 1}</span><Icon size={18} aria-hidden="true" /><div><strong>{label}</strong><small>{detail}</small></div></button>)}
           </div>
           <Link className="ask-mode-rail__method" href="/sources"><BookOpenCheck size={16} aria-hidden="true" />How source layers work <ArrowRight size={15} aria-hidden="true" /></Link>
+          <Link className="ask-mode-rail__method" href="/ai-transparency"><ShieldCheck size={16} aria-hidden="true" />How Ask Divya works <ArrowRight size={15} aria-hidden="true" /></Link>
         </aside>
 
         <section className="ask-conversation-stage" aria-label="Ask Divya conversation">
@@ -72,6 +73,7 @@ export default function AskDivya() {
                 <article><p className="ask-layer-label"><span className="ask-layer-compass" aria-hidden="true">✦</span>Layer 04 · Next learning path</p><Link href="/learning" className="ask-next-path">Continue with a pressure-free study path <ArrowRight size={15} aria-hidden="true" /></Link></article>
               </div>
               <div className="ask-boundary"><strong>Content boundary:</strong> Divya’s explanation is generated from a bounded local guide. It is not scripture quotation, a formal translation, professional advice, or a substitute for a qualified teacher.</div>
+              <p><Link className="inline-link" href="/ai-transparency"><ShieldCheck size={15} aria-hidden="true" />AI transparency <ArrowRight size={15} aria-hidden="true" /></Link> <Link className="inline-link" href="/content-corrections?from=ask-divya" style={{ marginLeft: "0.55rem" }}><Flag size={15} aria-hidden="true" />Report content issue <ArrowRight size={15} aria-hidden="true" /></Link></p>
             </>}
           </div>
           <div className="ask-composer-cinema"><textarea value={question} onChange={(event) => setQuestion(event.target.value)} onKeyDown={(event) => { if ((event.metaKey || event.ctrlKey) && event.key === "Enter") submit(); }} placeholder="Ask about a passage, a concept, or a reflection…" aria-label="Your question for Ask Divya" /><button className="button button--primary button--glow" onClick={submit} disabled={!question.trim()} aria-label="Send question"><ArrowUp size={17} aria-hidden="true" /><span>Ask Divya</span></button></div>
