@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ArrowRight, BookOpenCheck, Flag, MessageSquareText, ShieldCheck } from "lucide-react";
+import { ArrowRight, Flag, ShieldCheck } from "lucide-react";
 
 const reviewSteps = [
   ["1", "Submit", "Use the contact route and identify the exact page, record, citation or Ask Divya response that needs review."],
