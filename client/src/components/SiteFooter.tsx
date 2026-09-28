@@ -9,7 +9,7 @@ import { BrandMark } from "@/components/BrandMark";
 const footerGroups = [
   { title: "Explore", links: [["Scriptures", "/scriptures"], ["Deities", "/deities"], ["Temples", "/temples"], ["Learning", "/learning"], ["Audio", "/audio"]] },
   { title: "Study", links: [["Ask Divya", "/ask-divya"], ["Life Guidance", "/life-guidance"], ["Glossary", "/glossary"], ["Collection Status", "/collection-status"], ["Sources", "/sources"], ["About", "/about"]] },
-  { title: "Support & legal", links: [["System Status", "/status"], ["Privacy", "/privacy"], ["Terms", "/terms"], ["AI Disclaimer", "/disclaimer"], ["Delete Account", "/delete-account"], ["Contact", "/contact"]] },
+  { title: "Support & legal", links: [["System Status", "/status"], ["AI Transparency", "/ai-transparency"], ["Content Corrections", "/content-corrections"], ["Privacy", "/privacy"], ["Terms", "/terms"], ["AI Disclaimer", "/disclaimer"], ["Delete Account", "/delete-account"], ["Contact", "/contact"]] },
 ] as const;
 
 export function SiteFooter() {

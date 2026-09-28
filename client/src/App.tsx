@@ -17,10 +17,12 @@ import { SiteFooter } from "@/components/SiteFooter";
 import { SiteHeader } from "@/components/SiteHeader";
 import { getPreference, setPreference } from "@/lib/localLibrary";
 const About = lazy(() => import("@/pages/About"));
+const AiTransparency = lazy(() => import("@/pages/AiTransparency"));
 const AskDivya = lazy(() => import("@/pages/AskDivya"));
 const Audio = lazy(() => import("@/pages/Audio"));
 const CollectionStatus = lazy(() => import("@/pages/CollectionStatus"));
 const Contact = lazy(() => import("@/pages/Contact"));
+const ContentCorrections = lazy(() => import("@/pages/ContentCorrections"));
 const ContentDirectory = lazy(() => import("@/pages/ContentDirectory"));
 const DeityDetail = lazy(() => import("@/pages/DeityDetail"));
 const DeityDirectory = lazy(() => import("@/pages/DeityDirectory"));
@@ -76,6 +78,8 @@ function AppRoutes({ onAsk, onSearch }: { onAsk: () => void; onSearch: () => voi
       <Route path="/delete-account">{() => <LegalPage page="delete-account" />}</Route>
       <Route path="/delete-data">{() => <LegalPage page="delete-data" />}</Route>
       <Route path="/disclaimer">{() => <LegalPage page="disclaimer" />}</Route>
+      <Route path="/ai-transparency" component={AiTransparency} />
+      <Route path="/content-corrections" component={ContentCorrections} />
       <Route path="/contact" component={Contact} />
       <Route path="/status" component={Status} />
       <Route component={NotFound} />

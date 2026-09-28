@@ -190,6 +190,18 @@ export const routeMetaByPath: Readonly<Record<string, RouteMeta>> = {
     schemaType: "WebPage",
     label: "AI Disclaimer",
   },
+  "/ai-transparency": {
+    title: "Ask Divya AI Transparency — DivyaNexus",
+    description: "See what Ask Divya runs locally today, what the isolated mock staging service proves, how sources and uncertainty are handled, and which production AI capabilities remain inactive.",
+    schemaType: "WebPage",
+    label: "AI Transparency",
+  },
+  "/content-corrections": {
+    title: "Content Corrections and Reporting — DivyaNexus",
+    description: "Report a source, citation, transliteration, translation or generated-explanation concern and review the current human editorial correction intake boundary.",
+    schemaType: "WebPage",
+    label: "Content Corrections",
+  },
   "/contact": {
     title: "Contact and Corrections — DivyaNexus",
     description: "Use the DivyaNexus contact pathway for corrections, source suggestions, accessibility feedback, privacy requests and operational enquiries.",

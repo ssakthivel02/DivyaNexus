@@ -38,6 +38,8 @@ export const APP_ROUTES: readonly AppRoute[] = [
   { path: "/delete-account", label: "Delete Account", section: "legal", sitemap: true, smoke: false },
   { path: "/delete-data", label: "Delete Data", section: "legal", sitemap: true, smoke: false },
   { path: "/disclaimer", label: "AI Disclaimer", section: "legal", sitemap: true, smoke: false },
+  { path: "/ai-transparency", label: "AI Transparency", section: "legal", sitemap: true, smoke: true },
+  { path: "/content-corrections", label: "Content Corrections", section: "legal", sitemap: true, smoke: true },
   { path: "/contact", label: "Contact", section: "legal", sitemap: true, smoke: false },
   { path: "/status", label: "System Status", section: "system", sitemap: true, smoke: true },
 ] as const;
