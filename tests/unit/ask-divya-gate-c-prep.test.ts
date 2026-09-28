@@ -71,6 +71,12 @@ describe("Ask Divya Gate C staging preparation", () => {
 
     expect(statusForAskDivyaResult({
       ok: false,
+      code: "BUDGET_EXCEEDED",
+      message: "Ask Divya live generation is temporarily unavailable because its usage budget has been reached.",
+    })).toBe(503);
+
+    expect(statusForAskDivyaResult({
+      ok: false,
       code: "PROVIDER_UNAVAILABLE",
       message: "Ask Divya live generation is temporarily unavailable.",
     })).toBe(503);
