@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { ArrowRight, BookOpenCheck, CircleHelp, LockKeyhole, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowRight, BookOpenCheck, CircleHelp, ShieldCheck, Sparkles } from "lucide-react";
 
 const transparencySections = [
   {
