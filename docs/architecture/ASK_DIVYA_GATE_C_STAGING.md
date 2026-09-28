@@ -25,6 +25,20 @@ The health response must report:
 
 The POST route uses the Gate A request contract and the Gate B guarded runtime, including reviewed-corpus retrieval, citation preservation, prompt-injection blocking, timeout/circuit-breaker semantics and structured fallbacks.
 
+## Staging operational safety boundary
+
+The staging service applies the current anonymous request controls before provider execution:
+
+- 8 requests per 10-minute short window;
+- 30 requests per 24-hour window;
+- one active request per client key;
+- bounded professional-advice and guaranteed-outcome moderation;
+- a bounded in-memory client counter store, tracking at most 5,000 clients by default.
+
+When the client-counter store reaches capacity, expired daily-window entries are pruned before a new client is admitted. If the store is still full, an unseen client is rejected with the existing rate-limit response rather than evicting a live client counter. This fail-closed behavior prevents client-key churn from evicting active counters and bypassing limits.
+
+These controls are intentionally staging-only. The counter store is process-local, resets whenever the service process restarts, and is not shared between service instances. It is therefore **not** a distributed or durable production rate limiter. Production activation requires a server-side shared enforcement store or equivalent infrastructure that preserves limits across restarts and horizontally scaled instances.
+
 ## Provider boundary
 
 This stage uses only `AskDivyaStagingMockProvider`.
@@ -64,5 +78,6 @@ For a future staging deployment, verify:
 4. prompt-injection attempts are blocked;
 5. Tamil and English contract handling works;
 6. provider failure and timeout preserve safe fallback behavior;
-7. no credential appears in HTML, JS bundles, source maps, headers or API responses;
-8. the production GitHub Pages site remains unchanged until a separate activation decision.
+7. rate-limit capacity remains bounded and fails closed when no stale client entry can be pruned;
+8. no credential appears in HTML, JS bundles, source maps, headers or API responses;
+9. the production GitHub Pages site remains unchanged until a separate activation decision.
