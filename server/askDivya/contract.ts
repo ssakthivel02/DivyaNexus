@@ -58,6 +58,7 @@ export interface AskDivyaErrorResponse {
 }
 
 export const ASK_DIVYA_MAX_QUESTION_LENGTH = 1500;
+export const ASK_DIVYA_MAX_ANSWER_WORDS = 800;
 
 export function validateAskDivyaRequest(input: unknown): AskDivyaRequest {
   if (!input || typeof input !== "object") throw new Error("INVALID_REQUEST");
