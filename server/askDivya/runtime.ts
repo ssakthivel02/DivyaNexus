@@ -1,4 +1,5 @@
 import { randomUUID } from "crypto";
+import { ASK_DIVYA_MAX_ANSWER_WORDS } from "./contract";
 import type { AskDivyaRequest, AskDivyaResponse } from "./contract";
 import { retrieveAskDivyaContext } from "./retrieval";
 import type { AskDivyaProvider, AskDivyaProviderInput, AskDivyaProviderUsage } from "./provider";
@@ -61,6 +62,11 @@ export type AskDivyaRuntimeResult =
       message: string;
       retryAfterMs?: number;
     };
+
+function countWords(value: string): number {
+  const trimmed = value.trim();
+  return trimmed ? trimmed.split(/\s+/).length : 0;
+}
 
 export class AskDivyaRuntime {
   private consecutiveFailures = 0;
@@ -182,7 +188,11 @@ export class AskDivyaRuntime {
         this.options.provider.generate(providerInput, controller.signal),
         timeout,
       ]);
-      if (!generated.answer.trim()) throw new ProviderUnavailableError("EMPTY_PROVIDER_ANSWER");
+      const answer = generated.answer.trim();
+      if (!answer) throw new ProviderUnavailableError("EMPTY_PROVIDER_ANSWER");
+      if (countWords(answer) > ASK_DIVYA_MAX_ANSWER_WORDS) {
+        throw new ProviderUnavailableError("PROVIDER_ANSWER_TOO_LONG");
+      }
       if (generated.usage && this.options.usageRecorder) {
         try {
           await this.options.usageRecorder({ ...operationalContext, usage: generated.usage });
@@ -195,7 +205,7 @@ export class AskDivyaRuntime {
         ok: true,
         response: {
           requestId,
-          answer: generated.answer.trim(),
+          answer,
           language: request.language,
           mode: request.mode,
           citations: retrieved.citations,
