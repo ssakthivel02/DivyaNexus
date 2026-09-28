@@ -71,6 +71,61 @@ describe("Ask Divya Gate B guarded runtime", () => {
     expect(generate).not.toHaveBeenCalled();
   });
 
+  it("blocks before provider execution when the operational budget is exhausted", async () => {
+    const generate = vi.fn(async () => ({ answer: "should not run" }));
+    const budgetGuard = vi.fn(() => ({ allowed: false, retryAfterMs: 60_000 }));
+    const runtime = new AskDivyaRuntime({
+      provider: provider(generate),
+      budgetGuard,
+      requestIdFactory: () => "ask-budget-test",
+    });
+
+    const result = await runtime.execute(request, "client-budget");
+
+    expect(result).toEqual({
+      ok: false,
+      code: "BUDGET_EXCEEDED",
+      message: "Ask Divya live generation is temporarily unavailable because its usage budget has been reached.",
+      retryAfterMs: 60_000,
+    });
+    expect(generate).not.toHaveBeenCalled();
+    expect(budgetGuard).toHaveBeenCalledWith({
+      providerId: "mock-provider",
+      clientKey: "client-budget",
+      requestId: "ask-budget-test",
+      language: "en",
+      mode: "simple",
+      contextRecordCount: 1,
+    });
+    expect(budgetGuard.mock.calls[0]?.[0]).not.toHaveProperty("question");
+  });
+
+  it("records provider-reported usage without copying the raw question", async () => {
+    const usageRecorder = vi.fn(async () => undefined);
+    const runtime = new AskDivyaRuntime({
+      provider: provider(async () => ({
+        answer: "Grounded answer",
+        usage: { inputTokens: 120, outputTokens: 45, costMicros: 321 },
+      })),
+      usageRecorder,
+      requestIdFactory: () => "ask-usage-test",
+    });
+
+    const result = await runtime.execute(request, "client-usage");
+
+    expect(result.ok).toBe(true);
+    expect(usageRecorder).toHaveBeenCalledWith({
+      providerId: "mock-provider",
+      clientKey: "client-usage",
+      requestId: "ask-usage-test",
+      language: "en",
+      mode: "simple",
+      contextRecordCount: 1,
+      usage: { inputTokens: 120, outputTokens: 45, costMicros: 321 },
+    });
+    expect(usageRecorder.mock.calls[0]?.[0]).not.toHaveProperty("question");
+  });
+
   it("opens the circuit after repeated provider failures and resets after cooldown", async () => {
     let now = 10_000;
     const generate = vi.fn(async () => {

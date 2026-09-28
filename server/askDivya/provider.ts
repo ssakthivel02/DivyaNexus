@@ -15,10 +15,17 @@ export interface AskDivyaProviderInput {
   }>;
 }
 
+export interface AskDivyaProviderUsage {
+  inputTokens?: number;
+  outputTokens?: number;
+  costMicros?: number;
+}
+
 export interface AskDivyaProviderOutput {
   answer: string;
   uncertainty?: string;
   nextStudyRecordIds?: string[];
+  usage?: AskDivyaProviderUsage;
 }
 
 export interface AskDivyaProvider {

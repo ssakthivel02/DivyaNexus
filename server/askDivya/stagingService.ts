@@ -51,6 +51,7 @@ export function statusForAskDivyaResult(result: AskDivyaStagingResult): number {
   switch (result.code) {
     case "RATE_LIMITED":
       return 429;
+    case "BUDGET_EXCEEDED":
     case "PROVIDER_UNAVAILABLE":
       return 503;
     case "BLOCKED":
