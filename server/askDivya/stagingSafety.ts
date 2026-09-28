@@ -40,17 +40,17 @@ export function createAskDivyaStagingRateLimiter(options: StagingRateLimiterOpti
   function pruneExpiredClients(current: number): number | undefined {
     let earliestExpiry: number | undefined;
 
-    for (const [key, client] of counters) {
+    counters.forEach((client, key) => {
       const expiresAt = client.daily.startedAt + dailyWindowMs;
       if (current >= expiresAt) {
         counters.delete(key);
-        continue;
+        return;
       }
 
       if (earliestExpiry === undefined || expiresAt < earliestExpiry) {
         earliestExpiry = expiresAt;
       }
-    }
+    });
 
     return earliestExpiry;
   }
