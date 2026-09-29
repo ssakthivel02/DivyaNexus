@@ -55,6 +55,27 @@ export function findAskDivyaCorpusRecord(id: string): AskDivyaCorpusRecord | und
 }
 
 export function buildAskDivyaCitation(record: AskDivyaCorpusRecord): AskDivyaCitation {
+  const textForms: AskDivyaCitation["textForms"] = [
+    {
+      kind: "educational-meaning",
+      language: "ta",
+      text: record.tamilMeaning,
+    },
+    {
+      kind: "educational-meaning",
+      language: "en",
+      text: record.englishMeaning,
+    },
+  ];
+
+  if (record.transliteration?.trim()) {
+    textForms.unshift({
+      kind: "transliteration",
+      language: "und-Latn",
+      text: record.transliteration.trim(),
+    });
+  }
+
   return {
     recordId: record.id,
     label: record.title,
@@ -64,6 +85,7 @@ export function buildAskDivyaCitation(record: AskDivyaCorpusRecord): AskDivyaCit
     context: record.category,
     tradition: record.source,
     contentLayer: "modern-educational-explanation",
+    textForms,
     reviewStatus: record.reviewStatus,
   };
 }
