@@ -19,6 +19,18 @@ A category with a count of zero is explicitly **unavailable to Ask Divya from th
 
 At the time this guard was introduced, reviewed coverage exists for categories including Scripture, Glossary and Guidance. Deity and Temple currently report zero eligible records. This is intentional evidence of a content-review gap, not a signal to fabricate or automatically promote records.
 
+## Citation content layers
+
+Every Ask Divya citation carries `context`, `tradition` and a typed `contentLayer` so the response contract can distinguish:
+
+- `canonical-text`
+- `traditional-commentary`
+- `modern-educational-explanation`
+
+The currently eligible corpus consists of repository-authored `Editorial overview` records, not separately reviewed canonical quotations or traditional commentary editions. Therefore current citations are deliberately labeled `modern-educational-explanation`.
+
+A future record must not be labeled `canonical-text` or `traditional-commentary` merely because its source or title names a scripture or tradition. Those labels require separately reviewed source material appropriate to that layer.
+
 ## Safety consequence
 
 If a user supplies an unknown or non-eligible context record ID, retrieval remains fail-closed: no fabricated citation or substitute reviewed record is created for that ID. Existing Gate A tests also enforce exclusion of source-edition-pending starter records.

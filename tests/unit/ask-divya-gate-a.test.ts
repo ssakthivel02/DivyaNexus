@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { validateAskDivyaRequest } from "../../server/askDivya/contract";
-import { getAskDivyaCorpus, getAskDivyaCorpusCoverage } from "../../server/askDivya/corpus";
+import {
+  buildAskDivyaCitation,
+  getAskDivyaCorpus,
+  getAskDivyaCorpusCoverage,
+} from "../../server/askDivya/corpus";
 import { isPromptInjectionAttempt, retrieveAskDivyaContext } from "../../server/askDivya/retrieval";
 
 describe("Ask Divya Gate A", () => {
@@ -46,7 +50,7 @@ describe("Ask Divya Gate A", () => {
     expect(coverage.unavailableCategories).toEqual(expect.arrayContaining(["Deity", "Temple"]));
   });
 
-  it("builds citations only from repository records and preserves real review status", () => {
+  it("builds citations only from repository records and preserves source context", () => {
     const request = validateAskDivyaRequest({
       question: "What does dharma mean?",
       language: "en",
@@ -56,9 +60,24 @@ describe("Ask Divya Gate A", () => {
     const result = retrieveAskDivyaContext(request);
     expect(result.blocked).toBe(false);
     expect(result.citations.length).toBeGreaterThan(0);
-    expect(result.citations[0].recordId).toBe("glossary-dharma");
-    expect(result.citations[0].reviewStatus).toBe("Editorial overview");
+    expect(result.citations[0]).toMatchObject({
+      recordId: "glossary-dharma",
+      context: "Glossary",
+      tradition: "DivyaNexus glossary",
+      contentLayer: "modern-educational-explanation",
+      reviewStatus: "Editorial overview",
+    });
     expect(result.citations[0].route).toContain("record=glossary-dharma");
+  });
+
+  it("does not mislabel current editorial overviews as canonical text or traditional commentary", () => {
+    const citations = getAskDivyaCorpus().map(buildAskDivyaCitation);
+    expect(citations.length).toBeGreaterThan(0);
+    expect(citations.every((citation) => citation.context.length > 0)).toBe(true);
+    expect(citations.every((citation) => citation.tradition.length > 0)).toBe(true);
+    expect(citations.every((citation) => citation.contentLayer === "modern-educational-explanation")).toBe(true);
+    expect(citations.some((citation) => citation.contentLayer === "canonical-text")).toBe(false);
+    expect(citations.some((citation) => citation.contentLayer === "traditional-commentary")).toBe(false);
   });
 
   it("does not fabricate citations for unknown context IDs", () => {

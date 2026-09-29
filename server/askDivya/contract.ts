@@ -11,6 +11,13 @@ export const ASK_DIVYA_MODES = [
 ] as const;
 export type AskDivyaMode = (typeof ASK_DIVYA_MODES)[number];
 
+export const ASK_DIVYA_CONTENT_LAYERS = [
+  "canonical-text",
+  "traditional-commentary",
+  "modern-educational-explanation",
+] as const;
+export type AskDivyaContentLayer = (typeof ASK_DIVYA_CONTENT_LAYERS)[number];
+
 export interface AskDivyaRequest {
   question: string;
   language: AskDivyaLanguage;
@@ -24,6 +31,9 @@ export interface AskDivyaCitation {
   route: string;
   source: string;
   reference: string;
+  context: string;
+  tradition: string;
+  contentLayer: AskDivyaContentLayer;
   reviewStatus: string;
 }
 
