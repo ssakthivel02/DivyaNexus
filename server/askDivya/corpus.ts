@@ -61,6 +61,9 @@ export function buildAskDivyaCitation(record: AskDivyaCorpusRecord): AskDivyaCit
     route: `${record.route}?record=${encodeURIComponent(record.id)}`,
     source: record.source,
     reference: record.reference,
+    context: record.category,
+    tradition: record.source,
+    contentLayer: "modern-educational-explanation",
     reviewStatus: record.reviewStatus,
   };
 }
