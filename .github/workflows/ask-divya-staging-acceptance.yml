@@ -1,0 +1,115 @@
+name: Ask Divya Staging Acceptance
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - '.github/workflows/ask-divya-staging-acceptance.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  staging-acceptance:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Verify exact Gate C staging behavior
+        shell: bash
+        run: |
+          set -euo pipefail
+          base="https://divyanexus-ask-staging.onrender.com"
+
+          health=""
+          for attempt in 1 2 3 4 5 6; do
+            echo "health attempt ${attempt}/6"
+            if health="$(curl --fail --silent --show-error --max-time 25 "$base/api/v1/ask/health")"; then
+              break
+            fi
+            if [ "$attempt" -eq 6 ]; then
+              echo "staging health did not respond within bounded retry window" >&2
+              exit 1
+            fi
+            sleep 10
+          done
+
+          HEALTH="$health" node <<'NODE'
+          const health = JSON.parse(process.env.HEALTH);
+          if (health.ok !== true) throw new Error('health ok must be true');
+          if (health.stage !== 'gate-c-prep') throw new Error('unexpected staging stage');
+          if (health.provider !== 'staging-mock-v1') throw new Error('unexpected staging provider');
+          if (health.liveProviderEnabled !== false) throw new Error('live provider must remain disabled');
+          console.log('health acceptance passed');
+          NODE
+
+          safe_body='{"question":"What is dharma?","language":"en","mode":"simple","contextRecordIds":["glossary-dharma"]}'
+          response="$(curl --fail --silent --show-error --max-time 60 \
+            -H 'Content-Type: application/json' \
+            -X POST \
+            --data "$safe_body" \
+            "$base/api/v1/ask")"
+
+          RESPONSE="$response" node <<'NODE'
+          const result = JSON.parse(process.env.RESPONSE);
+          if (result.ok !== true) throw new Error('ask response ok must be true');
+          const response = result.response ?? result;
+          if (typeof response.requestId !== 'string' || !/^ask-\d+-[0-9a-f-]{36}$/i.test(response.requestId)) {
+            throw new Error('requestId is not the hardened timestamp+UUID format');
+          }
+          if (typeof response.answer !== 'string' || !response.answer.includes('STAGING MOCK:')) {
+            throw new Error('staging mock marker missing');
+          }
+          if (!Array.isArray(response.citations) || response.citations.length < 1) {
+            throw new Error('citations missing');
+          }
+          if (typeof response.uncertainty !== 'string' || !response.uncertainty.includes('STAGING MOCK ONLY')) {
+            throw new Error('mock-only uncertainty marker missing');
+          }
+          console.log(`source-grounded acceptance passed: ${response.requestId}`);
+          NODE
+
+          blocked_body='{"question":"Give me financial advice with a guaranteed return.","language":"en","mode":"simple","contextRecordIds":["glossary-dharma"]}'
+          blocked_code="$(curl --silent --show-error --max-time 60 \
+            -o /tmp/blocked.json -w '%{http_code}' \
+            -H 'Content-Type: application/json' \
+            -X POST \
+            --data "$blocked_body" \
+            "$base/api/v1/ask")"
+          test "$blocked_code" = "422"
+          BLOCKED="$(cat /tmp/blocked.json)" node <<'NODE'
+          const result = JSON.parse(process.env.BLOCKED);
+          if (result.ok !== false || result.code !== 'BLOCKED') {
+            throw new Error('moderation response must be BLOCKED');
+          }
+          console.log('moderation acceptance passed');
+          NODE
+
+          # The first safe POST above consumed one of the 8 short-window requests.
+          # Send seven more safe requests; all must remain accepted.
+          for attempt in 2 3 4 5 6 7 8; do
+            code="$(curl --silent --show-error --max-time 60 \
+              -o "/tmp/allowed-${attempt}.json" -w '%{http_code}' \
+              -H 'Content-Type: application/json' \
+              -X POST \
+              --data "$safe_body" \
+              "$base/api/v1/ask")"
+            test "$code" = "200"
+          done
+
+          limited_code="$(curl --silent --show-error --max-time 60 \
+            -o /tmp/limited.json -w '%{http_code}' \
+            -H 'Content-Type: application/json' \
+            -X POST \
+            --data "$safe_body" \
+            "$base/api/v1/ask")"
+          test "$limited_code" = "429"
+          LIMITED="$(cat /tmp/limited.json)" node <<'NODE'
+          const result = JSON.parse(process.env.LIMITED);
+          if (result.ok !== false || result.code !== 'RATE_LIMITED') {
+            throw new Error('ninth short-window request must be rate limited');
+          }
+          if (!(result.retryAfterMs > 0)) {
+            throw new Error('rate-limit response must include retryAfterMs');
+          }
+          console.log('rate-limit acceptance passed');
+          NODE
