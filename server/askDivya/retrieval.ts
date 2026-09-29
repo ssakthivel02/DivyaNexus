@@ -4,6 +4,16 @@ import { buildAskDivyaCitation, findAskDivyaCorpusRecord, getAskDivyaCorpus } fr
 const INJECTION_MARKERS = [
   "ignore previous instructions",
   "ignore all previous",
+  "disregard previous instructions",
+  "disregard prior instructions",
+  "override previous instructions",
+  "override your instructions",
+  "bypass safety",
+  "bypass your safety",
+  "disable safety",
+  "jailbreak",
+  "act as dan",
+  "do anything now",
   "system prompt",
   "developer message",
   "reveal your prompt",
@@ -12,7 +22,11 @@ const INJECTION_MARKERS = [
 ];
 
 function normalize(value: string): string {
-  return value.toLocaleLowerCase().normalize("NFKC");
+  return value
+    .toLocaleLowerCase()
+    .normalize("NFKC")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 function scoreRecord(question: string, record: ReturnType<typeof getAskDivyaCorpus>[number]): number {
