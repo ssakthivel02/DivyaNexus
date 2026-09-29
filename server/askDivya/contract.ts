@@ -18,6 +18,19 @@ export const ASK_DIVYA_CONTENT_LAYERS = [
 ] as const;
 export type AskDivyaContentLayer = (typeof ASK_DIVYA_CONTENT_LAYERS)[number];
 
+export const ASK_DIVYA_TEXT_FORM_KINDS = [
+  "transliteration",
+  "translation",
+  "educational-meaning",
+] as const;
+export type AskDivyaTextFormKind = (typeof ASK_DIVYA_TEXT_FORM_KINDS)[number];
+
+export interface AskDivyaCitationTextForm {
+  kind: AskDivyaTextFormKind;
+  language: string;
+  text: string;
+}
+
 export interface AskDivyaRequest {
   question: string;
   language: AskDivyaLanguage;
@@ -34,6 +47,7 @@ export interface AskDivyaCitation {
   context: string;
   tradition: string;
   contentLayer: AskDivyaContentLayer;
+  textForms: AskDivyaCitationTextForm[];
   reviewStatus: string;
 }
 

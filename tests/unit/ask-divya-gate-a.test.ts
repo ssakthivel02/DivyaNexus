@@ -80,6 +80,28 @@ describe("Ask Divya Gate A", () => {
     expect(citations.some((citation) => citation.contentLayer === "traditional-commentary")).toBe(false);
   });
 
+  it("distinguishes transliteration from translation and educational meaning", () => {
+    const citations = getAskDivyaCorpus().map(buildAskDivyaCitation);
+    expect(citations.length).toBeGreaterThan(0);
+
+    for (const citation of citations) {
+      expect(citation.textForms).toEqual(expect.arrayContaining([
+        expect.objectContaining({ kind: "educational-meaning", language: "ta" }),
+        expect.objectContaining({ kind: "educational-meaning", language: "en" }),
+      ]));
+      expect(citation.textForms.some((form) => form.kind === "translation")).toBe(false);
+    }
+
+    const dharma = citations.find((citation) => citation.recordId === "glossary-dharma");
+    expect(dharma).toBeDefined();
+    expect(dharma?.textForms).toContainEqual({
+      kind: "transliteration",
+      language: "und-Latn",
+      text: "dharma",
+    });
+    expect(dharma?.textForms.some((form) => form.kind === "translation")).toBe(false);
+  });
+
   it("does not fabricate citations for unknown context IDs", () => {
     const request = validateAskDivyaRequest({
       question: "zzzz-no-corpus-match",
