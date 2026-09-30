@@ -10,6 +10,10 @@ const reviewSteps = [
 
 export default function ContentCorrections() {
   const source = new URLSearchParams(window.location.search).get("from");
+  const contactHref = source === "ask-divya"
+    ? "/contact?intent=content-correction&from=ask-divya"
+    : "/contact?intent=content-correction";
+
   return (
     <main id="main-content" className="page-main">
       <section className="page-hero page-hero--compact">
@@ -25,7 +29,7 @@ export default function ContentCorrections() {
           <section className="article-section">
             <h2>What to include</h2>
             <p>Please include the page URL or record ID, the text or claim you are questioning, the relevant source or edition if known, and a short explanation of the concern. Do not include passwords, financial information, medical records or other unnecessary personal information.</p>
-            {source === "ask-divya" && <div className="notice-box"><strong>Ask Divya report:</strong> mention the question topic, visible citation label and the part of the generated explanation that should be reviewed. Do not paste sensitive personal data.</div>}
+            {source === "ask-divya" && <div className="notice-box" data-testid="ask-divya-correction-guidance"><strong>Ask Divya report:</strong> mention the question topic, visible citation label and the part of the generated explanation that should be reviewed. Do not paste sensitive personal data.</div>}
           </section>
           <section className="article-section">
             <h2>Editorial review path</h2>
@@ -42,9 +46,9 @@ export default function ContentCorrections() {
             <p>Examples include incorrect source attribution, citation mismatch, mistransliteration, misleading translation wording, flattened tradition context, invented or unsupported claims, accessibility problems, or an Ask Divya explanation that appears inconsistent with its cited record.</p>
           </section>
           <div className="notice-box"><strong>Correction principle:</strong> when reviewed evidence is insufficient, the safer outcome is to mark the content as uncertain or needs-review rather than replace one unsupported claim with another.</div>
-          <p><Link className="inline-link" href="/contact"><Flag size={15} aria-hidden="true" />Open correction contact path <ArrowRight size={15} aria-hidden="true" /></Link> <Link className="inline-link" href="/ai-transparency" style={{ marginLeft: "0.55rem" }}><ShieldCheck size={15} aria-hidden="true" />AI transparency <ArrowRight size={15} aria-hidden="true" /></Link></p>
+          <p><Link className="inline-link" href={contactHref}><Flag size={15} aria-hidden="true" />Open correction contact path <ArrowRight size={15} aria-hidden="true" /></Link> <Link className="inline-link" href="/ai-transparency" style={{ marginLeft: "0.55rem" }}><ShieldCheck size={15} aria-hidden="true" />AI transparency <ArrowRight size={15} aria-hidden="true" /></Link></p>
         </article>
-        <aside className="article-rail"><h2>Related</h2><Link href="/sources">Sources</Link><Link href="/ai-transparency">AI Transparency</Link><Link href="/disclaimer">AI Disclaimer</Link><Link href="/privacy">Privacy</Link><Link href="/contact">Contact</Link></aside>
+        <aside className="article-rail"><h2>Related</h2><Link href="/sources">Sources</Link><Link href="/ai-transparency">AI Transparency</Link><Link href="/disclaimer">AI Disclaimer</Link><Link href="/privacy">Privacy</Link><Link href={contactHref}>Contact</Link></aside>
       </section>
     </main>
   );
