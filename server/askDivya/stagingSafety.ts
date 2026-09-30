@@ -1,5 +1,10 @@
 import type { AskDivyaRequest } from "./contract";
-import type { AskDivyaModerationResult, AskDivyaRateLimitResult, AskDivyaRateLimiter } from "./runtime";
+import type {
+  AskDivyaModerationResult,
+  AskDivyaQuotaTier,
+  AskDivyaRateLimitResult,
+  AskDivyaRateLimiter,
+} from "./runtime";
 
 const TEN_MINUTES_MS = 10 * 60 * 1000;
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
@@ -15,20 +20,33 @@ interface ClientCounters {
   daily: CounterWindow;
 }
 
+interface QuotaPolicy {
+  shortLimit: number;
+  dailyLimit: number;
+}
+
 export interface StagingRateLimiterOptions {
   now?: () => number;
   shortLimit?: number;
   shortWindowMs?: number;
   dailyLimit?: number;
   dailyWindowMs?: number;
+  signedInShortLimit?: number;
+  signedInDailyLimit?: number;
   maxTrackedClients?: number;
 }
 
 export function createAskDivyaStagingRateLimiter(options: StagingRateLimiterOptions = {}): AskDivyaRateLimiter {
   const now = options.now ?? Date.now;
-  const shortLimit = options.shortLimit ?? 8;
+  const anonymousPolicy: QuotaPolicy = {
+    shortLimit: options.shortLimit ?? 8,
+    dailyLimit: options.dailyLimit ?? 30,
+  };
+  const signedInPolicy: QuotaPolicy = {
+    shortLimit: options.signedInShortLimit ?? 20,
+    dailyLimit: options.signedInDailyLimit ?? 100,
+  };
   const shortWindowMs = options.shortWindowMs ?? TEN_MINUTES_MS;
-  const dailyLimit = options.dailyLimit ?? 30;
   const dailyWindowMs = options.dailyWindowMs ?? ONE_DAY_MS;
   const maxTrackedClients = options.maxTrackedClients ?? DEFAULT_MAX_TRACKED_CLIENTS;
   const counters = new Map<string, ClientCounters>();
@@ -55,13 +73,15 @@ export function createAskDivyaStagingRateLimiter(options: StagingRateLimiterOpti
     return earliestExpiry;
   }
 
-  return (clientKey: string): AskDivyaRateLimitResult => {
+  return ({ clientKey, quotaTier }: { clientKey: string; quotaTier: AskDivyaQuotaTier }): AskDivyaRateLimitResult => {
     const current = now();
-    let existing = counters.get(clientKey);
+    const policy = quotaTier === "signed-in" ? signedInPolicy : anonymousPolicy;
+    const counterKey = `${quotaTier}:${clientKey}`;
+    let existing = counters.get(counterKey);
 
     if (!existing && counters.size >= maxTrackedClients) {
       const earliestExpiry = pruneExpiredClients(current);
-      existing = counters.get(clientKey);
+      existing = counters.get(counterKey);
 
       if (!existing && counters.size >= maxTrackedClients) {
         return {
@@ -83,13 +103,13 @@ export function createAskDivyaStagingRateLimiter(options: StagingRateLimiterOpti
       client.daily = { startedAt: current, count: 0 };
     }
 
-    if (client.short.count >= shortLimit) {
+    if (client.short.count >= policy.shortLimit) {
       return {
         allowed: false,
         retryAfterMs: Math.max(1, shortWindowMs - (current - client.short.startedAt)),
       };
     }
-    if (client.daily.count >= dailyLimit) {
+    if (client.daily.count >= policy.dailyLimit) {
       return {
         allowed: false,
         retryAfterMs: Math.max(1, dailyWindowMs - (current - client.daily.startedAt)),
@@ -98,7 +118,7 @@ export function createAskDivyaStagingRateLimiter(options: StagingRateLimiterOpti
 
     client.short.count += 1;
     client.daily.count += 1;
-    counters.set(clientKey, client);
+    counters.set(counterKey, client);
     return { allowed: true };
   };
 }
