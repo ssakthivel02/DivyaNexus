@@ -16,6 +16,8 @@ const modes = [
   { label: "Practical reflection", detail: "A question for daily life", Icon: CheckCircle2 },
 ] as const;
 
+const localUncertainty = "This is a bounded local educational guide assembled from reviewed editorial-overview records. It does not claim a verified canonical quotation, reviewed translation, complete commentary tradition, or final interpretation.";
+
 export default function AskDivya() {
   const contextualRecord = new URLSearchParams(window.location.search).get("context");
   const [mode, setMode] = useState<(typeof modes)[number]["label"]>("Simple explanation");
@@ -68,10 +70,11 @@ export default function AskDivya() {
                 <p>{response.response}</p>
               </article>
               <div className="ask-response-layers" aria-label="Response layers">
-                <article><p className="ask-layer-label"><BookOpenCheck size={13} aria-hidden="true" />Layer 01 · Source signals</p><div className="ask-source-links">{sourceRecords.map((record) => <Link key={record.id} href={`${record.route}?record=${record.id}`}><span>{record.source}</span><strong>{record.title}</strong><small>{record.reference}</small><ArrowRight size={15} aria-hidden="true" /></Link>)}</div></article>
+                <article><p className="ask-layer-label"><BookOpenCheck size={13} aria-hidden="true" />Layer 01 · Source signals</p><div className="ask-source-links" aria-label="Citation evidence">{sourceRecords.map((record) => <Link key={record.id} href={`${record.route}?record=${record.id}`}><span>{record.source}</span><strong>{record.title}</strong><small>{record.reference}</small><small>Review · {record.reviewStatus}</small><small>Evidence · modern educational explanation</small><ArrowRight size={15} aria-hidden="true" /></Link>)}</div></article>
                 <article><p className="ask-layer-label"><Scale size={13} aria-hidden="true" />Layer 02 · Interpretation boundary</p><p>These starter records are educational context. They are not being presented as a verified edition, a complete commentary tradition, or a universal conclusion.</p></article>
                 <article><p className="ask-layer-label"><span className="ask-layer-compass" aria-hidden="true">✦</span>Layer 04 · Next learning path</p><Link href="/learning" className="ask-next-path">Continue with a pressure-free study path <ArrowRight size={15} aria-hidden="true" /></Link></article>
               </div>
+              <div className="notice-box" data-testid="ask-local-uncertainty"><strong>Uncertainty:</strong> {localUncertainty}</div>
               <div className="ask-boundary"><strong>Content boundary:</strong> Divya’s explanation is generated from a bounded local guide. It is not scripture quotation, a formal translation, professional advice, or a substitute for a qualified teacher.</div>
               <p><Link className="inline-link" href="/ai-transparency"><ShieldCheck size={15} aria-hidden="true" />AI transparency <ArrowRight size={15} aria-hidden="true" /></Link> <Link className="inline-link" href="/content-corrections?from=ask-divya" style={{ marginLeft: "0.55rem" }}><Flag size={15} aria-hidden="true" />Report content issue <ArrowRight size={15} aria-hidden="true" /></Link></p>
             </>}
