@@ -5,6 +5,8 @@ import { retrieveAskDivyaContext } from "./retrieval";
 import type { AskDivyaProvider, AskDivyaProviderInput, AskDivyaProviderUsage } from "./provider";
 import { ProviderUnavailableError } from "./provider";
 
+export const ASK_DIVYA_DEFAULT_TIMEOUT_MS = 20_000;
+
 export interface AskDivyaModerationResult {
   allowed: boolean;
   reason?: string;
@@ -85,7 +87,7 @@ export class AskDivyaRuntime {
   private readonly requestIdFactory: () => string;
 
   constructor(private readonly options: AskDivyaRuntimeOptions) {
-    this.timeoutMs = options.timeoutMs ?? 8_000;
+    this.timeoutMs = options.timeoutMs ?? ASK_DIVYA_DEFAULT_TIMEOUT_MS;
     this.failureThreshold = options.failureThreshold ?? 3;
     this.cooldownMs = options.cooldownMs ?? 30_000;
     this.now = options.now ?? Date.now;
