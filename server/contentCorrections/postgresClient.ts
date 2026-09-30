@@ -20,6 +20,11 @@ export interface PostgresPoolConstructorLike {
   new (config: { connectionString: string; ssl: { ca: string } }): PostgresPoolLike;
 }
 
+export interface PostgresTlsConfig {
+  connectionString: string;
+  ssl: { ca: string };
+}
+
 function requireValue(value: string | undefined, error: string): string {
   const normalized = value?.trim();
   if (!normalized) throw new Error(error);
@@ -36,10 +41,7 @@ function decodeProjectCa(value: string): string {
   return ca;
 }
 
-export function buildPostgresTlsConfig(env: PostgresTlsEnvironment): {
-  connectionString: string;
-  ssl: { ca: string };
-} {
+export function buildPostgresTlsConfig(env: PostgresTlsEnvironment): PostgresTlsConfig {
   const rawUrl = requireValue(env.DATABASE_URL, "POSTGRES_DATABASE_URL_REQUIRED");
   const rawCa = requireValue(env.PROJECT_CA_CERT, "POSTGRES_CA_CERT_REQUIRED");
 
@@ -70,11 +72,11 @@ function normalizeResult<Row>(result: { rows: Row[]; rowCount: number | null }):
   };
 }
 
-export function createPostgresTransactionalExecutor(
+export function createPostgresTransactionalExecutorFromConfig(
   Pool: PostgresPoolConstructorLike,
-  env: PostgresTlsEnvironment,
+  config: PostgresTlsConfig,
 ): { executor: TransactionalSqlExecutor; close: () => Promise<void> } {
-  const pool = new Pool(buildPostgresTlsConfig(env));
+  const pool = new Pool(config);
 
   const executor: TransactionalSqlExecutor = {
     async query<Row = unknown>(text: string, values?: readonly unknown[]): Promise<SqlQueryResult<Row>> {
@@ -113,4 +115,11 @@ export function createPostgresTransactionalExecutor(
       if (pool.end) await pool.end();
     },
   };
+}
+
+export function createPostgresTransactionalExecutor(
+  Pool: PostgresPoolConstructorLike,
+  env: PostgresTlsEnvironment,
+): { executor: TransactionalSqlExecutor; close: () => Promise<void> } {
+  return createPostgresTransactionalExecutorFromConfig(Pool, buildPostgresTlsConfig(env));
 }
