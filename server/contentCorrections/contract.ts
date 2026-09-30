@@ -41,9 +41,14 @@ export interface ContentCorrectionRecord extends ContentCorrectionInput {
   submittedAt: string;
 }
 
+export interface ContentCorrectionRetentionPolicy {
+  retentionMs: number;
+}
+
 export interface ContentCorrectionQueueStore {
   enqueue(record: ContentCorrectionRecord): Promise<void> | void;
   getById(id: string): Promise<ContentCorrectionRecord | null> | ContentCorrectionRecord | null;
+  purgeBefore(cutoffIso: string): Promise<number> | number;
 }
 
 const MAX_CONCERN_LENGTH = 2_000;
@@ -91,6 +96,15 @@ export function validateContentCorrectionInput(input: unknown): ContentCorrectio
   };
 }
 
+export function validateContentCorrectionRetentionPolicy(input: unknown): ContentCorrectionRetentionPolicy {
+  if (!input || typeof input !== "object") throw new Error("INVALID_CORRECTION_RETENTION_POLICY");
+  const retentionMs = (input as Record<string, unknown>).retentionMs;
+  if (typeof retentionMs !== "number" || !Number.isSafeInteger(retentionMs) || retentionMs <= 0) {
+    throw new Error("INVALID_CORRECTION_RETENTION_POLICY");
+  }
+  return { retentionMs };
+}
+
 export interface ContentCorrectionServiceOptions {
   store: ContentCorrectionQueueStore;
   idFactory?: () => string;
@@ -122,5 +136,15 @@ export class ContentCorrectionService {
     const normalized = id.trim();
     if (!normalized || normalized.length > MAX_IDENTIFIER_LENGTH) throw new Error("INVALID_CORRECTION_ID");
     return await this.options.store.getById(normalized);
+  }
+
+  async purgeExpired(policy: unknown): Promise<number> {
+    const { retentionMs } = validateContentCorrectionRetentionPolicy(policy);
+    const cutoff = new Date(this.now().getTime() - retentionMs);
+    if (Number.isNaN(cutoff.getTime())) throw new Error("INVALID_CORRECTION_RETENTION_POLICY");
+
+    const purged = await this.options.store.purgeBefore(cutoff.toISOString());
+    if (!Number.isSafeInteger(purged) || purged < 0) throw new Error("INVALID_CORRECTION_PURGE_RESULT");
+    return purged;
   }
 }
