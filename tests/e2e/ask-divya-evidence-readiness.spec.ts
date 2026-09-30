@@ -6,8 +6,10 @@ test("Ask Divya local guide shows evidence provenance and uncertainty", async ({
   expect(response?.status()).toBeLessThan(400);
 
   await expect(page.locator("#main-content")).toBeVisible({ timeout: 15_000 });
-  await expect(page.getByText("LOCAL GUIDE", { exact: true })).toBeVisible();
-  await expect(page.getByText("STAGE B", { exact: true })).toBeVisible();
+  const stageStamp = page.locator(".ask-conversation-stage__stamp");
+  await expect(stageStamp).toBeVisible();
+  await expect(stageStamp).toContainText("LOCAL GUIDE");
+  await expect(stageStamp).toContainText("STAGE B");
 
   await page.locator(".ask-prompt-grid button").first().click();
 
