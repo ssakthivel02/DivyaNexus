@@ -13,11 +13,11 @@ The contract provides:
 - explicit editorial statuses from `submitted` through review/resolution states;
 - a storage interface that must be injected by a separately reviewed durable implementation;
 - a service that fails if storage fails rather than pretending a report was queued;
-- deterministic tests for validation, record creation, lookup, retention readiness, trusted status-transition authorization readiness and fail-closed storage behavior.
+- deterministic tests for validation, record creation, lookup, retention readiness, trusted status-transition authorization readiness, deletion/audit readiness and fail-closed storage behavior.
 
 ## Privacy and trust
 
-The initial contract deliberately does not add reporter name, email, account identifiers, medical data, financial data, or other unnecessary personal fields. A future authenticated workflow may add identity linkage only after its privacy, retention, access-control, abuse, and deletion requirements are reviewed.
+The initial contract deliberately does not add reporter name, email, account identifiers, medical data, financial data, or other unnecessary personal fields. A future authenticated workflow may add identity linkage only after its privacy, retention, access-control, abuse, deletion and audit requirements are reviewed.
 
 Retention is intentionally **not assigned a default duration** in this contract. Any durable deployment must supply an explicit reviewed `retentionMs` policy. The queue store must expose `purgeBefore(cutoffIso)`, and the service derives the cutoff from that explicit policy. Invalid policy values, storage failures, and invalid purge results fail closed.
 
@@ -27,21 +27,46 @@ Status-transition authorization is also provider-neutral and fail closed. A futu
 
 The store transition uses the record's current status as an expected value. A null result is treated as a conflict rather than silently overwriting a concurrent editorial update. This contract does not define staff roles, credentials, session semantics, or an authentication provider; those remain deployment decisions requiring separate review.
 
+## Deletion and audit readiness
+
+Deletion is deliberately modeled as a separate privileged operation. `deleteCorrection(...)` requires:
+
+- a bounded trusted actor reference;
+- an injected `deletionAuthorizer` that must explicitly approve the deletion;
+- the correction record to exist at the status that was just reviewed by the service; and
+- an injected store capability named `deleteWithAudit(...)`.
+
+The store capability is intentionally atomic from the service contract's point of view: the future durable adapter must delete the correction and commit its audit event together, or do neither. The service does **not** perform a delete first and then attempt a best-effort audit write afterward.
+
+The deletion audit event is immutable and intentionally metadata-only. It contains:
+
+- audit event ID;
+- correction ID;
+- action (`deleted`);
+- occurrence timestamp;
+- previous correction status; and
+- the bounded opaque trusted actor reference used for authorization.
+
+It does **not** copy the correction concern, questioned text, evidence, page URL, source record ID, Ask Divya prompt/answer text, reporter identity, account identifiers, or other report payload into the audit event.
+
+Missing deletion authorization, denied authorization, missing atomic store capability, optimistic-status conflict, invalid store result, invalid generated audit ID, or storage failure all fail closed. This readiness contract does not itself choose where audit events are stored, how long they are retained, who may read them, or what legal/compliance retention policy applies.
+
 ## Not included
 
 This change does not:
 
-- provision a database, queue, KV store, or third-party service;
+- provision a database, queue, KV store, audit database, or third-party service;
 - expose a new public HTTP endpoint;
 - change the current contact-path behavior;
 - claim durable persistence or public ticket tracking;
-- choose a production retention duration;
+- choose a production retention duration for correction records or audit events;
 - schedule or automatically execute retention cleanup;
 - define staff/editorial identities or role taxonomy;
 - select or activate an authentication provider;
-- expose status transitions to an untrusted/public caller;
+- expose status transitions or deletion to an untrusted/public caller;
 - persist the trusted actor reference on correction records;
+- define public audit-log visibility;
 - select or activate an AI provider;
 - change devotional/source records or their review status.
 
-A later persistence/runtime slice must choose a durable store, approve a production retention duration, define staff/editorial identities and access-control policy, decide deletion/audit behavior, bind the injected authorizer to a separately reviewed trusted authentication layer, add abuse controls, and qualify runtime/deployment behavior before the UI can say reports are automatically queued or trackable.
+A later persistence/runtime slice must choose a durable store, approve production retention durations for both correction records and audit metadata, define staff/editorial identities and access-control policy, bind the injected authorizers to a separately reviewed trusted authentication layer, define audit-log access and deletion/legal-hold behavior, add abuse controls, and qualify runtime/deployment behavior before the UI can say reports are automatically queued, trackable, or deletable.
