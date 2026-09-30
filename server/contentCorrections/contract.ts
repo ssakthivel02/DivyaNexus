@@ -59,6 +59,24 @@ export type ContentCorrectionTransitionAuthorizer = (
   request: ContentCorrectionTransitionAuthorization,
 ) => Promise<boolean> | boolean;
 
+export interface ContentCorrectionDeletionAuthorization {
+  actor: ContentCorrectionTrustedActor;
+  record: ContentCorrectionRecord;
+}
+
+export type ContentCorrectionDeletionAuthorizer = (
+  request: ContentCorrectionDeletionAuthorization,
+) => Promise<boolean> | boolean;
+
+export interface ContentCorrectionDeletionAuditEvent {
+  readonly id: string;
+  readonly correctionId: string;
+  readonly action: "deleted";
+  readonly occurredAt: string;
+  readonly previousStatus: ContentCorrectionStatus;
+  readonly actorRef: string;
+}
+
 export interface ContentCorrectionQueueStore {
   enqueue(record: ContentCorrectionRecord): Promise<void> | void;
   getById(id: string): Promise<ContentCorrectionRecord | null> | ContentCorrectionRecord | null;
@@ -68,6 +86,11 @@ export interface ContentCorrectionQueueStore {
     expectedStatus: ContentCorrectionStatus,
     nextStatus: ContentCorrectionStatus,
   ): Promise<ContentCorrectionRecord | null> | ContentCorrectionRecord | null;
+  deleteWithAudit?(
+    id: string,
+    expectedStatus: ContentCorrectionStatus,
+    event: ContentCorrectionDeletionAuditEvent,
+  ): Promise<boolean> | boolean;
 }
 
 const MAX_CONCERN_LENGTH = 2_000;
@@ -87,6 +110,12 @@ function optionalText(value: unknown, maxLength: number): string | undefined {
 function normalizeCorrectionId(id: string): string {
   const normalized = id.trim();
   if (!normalized || normalized.length > MAX_IDENTIFIER_LENGTH) throw new Error("INVALID_CORRECTION_ID");
+  return normalized;
+}
+
+function normalizeAuditEventId(id: string): string {
+  const normalized = id.trim();
+  if (!normalized || normalized.length > MAX_IDENTIFIER_LENGTH) throw new Error("INVALID_CORRECTION_AUDIT_EVENT");
   return normalized;
 }
 
@@ -147,16 +176,20 @@ export function validateContentCorrectionRetentionPolicy(input: unknown): Conten
 export interface ContentCorrectionServiceOptions {
   store: ContentCorrectionQueueStore;
   transitionAuthorizer?: ContentCorrectionTransitionAuthorizer;
+  deletionAuthorizer?: ContentCorrectionDeletionAuthorizer;
   idFactory?: () => string;
+  auditEventIdFactory?: () => string;
   now?: () => Date;
 }
 
 export class ContentCorrectionService {
   private readonly idFactory: () => string;
+  private readonly auditEventIdFactory: () => string;
   private readonly now: () => Date;
 
   constructor(private readonly options: ContentCorrectionServiceOptions) {
     this.idFactory = options.idFactory ?? (() => `correction-${randomUUID()}`);
+    this.auditEventIdFactory = options.auditEventIdFactory ?? (() => `correction-audit-${randomUUID()}`);
     this.now = options.now ?? (() => new Date());
   }
 
@@ -205,5 +238,34 @@ export class ContentCorrectionService {
       throw new Error("INVALID_CORRECTION_TRANSITION_RESULT");
     }
     return updated;
+  }
+
+  async deleteCorrection(id: string, actor: unknown): Promise<ContentCorrectionDeletionAuditEvent> {
+    const normalizedId = normalizeCorrectionId(id);
+    const trustedActor = validateContentCorrectionTrustedActor(actor);
+    const current = await this.options.store.getById(normalizedId);
+    if (!current) throw new Error("CORRECTION_NOT_FOUND");
+
+    const authorizer = this.options.deletionAuthorizer;
+    if (!authorizer) throw new Error("CORRECTION_DELETION_AUTHORIZATION_REQUIRED");
+    const authorized = await authorizer({ actor: trustedActor, record: current });
+    if (authorized !== true) throw new Error("CORRECTION_DELETION_FORBIDDEN");
+
+    const deleteWithAudit = this.options.store.deleteWithAudit;
+    if (!deleteWithAudit) throw new Error("CORRECTION_ATOMIC_DELETE_AUDIT_REQUIRED");
+
+    const event: ContentCorrectionDeletionAuditEvent = Object.freeze({
+      id: normalizeAuditEventId(this.auditEventIdFactory()),
+      correctionId: normalizedId,
+      action: "deleted",
+      occurredAt: this.now().toISOString(),
+      previousStatus: current.status,
+      actorRef: trustedActor.actorRef,
+    });
+
+    const deleted = await deleteWithAudit(normalizedId, current.status, event);
+    if (deleted === false) throw new Error("CORRECTION_DELETE_CONFLICT");
+    if (deleted !== true) throw new Error("INVALID_CORRECTION_DELETE_RESULT");
+    return event;
   }
 }
