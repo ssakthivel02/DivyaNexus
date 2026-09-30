@@ -49,6 +49,14 @@ export interface ContentCorrectionTrustedActor {
   actorRef: string;
 }
 
+export interface ContentCorrectionSubmissionAdmission {
+  input: Readonly<ContentCorrectionInput>;
+}
+
+export type ContentCorrectionSubmissionAdmissionPolicy = (
+  request: ContentCorrectionSubmissionAdmission,
+) => Promise<boolean> | boolean;
+
 export interface ContentCorrectionTransitionAuthorization {
   actor: ContentCorrectionTrustedActor;
   record: ContentCorrectionRecord;
@@ -175,6 +183,7 @@ export function validateContentCorrectionRetentionPolicy(input: unknown): Conten
 
 export interface ContentCorrectionServiceOptions {
   store: ContentCorrectionQueueStore;
+  submissionAdmissionPolicy?: ContentCorrectionSubmissionAdmissionPolicy;
   transitionAuthorizer?: ContentCorrectionTransitionAuthorizer;
   deletionAuthorizer?: ContentCorrectionDeletionAuthorizer;
   idFactory?: () => string;
@@ -193,8 +202,7 @@ export class ContentCorrectionService {
     this.now = options.now ?? (() => new Date());
   }
 
-  async submit(input: unknown): Promise<ContentCorrectionRecord> {
-    const validated = validateContentCorrectionInput(input);
+  private async enqueueValidated(validated: ContentCorrectionInput): Promise<ContentCorrectionRecord> {
     const record: ContentCorrectionRecord = {
       ...validated,
       id: this.idFactory(),
@@ -203,6 +211,22 @@ export class ContentCorrectionService {
     };
     await this.options.store.enqueue(record);
     return record;
+  }
+
+  async submit(input: unknown): Promise<ContentCorrectionRecord> {
+    return await this.enqueueValidated(validateContentCorrectionInput(input));
+  }
+
+  async submitGuarded(input: unknown): Promise<ContentCorrectionRecord> {
+    const validated = validateContentCorrectionInput(input);
+    const policy = this.options.submissionAdmissionPolicy;
+    if (!policy) throw new Error("CORRECTION_ABUSE_CONTROL_REQUIRED");
+
+    const admissionInput = Object.freeze({ ...validated }) as Readonly<ContentCorrectionInput>;
+    const admitted = await policy({ input: admissionInput });
+    if (admitted !== true) throw new Error("CORRECTION_SUBMISSION_REJECTED");
+
+    return await this.enqueueValidated(validated);
   }
 
   async get(id: string): Promise<ContentCorrectionRecord | null> {
