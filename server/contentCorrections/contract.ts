@@ -45,10 +45,29 @@ export interface ContentCorrectionRetentionPolicy {
   retentionMs: number;
 }
 
+export interface ContentCorrectionTrustedActor {
+  actorRef: string;
+}
+
+export interface ContentCorrectionTransitionAuthorization {
+  actor: ContentCorrectionTrustedActor;
+  record: ContentCorrectionRecord;
+  nextStatus: ContentCorrectionStatus;
+}
+
+export type ContentCorrectionTransitionAuthorizer = (
+  request: ContentCorrectionTransitionAuthorization,
+) => Promise<boolean> | boolean;
+
 export interface ContentCorrectionQueueStore {
   enqueue(record: ContentCorrectionRecord): Promise<void> | void;
   getById(id: string): Promise<ContentCorrectionRecord | null> | ContentCorrectionRecord | null;
   purgeBefore(cutoffIso: string): Promise<number> | number;
+  transitionStatus(
+    id: string,
+    expectedStatus: ContentCorrectionStatus,
+    nextStatus: ContentCorrectionStatus,
+  ): Promise<ContentCorrectionRecord | null> | ContentCorrectionRecord | null;
 }
 
 const MAX_CONCERN_LENGTH = 2_000;
@@ -63,6 +82,26 @@ function optionalText(value: unknown, maxLength: number): string | undefined {
   const trimmed = value.trim();
   if (!trimmed || trimmed.length > maxLength) throw new Error("INVALID_CORRECTION_REPORT");
   return trimmed;
+}
+
+function normalizeCorrectionId(id: string): string {
+  const normalized = id.trim();
+  if (!normalized || normalized.length > MAX_IDENTIFIER_LENGTH) throw new Error("INVALID_CORRECTION_ID");
+  return normalized;
+}
+
+function validateContentCorrectionStatus(input: unknown): ContentCorrectionStatus {
+  if (!CONTENT_CORRECTION_STATUSES.includes(input as ContentCorrectionStatus)) {
+    throw new Error("INVALID_CORRECTION_STATUS");
+  }
+  return input as ContentCorrectionStatus;
+}
+
+export function validateContentCorrectionTrustedActor(input: unknown): ContentCorrectionTrustedActor {
+  if (!input || typeof input !== "object") throw new Error("INVALID_CORRECTION_ACTOR");
+  const actorRef = optionalText((input as Record<string, unknown>).actorRef, MAX_IDENTIFIER_LENGTH);
+  if (!actorRef) throw new Error("INVALID_CORRECTION_ACTOR");
+  return { actorRef };
 }
 
 export function validateContentCorrectionInput(input: unknown): ContentCorrectionInput {
@@ -107,6 +146,7 @@ export function validateContentCorrectionRetentionPolicy(input: unknown): Conten
 
 export interface ContentCorrectionServiceOptions {
   store: ContentCorrectionQueueStore;
+  transitionAuthorizer?: ContentCorrectionTransitionAuthorizer;
   idFactory?: () => string;
   now?: () => Date;
 }
@@ -133,9 +173,7 @@ export class ContentCorrectionService {
   }
 
   async get(id: string): Promise<ContentCorrectionRecord | null> {
-    const normalized = id.trim();
-    if (!normalized || normalized.length > MAX_IDENTIFIER_LENGTH) throw new Error("INVALID_CORRECTION_ID");
-    return await this.options.store.getById(normalized);
+    return await this.options.store.getById(normalizeCorrectionId(id));
   }
 
   async purgeExpired(policy: unknown): Promise<number> {
@@ -146,5 +184,26 @@ export class ContentCorrectionService {
     const purged = await this.options.store.purgeBefore(cutoff.toISOString());
     if (!Number.isSafeInteger(purged) || purged < 0) throw new Error("INVALID_CORRECTION_PURGE_RESULT");
     return purged;
+  }
+
+  async transitionStatus(id: string, nextStatus: unknown, actor: unknown): Promise<ContentCorrectionRecord> {
+    const normalizedId = normalizeCorrectionId(id);
+    const normalizedNextStatus = validateContentCorrectionStatus(nextStatus);
+    const trustedActor = validateContentCorrectionTrustedActor(actor);
+    const current = await this.options.store.getById(normalizedId);
+    if (!current) throw new Error("CORRECTION_NOT_FOUND");
+    if (current.status === normalizedNextStatus) throw new Error("INVALID_CORRECTION_STATUS_TRANSITION");
+
+    const authorizer = this.options.transitionAuthorizer;
+    if (!authorizer) throw new Error("CORRECTION_AUTHORIZATION_REQUIRED");
+    const authorized = await authorizer({ actor: trustedActor, record: current, nextStatus: normalizedNextStatus });
+    if (authorized !== true) throw new Error("CORRECTION_TRANSITION_FORBIDDEN");
+
+    const updated = await this.options.store.transitionStatus(normalizedId, current.status, normalizedNextStatus);
+    if (!updated) throw new Error("CORRECTION_STATUS_CONFLICT");
+    if (updated.id !== normalizedId || updated.status !== normalizedNextStatus) {
+      throw new Error("INVALID_CORRECTION_TRANSITION_RESULT");
+    }
+    return updated;
   }
 }

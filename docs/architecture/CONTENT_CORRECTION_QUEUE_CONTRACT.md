@@ -13,7 +13,7 @@ The contract provides:
 - explicit editorial statuses from `submitted` through review/resolution states;
 - a storage interface that must be injected by a separately reviewed durable implementation;
 - a service that fails if storage fails rather than pretending a report was queued;
-- deterministic tests for validation, record creation, lookup, retention readiness and fail-closed storage behavior.
+- deterministic tests for validation, record creation, lookup, retention readiness, trusted status-transition authorization readiness and fail-closed storage behavior.
 
 ## Privacy and trust
 
@@ -22,6 +22,10 @@ The initial contract deliberately does not add reporter name, email, account ide
 Retention is intentionally **not assigned a default duration** in this contract. Any durable deployment must supply an explicit reviewed `retentionMs` policy. The queue store must expose `purgeBefore(cutoffIso)`, and the service derives the cutoff from that explicit policy. Invalid policy values, storage failures, and invalid purge results fail closed.
 
 A numeric retention value used in unit tests is test data only and is not a production recommendation or policy decision.
+
+Status-transition authorization is also provider-neutral and fail closed. A future trusted server-side layer may pass a bounded opaque `actorRef` into `transitionStatus(...)`; an injected `transitionAuthorizer` must explicitly approve the requested next status before the store is called. The actor reference is authorization context only and is not added to the correction record by this contract.
+
+The store transition uses the record's current status as an expected value. A null result is treated as a conflict rather than silently overwriting a concurrent editorial update. This contract does not define staff roles, credentials, session semantics, or an authentication provider; those remain deployment decisions requiring separate review.
 
 ## Not included
 
@@ -33,9 +37,11 @@ This change does not:
 - claim durable persistence or public ticket tracking;
 - choose a production retention duration;
 - schedule or automatically execute retention cleanup;
-- define staff/editorial identities or access-control roles;
-- select an authentication provider;
+- define staff/editorial identities or role taxonomy;
+- select or activate an authentication provider;
+- expose status transitions to an untrusted/public caller;
+- persist the trusted actor reference on correction records;
 - select or activate an AI provider;
 - change devotional/source records or their review status.
 
-A later persistence slice must choose a durable store, approve a production retention duration, define staff/editorial access controls and deletion/audit behavior, wire an authenticated/editorial status-transition path, add abuse controls, and qualify runtime/deployment behavior before the UI can say reports are automatically queued or trackable.
+A later persistence/runtime slice must choose a durable store, approve a production retention duration, define staff/editorial identities and access-control policy, decide deletion/audit behavior, bind the injected authorizer to a separately reviewed trusted authentication layer, add abuse controls, and qualify runtime/deployment behavior before the UI can say reports are automatically queued or trackable.
