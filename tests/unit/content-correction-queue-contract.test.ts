@@ -3,6 +3,7 @@ import {
   ContentCorrectionService,
   validateContentCorrectionInput,
   validateContentCorrectionRetentionPolicy,
+  validateContentCorrectionTrustedActor,
   type ContentCorrectionQueueStore,
   type ContentCorrectionRecord,
 } from "../../server/contentCorrections/contract";
@@ -25,6 +26,13 @@ function memoryStore() {
         }
       }
       return purged;
+    },
+    transitionStatus(id, expectedStatus, nextStatus) {
+      const record = records.get(id);
+      if (!record || record.status !== expectedStatus) return null;
+      const updated = { ...record, status: nextStatus };
+      records.set(id, updated);
+      return updated;
     },
   };
   return { records, store };
@@ -97,7 +105,12 @@ describe("content correction queue contract", () => {
   it("does not silently invent persistence when the injected store fails", async () => {
     const enqueue = vi.fn(() => { throw new Error("STORE_UNAVAILABLE"); });
     const service = new ContentCorrectionService({
-      store: { enqueue, getById: () => null, purgeBefore: () => 0 },
+      store: {
+        enqueue,
+        getById: () => null,
+        purgeBefore: () => 0,
+        transitionStatus: () => null,
+      },
       idFactory: () => "correction-test-002",
     });
 
@@ -149,7 +162,12 @@ describe("content correction queue contract", () => {
   it("fails closed when purge storage fails or returns an invalid result", async () => {
     const purgeBefore = vi.fn(() => { throw new Error("STORE_UNAVAILABLE"); });
     const service = new ContentCorrectionService({
-      store: { enqueue: () => undefined, getById: () => null, purgeBefore },
+      store: {
+        enqueue: () => undefined,
+        getById: () => null,
+        purgeBefore,
+        transitionStatus: () => null,
+      },
       now: () => new Date("2026-09-30T00:00:00.000Z"),
     });
 
@@ -157,8 +175,100 @@ describe("content correction queue contract", () => {
     expect(purgeBefore).toHaveBeenCalledWith("2026-09-29T23:59:59.000Z");
 
     const invalidResultService = new ContentCorrectionService({
-      store: { enqueue: () => undefined, getById: () => null, purgeBefore: () => -1 },
+      store: {
+        enqueue: () => undefined,
+        getById: () => null,
+        purgeBefore: () => -1,
+        transitionStatus: () => null,
+      },
     });
     await expect(invalidResultService.purgeExpired({ retentionMs: 1_000 })).rejects.toThrow("INVALID_CORRECTION_PURGE_RESULT");
+  });
+
+  it("accepts only a bounded opaque trusted actor reference", () => {
+    expect(validateContentCorrectionTrustedActor({ actorRef: " editorial-session-42 " })).toEqual({
+      actorRef: "editorial-session-42",
+    });
+    expect(() => validateContentCorrectionTrustedActor(undefined)).toThrow("INVALID_CORRECTION_ACTOR");
+    expect(() => validateContentCorrectionTrustedActor({ actorRef: "x".repeat(201) })).toThrow("INVALID_CORRECTION_REPORT");
+  });
+
+  it("fails closed when status transition authorization is not supplied", async () => {
+    const { records, store } = memoryStore();
+    records.set("correction-transition-001", {
+      id: "correction-transition-001",
+      status: "submitted",
+      submittedAt: "2026-09-30T08:00:00.000Z",
+      category: "other",
+      concern: "Needs triage",
+      pageUrl: "/sources",
+    });
+    const service = new ContentCorrectionService({ store });
+
+    await expect(service.transitionStatus(
+      "correction-transition-001",
+      "triage",
+      { actorRef: "trusted-editorial-session" },
+    )).rejects.toThrow("CORRECTION_AUTHORIZATION_REQUIRED");
+    expect(records.get("correction-transition-001")?.status).toBe("submitted");
+  });
+
+  it("authorizes a trusted transition without persisting actor identity on the record", async () => {
+    const { records, store } = memoryStore();
+    records.set("correction-transition-002", {
+      id: "correction-transition-002",
+      status: "submitted",
+      submittedAt: "2026-09-30T08:00:00.000Z",
+      category: "citation-mismatch",
+      concern: "Needs editorial review",
+      recordId: "glossary-dharma",
+    });
+    const transitionAuthorizer = vi.fn(() => true);
+    const service = new ContentCorrectionService({ store, transitionAuthorizer });
+
+    const updated = await service.transitionStatus(
+      " correction-transition-002 ",
+      "triage",
+      { actorRef: " editorial-session-42 " },
+    );
+
+    expect(updated.status).toBe("triage");
+    expect(updated).not.toHaveProperty("actorRef");
+    expect(transitionAuthorizer).toHaveBeenCalledWith({
+      actor: { actorRef: "editorial-session-42" },
+      record: expect.objectContaining({ id: "correction-transition-002", status: "submitted" }),
+      nextStatus: "triage",
+    });
+  });
+
+  it("blocks denied or conflicting status transitions without silently overwriting state", async () => {
+    const { records, store } = memoryStore();
+    records.set("correction-transition-003", {
+      id: "correction-transition-003",
+      status: "triage",
+      submittedAt: "2026-09-30T08:00:00.000Z",
+      category: "other",
+      concern: "Needs source review",
+      pageUrl: "/sources",
+    });
+
+    const denied = new ContentCorrectionService({ store, transitionAuthorizer: () => false });
+    await expect(denied.transitionStatus(
+      "correction-transition-003",
+      "source-review",
+      { actorRef: "editorial-session-1" },
+    )).rejects.toThrow("CORRECTION_TRANSITION_FORBIDDEN");
+    expect(records.get("correction-transition-003")?.status).toBe("triage");
+
+    const conflictStore: ContentCorrectionQueueStore = {
+      ...store,
+      transitionStatus: () => null,
+    };
+    const conflicting = new ContentCorrectionService({ store: conflictStore, transitionAuthorizer: () => true });
+    await expect(conflicting.transitionStatus(
+      "correction-transition-003",
+      "source-review",
+      { actorRef: "editorial-session-1" },
+    )).rejects.toThrow("CORRECTION_STATUS_CONFLICT");
   });
 });
