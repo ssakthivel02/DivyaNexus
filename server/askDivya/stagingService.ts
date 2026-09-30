@@ -1,6 +1,6 @@
 import type { AskDivyaErrorCode } from "./contract";
 import { validateAskDivyaRequest } from "./contract";
-import type { AskDivyaRuntimeResult } from "./runtime";
+import type { AskDivyaQuotaTier, AskDivyaRuntimeResult } from "./runtime";
 import { AskDivyaRuntime } from "./runtime";
 import { AskDivyaStagingMockProvider } from "./mockProvider";
 import {
@@ -25,9 +25,15 @@ export type AskDivyaStagingResult =
       retryAfterMs?: number;
     };
 
+export interface AskDivyaTrustedRequestContext {
+  clientKey: string;
+  quotaTier: AskDivyaQuotaTier;
+}
+
 export interface AskDivyaStagingService {
   health(): AskDivyaStagingHealth;
   ask(input: unknown, clientKey?: string): Promise<AskDivyaStagingResult>;
+  askTrusted(input: unknown, context: AskDivyaTrustedRequestContext): Promise<AskDivyaStagingResult>;
 }
 
 const VALIDATION_ERROR_CODES = new Set<string>([
@@ -77,6 +83,34 @@ export function createAskDivyaStagingService(): AskDivyaStagingService {
     cooldownMs: 5_000,
   });
 
+  async function executeWithTrustedContext(
+    input: unknown,
+    context: AskDivyaTrustedRequestContext,
+  ): Promise<AskDivyaStagingResult> {
+    let acquired = false;
+    try {
+      const request = validateAskDivyaRequest(input);
+      acquired = concurrency.tryAcquire(context.clientKey);
+      if (!acquired) {
+        return {
+          ok: false,
+          code: "RATE_LIMITED",
+          message: "Another Ask Divya request is already active for this client.",
+          retryAfterMs: 1000,
+        };
+      }
+      return await runtime.execute(request, context.clientKey, context.quotaTier);
+    } catch (error) {
+      return {
+        ok: false,
+        code: validationErrorCode(error),
+        message: "Invalid Ask Divya staging request.",
+      };
+    } finally {
+      if (acquired) concurrency.release(context.clientKey);
+    }
+  }
+
   return {
     health() {
       return {
@@ -87,29 +121,12 @@ export function createAskDivyaStagingService(): AskDivyaStagingService {
       };
     },
 
-    async ask(input: unknown, clientKey = "anonymous") {
-      let acquired = false;
-      try {
-        const request = validateAskDivyaRequest(input);
-        acquired = concurrency.tryAcquire(clientKey);
-        if (!acquired) {
-          return {
-            ok: false,
-            code: "RATE_LIMITED",
-            message: "Another Ask Divya request is already active for this client.",
-            retryAfterMs: 1000,
-          };
-        }
-        return await runtime.execute(request, clientKey);
-      } catch (error) {
-        return {
-          ok: false,
-          code: validationErrorCode(error),
-          message: "Invalid Ask Divya staging request.",
-        };
-      } finally {
-        if (acquired) concurrency.release(clientKey);
-      }
+    ask(input: unknown, clientKey = "anonymous") {
+      return executeWithTrustedContext(input, { clientKey, quotaTier: "anonymous" });
+    },
+
+    askTrusted(input: unknown, context: AskDivyaTrustedRequestContext) {
+      return executeWithTrustedContext(input, context);
     },
   };
 }

@@ -12,12 +12,19 @@ export interface AskDivyaModerationResult {
 
 export type AskDivyaModerator = (request: AskDivyaRequest) => Promise<AskDivyaModerationResult> | AskDivyaModerationResult;
 
+export type AskDivyaQuotaTier = "anonymous" | "signed-in";
+
+export interface AskDivyaRateLimitContext {
+  clientKey: string;
+  quotaTier: AskDivyaQuotaTier;
+}
+
 export interface AskDivyaRateLimitResult {
   allowed: boolean;
   retryAfterMs?: number;
 }
 
-export type AskDivyaRateLimiter = (key: string) => Promise<AskDivyaRateLimitResult> | AskDivyaRateLimitResult;
+export type AskDivyaRateLimiter = (context: AskDivyaRateLimitContext) => Promise<AskDivyaRateLimitResult> | AskDivyaRateLimitResult;
 
 export interface AskDivyaBudgetContext {
   providerId: string;
@@ -107,7 +114,11 @@ export class AskDivyaRuntime {
     this.circuitOpenedAt = null;
   }
 
-  async execute(request: AskDivyaRequest, clientKey = "anonymous"): Promise<AskDivyaRuntimeResult> {
+  async execute(
+    request: AskDivyaRequest,
+    clientKey = "anonymous",
+    quotaTier: AskDivyaQuotaTier = "anonymous",
+  ): Promise<AskDivyaRuntimeResult> {
     if (this.circuitOpen()) {
       return { ok: false, code: "PROVIDER_UNAVAILABLE", message: "Ask Divya live generation is temporarily unavailable." };
     }
@@ -117,7 +128,7 @@ export class AskDivyaRuntime {
       return { ok: false, code: "BLOCKED", message: moderation.reason ?? "This request cannot be handled by live generation." };
     }
 
-    const rateLimit = await this.options.rateLimiter?.(clientKey);
+    const rateLimit = await this.options.rateLimiter?.({ clientKey, quotaTier });
     if (rateLimit && !rateLimit.allowed) {
       return {
         ok: false,

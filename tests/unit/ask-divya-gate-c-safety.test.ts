@@ -13,21 +13,24 @@ const safeRequest = {
   contextRecordIds: ["glossary-dharma"],
 };
 
+const anonymous = (clientKey: string) => ({ clientKey, quotaTier: "anonymous" as const });
+const signedIn = (clientKey: string) => ({ clientKey, quotaTier: "signed-in" as const });
+
 describe("Ask Divya Gate C operational safety", () => {
   it("enforces the anonymous short-window limit and resets after the window", async () => {
     let now = 1_000;
     const limiter = createAskDivyaStagingRateLimiter({ now: () => now });
 
     for (let index = 0; index < 8; index += 1) {
-      expect(await limiter("client-a")).toEqual({ allowed: true });
+      expect(await limiter(anonymous("client-a"))).toEqual({ allowed: true });
     }
 
-    const blocked = await limiter("client-a");
+    const blocked = await limiter(anonymous("client-a"));
     expect(blocked.allowed).toBe(false);
     expect(blocked.retryAfterMs).toBe(10 * 60 * 1000);
 
     now += 10 * 60 * 1000;
-    expect(await limiter("client-a")).toEqual({ allowed: true });
+    expect(await limiter(anonymous("client-a"))).toEqual({ allowed: true });
   });
 
   it("enforces the anonymous daily limit across refreshed short windows", async () => {
@@ -36,26 +39,62 @@ describe("Ask Divya Gate C operational safety", () => {
 
     for (let batch = 0; batch < 3; batch += 1) {
       for (let index = 0; index < 8; index += 1) {
-        expect((await limiter("client-daily")).allowed).toBe(true);
+        expect((await limiter(anonymous("client-daily"))).allowed).toBe(true);
       }
       now += 10 * 60 * 1000;
     }
 
     for (let index = 0; index < 6; index += 1) {
-      expect((await limiter("client-daily")).allowed).toBe(true);
+      expect((await limiter(anonymous("client-daily"))).allowed).toBe(true);
     }
 
-    const blocked = await limiter("client-daily");
+    const blocked = await limiter(anonymous("client-daily"));
     expect(blocked.allowed).toBe(false);
     expect(blocked.retryAfterMs).toBeGreaterThan(0);
   });
 
-  it("keeps counters isolated per client", async () => {
-    const limiter = createAskDivyaStagingRateLimiter({ shortLimit: 1, dailyLimit: 2 });
+  it("enforces the trusted signed-in 20-request short-window policy", async () => {
+    const limiter = createAskDivyaStagingRateLimiter();
 
-    expect((await limiter("client-a")).allowed).toBe(true);
-    expect((await limiter("client-a")).allowed).toBe(false);
-    expect((await limiter("client-b")).allowed).toBe(true);
+    for (let index = 0; index < 20; index += 1) {
+      expect((await limiter(signedIn("member-a"))).allowed).toBe(true);
+    }
+
+    const blocked = await limiter(signedIn("member-a"));
+    expect(blocked.allowed).toBe(false);
+    expect(blocked.retryAfterMs).toBeGreaterThan(0);
+  });
+
+  it("enforces the trusted signed-in 100-request daily policy", async () => {
+    let now = 5_000;
+    const limiter = createAskDivyaStagingRateLimiter({ now: () => now });
+
+    for (let batch = 0; batch < 5; batch += 1) {
+      for (let index = 0; index < 20; index += 1) {
+        expect((await limiter(signedIn("member-daily"))).allowed).toBe(true);
+      }
+      now += 10 * 60 * 1000;
+    }
+
+    const blocked = await limiter(signedIn("member-daily"));
+    expect(blocked.allowed).toBe(false);
+    expect(blocked.retryAfterMs).toBeGreaterThan(0);
+  });
+
+  it("keeps counters isolated per client and quota tier", async () => {
+    const limiter = createAskDivyaStagingRateLimiter({
+      shortLimit: 1,
+      dailyLimit: 2,
+      signedInShortLimit: 2,
+      signedInDailyLimit: 3,
+    });
+
+    expect((await limiter(anonymous("client-a"))).allowed).toBe(true);
+    expect((await limiter(anonymous("client-a"))).allowed).toBe(false);
+    expect((await limiter(anonymous("client-b"))).allowed).toBe(true);
+    expect((await limiter(signedIn("client-a"))).allowed).toBe(true);
+    expect((await limiter(signedIn("client-a"))).allowed).toBe(true);
+    expect((await limiter(signedIn("client-a"))).allowed).toBe(false);
   });
 
   it("fails closed for unseen clients when the bounded tracker is full", async () => {
@@ -66,15 +105,15 @@ describe("Ask Divya Gate C operational safety", () => {
       dailyWindowMs: 60_000,
     });
 
-    expect((await limiter("client-a")).allowed).toBe(true);
+    expect((await limiter(anonymous("client-a"))).allowed).toBe(true);
     now += 10_000;
-    expect((await limiter("client-b")).allowed).toBe(true);
+    expect((await limiter(anonymous("client-b"))).allowed).toBe(true);
 
-    const blocked = await limiter("client-c");
+    const blocked = await limiter(anonymous("client-c"));
     expect(blocked.allowed).toBe(false);
     expect(blocked.retryAfterMs).toBe(50_000);
 
-    expect((await limiter("client-a")).allowed).toBe(true);
+    expect((await limiter(anonymous("client-a"))).allowed).toBe(true);
   });
 
   it("prunes stale tracked clients before admitting a new client", async () => {
@@ -85,13 +124,13 @@ describe("Ask Divya Gate C operational safety", () => {
       dailyWindowMs: 60_000,
     });
 
-    expect((await limiter("client-a")).allowed).toBe(true);
+    expect((await limiter(anonymous("client-a"))).allowed).toBe(true);
     now += 10_000;
-    expect((await limiter("client-b")).allowed).toBe(true);
+    expect((await limiter(anonymous("client-b"))).allowed).toBe(true);
 
     now = 61_000;
-    expect((await limiter("client-c")).allowed).toBe(true);
-    expect((await limiter("client-b")).allowed).toBe(true);
+    expect((await limiter(anonymous("client-c"))).allowed).toBe(true);
+    expect((await limiter(anonymous("client-b"))).allowed).toBe(true);
   });
 
   it("rejects invalid bounded-tracker capacity", () => {
@@ -160,5 +199,34 @@ describe("Ask Divya Gate C operational safety", () => {
     expect(blocked.code).toBe("RATE_LIMITED");
     expect(blocked.retryAfterMs).toBeGreaterThan(0);
     expect(statusForAskDivyaResult(blocked)).toBe(429);
+  });
+
+  it("allows the higher tier only through trusted server context", async () => {
+    const staging = createAskDivyaStagingService();
+
+    for (let index = 0; index < 20; index += 1) {
+      const allowed = await staging.askTrusted(safeRequest, signedIn("trusted-member"));
+      expect(allowed.ok).toBe(true);
+    }
+
+    const blocked = await staging.askTrusted(safeRequest, signedIn("trusted-member"));
+    expect(blocked.ok).toBe(false);
+    if (blocked.ok) return;
+    expect(blocked.code).toBe("RATE_LIMITED");
+  });
+
+  it("does not let request-body quotaTier self-upgrade the public staging path", async () => {
+    const staging = createAskDivyaStagingService();
+    const selfClaimedSignedIn = { ...safeRequest, quotaTier: "signed-in" };
+
+    for (let index = 0; index < 8; index += 1) {
+      const allowed = await staging.ask(selfClaimedSignedIn, "self-claim-client");
+      expect(allowed.ok).toBe(true);
+    }
+
+    const blocked = await staging.ask(selfClaimedSignedIn, "self-claim-client");
+    expect(blocked.ok).toBe(false);
+    if (blocked.ok) return;
+    expect(blocked.code).toBe("RATE_LIMITED");
   });
 });
