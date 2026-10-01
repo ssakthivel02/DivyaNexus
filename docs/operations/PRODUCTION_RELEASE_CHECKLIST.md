@@ -49,7 +49,7 @@ Use this checklist for every production-affecting change. A green build alone is
 - [ ] DNS/custom-domain assumptions are unchanged or explicitly reviewed
 - [ ] PWA/service-worker cache marker is preserved or deliberately versioned
 - [ ] Rollback commit/procedure is documented
-- [ ] Emergency bypass, if used, records reason, approver, evidence, rollback path, and follow-up PR
+- [ ] Emergency bypass, if used, follows [`EMERGENCY_BYPASS_PROCEDURE.md`](./EMERGENCY_BYPASS_PROCEDURE.md) and records reason, approver, evidence, rollback path, and follow-up PR
 
 ## 6. Post-deployment evidence
 
