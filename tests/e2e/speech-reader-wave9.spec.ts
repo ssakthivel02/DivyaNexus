@@ -6,6 +6,7 @@ type SpeechMockOptions = {
   supported?: boolean;
   initialVoices?: MockVoice[];
   delayedVoices?: MockVoice[];
+  dropSpeakWithinMsAfterCancel?: number;
 };
 
 async function installSpeechMock(page: Page, options: SpeechMockOptions = {}) {
@@ -51,6 +52,7 @@ async function installSpeechMock(page: Page, options: SpeechMockOptions = {}) {
     let paused = false;
     let speakCount = 0;
     let cancelCount = 0;
+    let lastCancelAt = 0;
 
     const speech = {
       get speaking() { return speaking; },
@@ -58,6 +60,10 @@ async function installSpeechMock(page: Page, options: SpeechMockOptions = {}) {
       get pending() { return false; },
       getVoices: () => voices,
       speak: (utterance: MockUtterance) => {
+        if (
+          configuration.dropSpeakWithinMsAfterCancel
+          && Date.now() - lastCancelAt < configuration.dropSpeakWithinMsAfterCancel
+        ) return;
         active = utterance;
         speaking = true;
         paused = false;
@@ -66,6 +72,7 @@ async function installSpeechMock(page: Page, options: SpeechMockOptions = {}) {
       },
       cancel: () => {
         cancelCount += 1;
+        lastCancelAt = Date.now();
         active = null;
         speaking = false;
         paused = false;
@@ -158,6 +165,18 @@ test("delayed browser voices are discovered through voiceschanged", async ({ pag
   await expect(page.locator(".speech-controls__voice").first()).toContainText("No matching ta-IN voice");
   await page.evaluate(() => (window as typeof window & { __speechMock: { releaseVoices: () => void } }).__speechMock.releaseVoices());
   await expect(page.locator(".speech-controls").first().getByLabel("Device voice")).toBeVisible();
+});
+
+test("speech start is deferred when a browser drops speak calls made immediately after cancel", async ({ page }) => {
+  await installSpeechMock(page, { dropSpeakWithinMsAfterCancel: 40 });
+  await openRoute(page, "/rig-veda?record=rig-veda-1-1-1");
+  const controls = page.locator(".speech-controls").first();
+  await controls.getByRole("button", { name: "Play", exact: true }).click();
+  await expect(controls).toHaveAttribute("data-speech-state", "speaking");
+  const counts = await page.evaluate(() => (
+    window as typeof window & { __speechMock: { counts: () => { speakCount: number } } }
+  ).__speechMock.counts());
+  expect(counts.speakCount).toBe(1);
 });
 
 test("changing rooms cancels active speech and prevents overlap", async ({ page }) => {
