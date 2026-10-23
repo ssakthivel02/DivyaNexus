@@ -136,7 +136,11 @@ export function useSpeechSynthesis() {
       setState("error");
     });
 
-    window.speechSynthesis.speak(utterance);
+    window.setTimeout(() => {
+      if (!mountedRef.current || generationRef.current !== generation) return;
+      window.speechSynthesis.resume();
+      window.speechSynthesis.speak(utterance);
+    }, 60);
     return true;
   }, [state, supported, voices]);
 
