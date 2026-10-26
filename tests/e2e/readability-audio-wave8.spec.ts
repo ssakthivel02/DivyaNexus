@@ -129,11 +129,12 @@ test.describe("Wave 8 multilingual speech", () => {
     await expect(speed).toHaveValue("0.72");
     await expect(controls.locator(".speech-controls__voice")).toContainText("matching sa-IN voice is available");
     await controls.getByRole("button", { name: "Play", exact: true }).click();
-    const utterance = await page.evaluate(() => {
+    const readLastSpeech = () => page.evaluate(() => {
       const value = (window as typeof window & { __lastSpeech?: { lang: string; rate: number; text: string } }).__lastSpeech;
       return value ? { lang: value.lang, rate: value.rate, length: value.text.length } : null;
     });
-    expect(utterance).toMatchObject({ lang: "sa-IN", rate: 0.72 });
+    await expect.poll(readLastSpeech).toMatchObject({ lang: "sa-IN", rate: 0.72 });
+    const utterance = await readLastSpeech();
     expect(utterance?.length).toBeGreaterThan(10);
   });
 
