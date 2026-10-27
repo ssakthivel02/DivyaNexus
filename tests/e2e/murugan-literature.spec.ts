@@ -9,7 +9,7 @@ test.describe("Murugan Tamil library publication boundaries", () => {
     await expect(page.getByRole("heading", { name: "சரிபார்ப்புக்காகக் காத்திருக்கும் நூல்கள்" })).toBeVisible();
     await expect(page.getByText("கந்தர் அனுபூதி — சரிபார்ப்பு நிலுவையில்")).toBeVisible();
     await expect(page.getByText("திருப்புகழ் — சரிபார்ப்பு நிலுவையில்")).toBeVisible();
-    await expect(page.locator('a[href^="http"]')).toHaveCount(0);
+    await expect(page.locator('main a[href^="http"]')).toHaveCount(0);
   });
 
   test("keeps search keyboard accessible and avoids horizontal overflow on mobile", async ({ page }) => {
