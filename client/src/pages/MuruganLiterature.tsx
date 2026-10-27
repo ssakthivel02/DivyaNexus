@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { getPublishableMuruganWorks, muruganWorks } from "@/data/muruganTamilLibrary";
+import { getPublishableMuruganWorks, muruganWorks, splitMuruganReadingSections } from "@/data/muruganTamilLibrary";
 
 /**
  * In-site Tamil devotional reader. No redirects to third-party sites and no
@@ -16,6 +16,7 @@ export default function MuruganLiterature() {
     )
   ), [published, query]);
   const selected = visible.find((work) => work.id === selectedId) ?? visible[0];
+  const readingSections = selected ? splitMuruganReadingSections(selected.textTa) : [];
   const awaitingReview = muruganWorks.filter((work) => work.reviewStatus === "pending-source-review");
 
   return (
@@ -57,7 +58,9 @@ export default function MuruganLiterature() {
             <label htmlFor="murugan-font-size">எழுத்து அளவு</label>
             <input id="murugan-font-size" type="range" min={18} max={36} value={fontSize}
               onChange={(event) => setFontSize(Number(event.target.value))} />
-            <div style={{ whiteSpace: "pre-wrap", fontSize, lineHeight: 1.95, overflowWrap: "anywhere" }}>{selected.textTa}</div>
+            <div aria-label="தமிழ் மூல உரை" style={{ fontSize, lineHeight: 1.95, overflowWrap: "anywhere" }}>
+              {readingSections.map((section, index) => <p key={`${selected.id}-${index}`} style={{ whiteSpace: "pre-wrap", marginBlock: "1.25em" }}>{section}</p>)}
+            </div>
             <footer><p>மூலப் பதிப்பு: {selected.sourceEdition}</p><p>மூல இடம்: {selected.sourceLocator}</p><p>சரிபார்த்தவர்: {selected.reviewer}</p></footer>
           </article>}
         </section>
