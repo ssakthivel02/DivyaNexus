@@ -24,6 +24,8 @@ export type MuruganWorkPublished = Omit<MuruganWorkDraft, "reviewStatus"> & {
   redistributionBasis: string;
   reviewer: string;
   reviewedAt: string;
+  /** Canonical count established by the exact source edition; optional if none is attested. */
+  expectedSectionCount?: number;
 };
 export type MuruganWork = MuruganWorkDraft | MuruganWorkPublished;
 
@@ -58,6 +60,9 @@ export function getPublishableMuruganWorks(works: readonly MuruganWork[] = murug
     if (!/[\u0B80-\u0BFF]/.test(work.textTa)) throw new Error(`Tamil source text missing: ${work.id}`);
     if (/<script\b|<html\b|<body\b/i.test(work.textTa)) throw new Error(`HTML shell cannot be published as a Tamil work: ${work.id}`);
     if (/source verification required|pending review|cross reference/i.test(work.textTa)) throw new Error(`Placeholder cannot be published: ${work.id}`);
+    if (work.expectedSectionCount !== undefined && (!Number.isSafeInteger(work.expectedSectionCount) || work.expectedSectionCount < 1 || splitMuruganReadingSections(work.textTa).length !== work.expectedSectionCount)) {
+      throw new Error(`Source section count does not match reviewed edition: ${work.id}`);
+    }
   }
   return published;
 }
