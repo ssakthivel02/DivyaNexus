@@ -9,6 +9,7 @@ export default function MuruganLiterature() {
   const [query, setQuery] = useState("");
   const [selectedId, setSelectedId] = useState("");
   const [fontSize, setFontSize] = useState(22);
+  const [sectionIndex, setSectionIndex] = useState(0);
   const published = getPublishableMuruganWorks();
   const visible = useMemo(() => published.filter((work) =>
     [work.titleTa, work.titleEn, work.author ?? "", work.textTa].some((value) =>
@@ -17,6 +18,7 @@ export default function MuruganLiterature() {
   ), [published, query]);
   const selected = visible.find((work) => work.id === selectedId) ?? visible[0];
   const readingSections = selected ? splitMuruganReadingSections(selected.textTa) : [];
+  const safeSectionIndex = Math.min(sectionIndex, Math.max(0, readingSections.length - 1));
   const awaitingReview = muruganWorks.filter((work) => work.reviewStatus === "pending-source-review");
 
   return (
@@ -46,7 +48,7 @@ export default function MuruganLiterature() {
             <h2>வாசிக்கக் கிடைக்கும் நூல்கள்</h2>
             {visible.map((work) => (
               <button key={work.id} type="button" aria-current={selected?.id === work.id ? "true" : undefined}
-                onClick={() => setSelectedId(work.id)} style={{ display: "block", width: "100%", textAlign: "left", padding: 12, marginBlock: 8 }}>
+                onClick={() => { setSelectedId(work.id); setSectionIndex(0); }} style={{ display: "block", width: "100%", textAlign: "left", padding: 12, marginBlock: 8 }}>
                 {work.titleTa}
               </button>
             ))}
@@ -58,8 +60,14 @@ export default function MuruganLiterature() {
             <label htmlFor="murugan-font-size">எழுத்து அளவு</label>
             <input id="murugan-font-size" type="range" min={18} max={36} value={fontSize}
               onChange={(event) => setFontSize(Number(event.target.value))} />
+            {readingSections.length > 1 && <nav aria-label="பாடல் பகுதி வழிசெலுத்தல்" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap", marginBlock: 16 }}>
+              <button type="button" disabled={safeSectionIndex === 0} onClick={() => setSectionIndex(Math.max(0, safeSectionIndex - 1))}>முந்தைய பகுதி</button>
+              <span role="status">பகுதி {safeSectionIndex + 1} / {readingSections.length}</span>
+              <button type="button" disabled={safeSectionIndex >= readingSections.length - 1} onClick={() => setSectionIndex(Math.min(readingSections.length - 1, safeSectionIndex + 1))}>அடுத்த பகுதி</button>
+              <button type="button" onClick={() => setSectionIndex(0)}>முதல் பகுதி</button>
+            </nav>}
             <div aria-label="தமிழ் மூல உரை" style={{ fontSize, lineHeight: 1.95, overflowWrap: "anywhere" }}>
-              {readingSections.map((section, index) => <p key={`${selected.id}-${index}`} style={{ whiteSpace: "pre-wrap", marginBlock: "1.25em" }}>{section}</p>)}
+              {readingSections.length > 0 && <p key={`${selected.id}-${safeSectionIndex}`} style={{ whiteSpace: "pre-wrap", marginBlock: "1.25em" }}>{readingSections[safeSectionIndex]}</p>}
             </div>
             <footer><p>மூலப் பதிப்பு: {selected.sourceEdition}</p><p>மூல இடம்: {selected.sourceLocator}</p><p>சரிபார்த்தவர்: {selected.reviewer}</p></footer>
           </article>}
