@@ -55,7 +55,7 @@ export function getPublishableMuruganWorks(works: readonly MuruganWork[] = murug
     if (![work.textTa, work.sourceEdition, work.sourceLocator, work.redistributionBasis, work.reviewer, work.reviewedAt].every((value) => value.trim())) {
       throw new Error(`Incomplete publication evidence: ${work.id}`);
     }
-    if (!/[\u0B80-\u0BFF].test(work.textTa)) throw new Error(`Tamil source text missing: ${work.id}`);
+    if (!/[\u0B80-\u0BFF]/.test(work.textTa)) throw new Error(`Tamil source text missing: ${work.id}`);
     if (/<script\b|<html\b|<body\b/i.test(work.textTa)) throw new Error(`HTML shell cannot be published as a Tamil work: ${work.id}`);
     if (/source verification required|pending review|cross reference/i.test(work.textTa)) throw new Error(`Placeholder cannot be published: ${work.id}`);
   }
