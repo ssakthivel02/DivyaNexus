@@ -5,7 +5,7 @@ test.describe("Murugan Tamil library publication boundaries", () => {
     await page.goto("/murugan-literature");
     await expect(page.getByRole("heading", { name: "முருகன் தமிழ் இலக்கிய நூலகம்" })).toBeVisible();
     await expect(page.getByRole("heading", { name: "மூல உரை சரிபார்ப்பு நடைபெறுகிறது" })).toBeVisible();
-    await expect(page.locator("main [role=\"status\"]").toContainText("0 சரிபார்க்கப்பட்ட");
+    await expect(page.locator('main [role="status"]')).toContainText("0 சரிபார்க்கப்பட்ட");
     await expect(page.getByRole("heading", { name: "சரிபார்ப்புக்காகக் காத்திருக்கும் நூல்கள்" })).toBeVisible();
     await expect(page.getByText("கந்தர் அனுபூதி — சரிபார்ப்பு நிலுவையில்")).toBeVisible();
     await expect(page.getByText("திருப்புகழ் — சரிபார்ப்பு நிலுவையில்")).toBeVisible();
