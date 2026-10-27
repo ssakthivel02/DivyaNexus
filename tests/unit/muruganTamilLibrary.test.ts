@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import {
   getPublishableMuruganWorks,
+  splitMuruganReadingSections,
   muruganWorks,
   type MuruganWorkPublished,
 } from "../../client/src/data/muruganTamilLibrary";
@@ -41,5 +42,18 @@ describe("Murugan Tamil publication integrity", () => {
     ["placeholder text", { textTa: "தமிழ் source verification required" }],
   ])("rejects %s", (_label, changes) => {
     expect(() => getPublishableMuruganWorks([{ ...approved, ...changes }])).toThrow();
+  });
+});
+
+describe("Tamil source stanza integrity", () => {
+  it("preserves line breaks and splits only explicit blank-line boundaries", () => {
+    expect(splitMuruganReadingSections("முதல் வரி\nஇரண்டாம் வரி\n\nமூன்றாம் வரி")).toEqual([
+      "முதல் வரி\nஇரண்டாம் வரி",
+      "மூன்றாம் வரி",
+    ]);
+  });
+  it("normalises Windows line endings without inventing stanza numbers", () => {
+    expect(splitMuruganReadingSections("தமிழ் ஒன்று\r\n\r\nதமிழ் இரண்டு")).toEqual(["தமிழ் ஒன்று", "தமிழ் இரண்டு"]);
+    expect(splitMuruganReadingSections("  ")).toEqual([]);
   });
 });
