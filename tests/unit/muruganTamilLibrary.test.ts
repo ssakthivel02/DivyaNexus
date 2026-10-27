@@ -57,3 +57,15 @@ describe("Tamil source stanza integrity", () => {
     expect(splitMuruganReadingSections("  ")).toEqual([]);
   });
 });
+
+describe("Tamil text completeness against verified edition", () => {
+  it("rejects truncated works when a canonical section count is declared", () => {
+    expect(() => getPublishableMuruganWorks([{ ...approved, expectedSectionCount: 2 }])).toThrow(/section count/);
+  });
+  it("accepts source-preserved sections matching a reviewed count", () => {
+    expect(getPublishableMuruganWorks([{ ...approved, textTa: "தமிழ் ஒன்று\n\nதமிழ் இரண்டு", expectedSectionCount: 2 }])).toHaveLength(1);
+  });
+  it("rejects invalid canonical count metadata", () => {
+    expect(() => getPublishableMuruganWorks([{ ...approved, expectedSectionCount: 0 }])).toThrow(/section count/);
+  });
+});
