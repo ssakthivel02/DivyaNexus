@@ -61,3 +61,11 @@ export function getPublishableMuruganWorks(works: readonly MuruganWork[] = murug
   }
   return published;
 }
+
+/**
+ * Split reviewed source text only at blank-line stanza boundaries.
+ * Do not invent verse numbers or infer canonical divisions from line wraps.
+ */
+export function splitMuruganReadingSections(textTa: string): string[] {
+  return textTa.replace(/\r\n?/g, "\n").trim().split(/\n\s*\n+/).map((section) => section.trim()).filter(Boolean);
+}
