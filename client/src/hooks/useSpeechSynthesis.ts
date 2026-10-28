@@ -114,8 +114,14 @@ export function useSpeechSynthesis() {
     utterance.pitch = Math.min(1.25, Math.max(0.75, request.pitch ?? 1));
 
     const selectedVoice = selectSpeechVoice(voices, request.lang, request.voiceURI);
-    if (selectedVoice) utterance.voice = selectedVoice;
-    setActiveVoice(selectedVoice?.name ?? `Browser default for ${request.lang}`);
+    if (!selectedVoice) {
+      setActiveVoice("");
+      setError(`No ${request.lang} speech voice is installed or exposed by this browser. Install or enable a matching voice, then reload this page. The written text remains available.`);
+      setState("error");
+      return false;
+    }
+    utterance.voice = selectedVoice;
+    setActiveVoice(selectedVoice.name);
     setError("");
     setState("ready");
 
