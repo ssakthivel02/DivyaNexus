@@ -7,6 +7,7 @@ type SpeechMockOptions = {
   initialVoices?: MockVoice[];
   delayedVoices?: MockVoice[];
   dropSpeakWithinMsAfterCancel?: number;
+  silentlyDropSpeak?: boolean;
 };
 
 async function installSpeechMock(page: Page, options: SpeechMockOptions = {}) {
@@ -60,6 +61,7 @@ async function installSpeechMock(page: Page, options: SpeechMockOptions = {}) {
       get pending() { return false; },
       getVoices: () => voices,
       speak: (utterance: MockUtterance) => {
+        if (configuration.silentlyDropSpeak) return;
         if (
           configuration.dropSpeakWithinMsAfterCancel
           && Date.now() - lastCancelAt < configuration.dropSpeakWithinMsAfterCancel
@@ -180,6 +182,15 @@ test("missing Tamil or Sanskrit device voice reports an explicit error instead o
     window as typeof window & { __speechMock: { counts: () => { speakCount: number } } }
   ).__speechMock.counts());
   expect(counts.speakCount).toBe(0);
+});
+
+test("browser silently ignoring a speech request shows a timeout error", async ({ page }) => {
+  await installSpeechMock(page, { silentlyDropSpeak: true });
+  await openRoute(page, "/audio");
+  const controls = page.locator(".speech-controls").first();
+  await controls.getByRole("button", { name: "Play", exact: true }).click();
+  await expect(controls).toHaveAttribute("data-speech-state", "error", { timeout: 7000 });
+  await expect(controls.getByRole("alert")).toContainText("voice did not start speaking");
 });
 
 test("speech start is deferred when a browser drops speak calls made immediately after cancel", async ({ page }) => {
