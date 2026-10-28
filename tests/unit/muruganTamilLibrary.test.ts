@@ -1,3 +1,4 @@
+import { KANDAR_ANUBHUTI_TAMIL } from "../../client/src/data/murugan/kandarAnubhutiTa";
 import { describe, expect, it } from "vitest";
 import {
   getPublishableMuruganWorks,
@@ -67,5 +68,19 @@ describe("Tamil text completeness against verified edition", () => {
   });
   it("rejects invalid canonical count metadata", () => {
     expect(() => getPublishableMuruganWorks([{ ...approved, expectedSectionCount: 0 }])).toThrow(/section count/);
+  });
+});
+
+describe("Kandar Anubhuti staged complete source", () => {
+  const sections = splitMuruganReadingSections(KANDAR_ANUBHUTI_TAMIL);
+  it("includes the opening invocation and all numbered verses 1-51", () => {
+    expect(sections).toHaveLength(52);
+    expect(sections[0]).toContain("நெஞ்சக் கனகல்லு");
+    sections.slice(1).forEach((verse, index) => expect(verse.trimEnd().endsWith(String(index + 1))).toBe(true));
+    expect(sections[51]).toContain("குருவாய் வருவா");
+  });
+  it("keeps canonical four-line stanzas without HTML contamination", () => {
+    expect(sections.every((verse) => verse.split("\n").length === 4)).toBe(true);
+    expect(KANDAR_ANUBHUTI_TAMIL).not.toMatch(/<html|<script|source verification required/i);
   });
 });
