@@ -18,7 +18,10 @@ export default function MuruganLiterature() {
   ), [published, query]);
   const selected = visible.find((work) => work.id === selectedId) ?? visible[0];
   const readingSections = selected ? splitMuruganReadingSections(selected.textTa) : [];
-  const safeSectionIndex = Math.min(sectionIndex, Math.max(0, readingSections.length - 1));
+  const firstMatchingSection = query.trim() && selected
+    ? readingSections.findIndex((section) => section.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))
+    : -1;
+  const safeSectionIndex = Math.min(firstMatchingSection >= 0 ? firstMatchingSection : sectionIndex, Math.max(0, readingSections.length - 1));
   const awaitingReview = muruganWorks.filter((work) => work.reviewStatus === "pending-source-review");
 
   return (
