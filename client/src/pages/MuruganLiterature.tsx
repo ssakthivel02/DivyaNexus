@@ -18,10 +18,7 @@ export default function MuruganLiterature() {
   ), [published, query]);
   const selected = visible.find((work) => work.id === selectedId) ?? visible[0];
   const readingSections = selected ? splitMuruganReadingSections(selected.textTa) : [];
-  const firstMatchingSection = query.trim() && selected
-    ? readingSections.findIndex((section) => section.toLocaleLowerCase().includes(query.trim().toLocaleLowerCase()))
-    : -1;
-  const safeSectionIndex = Math.min(firstMatchingSection >= 0 ? firstMatchingSection : sectionIndex, Math.max(0, readingSections.length - 1));
+  const safeSectionIndex = Math.min(sectionIndex, Math.max(0, readingSections.length - 1));
   const awaitingReview = muruganWorks.filter((work) => work.reviewStatus === "pending-source-review");
 
   return (
@@ -34,7 +31,18 @@ export default function MuruganLiterature() {
 
       <section aria-label="Tamil literature search" style={{ marginBlock: 28 }}>
         <label htmlFor="murugan-literature-search">தமிழ் நூல்கள் மற்றும் பாடல்களில் தேடுக</label>
-        <input id="murugan-literature-search" type="search" value={query} onChange={(event) => setQuery(event.target.value)}
+        <input id="murugan-literature-search" type="search" value={query} onChange={(event) => {
+          const value = event.target.value;
+          setQuery(value);
+          const match = published.find((work) => [work.titleTa, work.titleEn, work.author ?? "", work.textTa].some((text) => text.toLocaleLowerCase().includes(value.trim().toLocaleLowerCase())));
+          if (match && value.trim()) {
+            setSelectedId(match.id);
+            const matchIndex = splitMuruganReadingSections(match.textTa).findIndex((section) => section.toLocaleLowerCase().includes(value.trim().toLocaleLowerCase()));
+            setSectionIndex(Math.max(0, matchIndex));
+          } else {
+            setSectionIndex(0);
+          }
+        }}
           placeholder="நூல், ஆசிரியர் அல்லது பாடல் வரி" style={{ display: "block", width: "100%", padding: 12, marginTop: 8 }} />
         <p role="status">{visible.length} சரிபார்க்கப்பட்ட படைப்புகள் வாசிக்கக் கிடைக்கின்றன.</p>
       </section>
