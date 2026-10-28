@@ -167,6 +167,21 @@ test("delayed browser voices are discovered through voiceschanged", async ({ pag
   await expect(page.locator(".speech-controls").first().getByLabel("Device voice")).toBeVisible();
 });
 
+test("missing Tamil or Sanskrit device voice reports an explicit error instead of silent fallback", async ({ page }) => {
+  await installSpeechMock(page, {
+    initialVoices: [{ name: "English Voice", lang: "en-GB", voiceURI: "en-a" }],
+  });
+  await openRoute(page, "/audio");
+  const controls = page.locator(".speech-controls").first();
+  await controls.getByRole("button", { name: "Play", exact: true }).click();
+  await expect(controls).toHaveAttribute("data-speech-state", "error");
+  await expect(controls.getByRole("alert")).toContainText("No ta-IN speech voice");
+  const counts = await page.evaluate(() => (
+    window as typeof window & { __speechMock: { counts: () => { speakCount: number } } }
+  ).__speechMock.counts());
+  expect(counts.speakCount).toBe(0);
+});
+
 test("speech start is deferred when a browser drops speak calls made immediately after cancel", async ({ page }) => {
   await installSpeechMock(page, { dropSpeakWithinMsAfterCancel: 40 });
   await openRoute(page, "/rig-veda?record=rig-veda-1-1-1");
