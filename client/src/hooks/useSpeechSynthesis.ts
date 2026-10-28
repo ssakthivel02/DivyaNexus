@@ -129,11 +129,13 @@ export function useSpeechSynthesis() {
       if (mountedRef.current && generationRef.current === generation) callback();
     };
 
-    utterance.onstart = () => updateIfCurrent(() => setState("speaking"));
+    let started = false;
+    utterance.onstart = () => updateIfCurrent(() => { started = true; setState("speaking"); });
     utterance.onpause = () => updateIfCurrent(() => setState("paused"));
     utterance.onresume = () => updateIfCurrent(() => setState("speaking"));
-    utterance.onend = () => updateIfCurrent(() => setState("ended"));
+    utterance.onend = () => updateIfCurrent(() => { started = true; setState("ended"); });
     utterance.onerror = (event) => updateIfCurrent(() => {
+      started = true;
       if (event.error === "canceled" || event.error === "interrupted") {
         setState("stopped");
         return;
@@ -146,6 +148,12 @@ export function useSpeechSynthesis() {
       if (!mountedRef.current || generationRef.current !== generation) return;
       window.speechSynthesis.resume();
       window.speechSynthesis.speak(utterance);
+      window.setTimeout(() => {
+        if (!mountedRef.current || generationRef.current !== generation || started) return;
+        window.speechSynthesis.cancel();
+        setError(`The ${request.lang} voice did not start speaking. Check browser audio output or install another matching voice. The written text remains available.`);
+        setState("error");
+      }, 2500);
     }, 60);
     return true;
   }, [state, supported, voices]);
