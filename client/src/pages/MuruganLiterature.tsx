@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { KANDAR_ANUBHUTI_TAMIL } from "@/data/murugan/kandarAnubhutiTa";
 import { getPublishableMuruganWorks, muruganWorks, splitMuruganReadingSections } from "@/data/muruganTamilLibrary";
 
 /**
@@ -19,6 +20,8 @@ export default function MuruganLiterature() {
   const selected = visible.find((work) => work.id === selectedId) ?? visible[0];
   const readingSections = selected ? splitMuruganReadingSections(selected.textTa) : [];
   const safeSectionIndex = Math.min(sectionIndex, Math.max(0, readingSections.length - 1));
+  const [showEditorialPreview, setShowEditorialPreview] = useState(false);
+  const previewSections = splitMuruganReadingSections(KANDAR_ANUBHUTI_TAMIL);
   const awaitingReview = muruganWorks.filter((work) => work.reviewStatus === "pending-source-review");
 
   return (
@@ -52,6 +55,15 @@ export default function MuruganLiterature() {
           <h2 id="murugan-review-heading">மூல உரை சரிபார்ப்பு நடைபெறுகிறது</h2>
           <p>முழுமையான தமிழ் உரை, மூலப் பதிப்பு மற்றும் வெளியீட்டு அனுமதி உறுதி செய்யப்பட்ட பின்னரே நூல்கள் இங்கே வெளியிடப்படும்.</p>
           <p>காலியான பக்கங்களோ, சரிபார்க்கப்படாத பாடல்களோ வெளியிடப்படுவதில்லை.</p>
+          <button type="button" aria-expanded={showEditorialPreview} onClick={() => setShowEditorialPreview((open) => !open)}>
+            {showEditorialPreview ? "மூல உரை ஆய்வு முன்னோட்டத்தை மூடு" : "கந்தர் அனுபூதி — ஆய்வு முன்னோட்டம் (51 பாடல்கள்)"}
+          </button>
+          {showEditorialPreview && <article aria-label="கந்தர் அனுபூதி ஆய்வு முன்னோட்டம்">
+            <h3>கந்தர் அனுபூதி — சரிபார்க்கப்படாத ஆய்வு முன்னோட்டம்</h3>
+            <p>இது வெளியீட்டு ஒப்புதல் பெற்ற பதிப்பு அல்ல. மூல உரையுடன் ஒப்பிட்டு சரிபார்க்க வேண்டும்.</p>
+            <p>மூலம்: தமிழ் விக்கிமூலம், பதிப்பு 1526108. ஆசிரியர்: அருணகிரிநாதர்.</p>
+            {previewSections.map((section, index) => <p key={index} style={{ whiteSpace: "pre-wrap", lineHeight: 1.9 }}><strong>{index === 0 ? "காப்பு" : `பாடல் ${index}`}</strong><span style={{ display: "block" }}>{section}</span></p>)}
+          </article>}
         </section>
       ) : (
         <section aria-label="Available complete works" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 300px), 1fr))", gap: 24 }}>
