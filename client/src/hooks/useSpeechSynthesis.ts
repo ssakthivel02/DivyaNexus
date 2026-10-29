@@ -26,7 +26,7 @@ export function selectSpeechVoice(
 ) {
   if (preferredVoiceURI) {
     const preferred = voices.find((voice) => voice.voiceURI === preferredVoiceURI);
-    if (preferred) return preferred;
+    if (preferred && preferred.lang.toLowerCase().split("-")[0] === language.toLowerCase().split("-")[0]) return preferred;
   }
 
   const normalisedLanguage = language.toLowerCase();
@@ -113,9 +113,18 @@ export function useSpeechSynthesis() {
     utterance.rate = clampSpeechRate(request.rate ?? 0.9, 0.9);
     utterance.pitch = Math.min(1.25, Math.max(0.75, request.pitch ?? 1));
 
-    const selectedVoice = selectSpeechVoice(voices, request.lang, request.voiceURI);
-    if (selectedVoice) utterance.voice = selectedVoice;
-    setActiveVoice(selectedVoice?.name ?? `Browser default for ${request.lang}`);
+    // Some browsers populate the voice list only after the first user gesture.
+    const currentVoices = window.speechSynthesis.getVoices();
+    if (currentVoices.length > 0) setVoices(currentVoices);
+    const selectedVoice = selectSpeechVoice(currentVoices.length > 0 ? currentVoices : voices, request.lang, request.voiceURI);
+    if (!selectedVoice) {
+      setActiveVoice("");
+      setError(`No ${request.lang} speech voice is installed or exposed by this browser. Install or enable a matching voice, then reload this page. The written text remains available.`);
+      setState("error");
+      return false;
+    }
+    utterance.voice = selectedVoice;
+    setActiveVoice(selectedVoice.name);
     setError("");
     setState("ready");
 
@@ -123,11 +132,13 @@ export function useSpeechSynthesis() {
       if (mountedRef.current && generationRef.current === generation) callback();
     };
 
-    utterance.onstart = () => updateIfCurrent(() => setState("speaking"));
+    let started = false;
+    utterance.onstart = () => updateIfCurrent(() => { started = true; setState("speaking"); });
     utterance.onpause = () => updateIfCurrent(() => setState("paused"));
     utterance.onresume = () => updateIfCurrent(() => setState("speaking"));
-    utterance.onend = () => updateIfCurrent(() => setState("ended"));
+    utterance.onend = () => updateIfCurrent(() => { started = true; setState("ended"); });
     utterance.onerror = (event) => updateIfCurrent(() => {
+      started = true;
       if (event.error === "canceled" || event.error === "interrupted") {
         setState("stopped");
         return;
@@ -136,7 +147,17 @@ export function useSpeechSynthesis() {
       setState("error");
     });
 
-    window.speechSynthesis.speak(utterance);
+    window.setTimeout(() => {
+      if (!mountedRef.current || generationRef.current !== generation) return;
+      window.speechSynthesis.resume();
+      window.speechSynthesis.speak(utterance);
+      window.setTimeout(() => {
+        if (!mountedRef.current || generationRef.current !== generation || started) return;
+        window.speechSynthesis.cancel();
+        setError(`The ${request.lang} voice did not start speaking. Check browser audio output or install another matching voice. The written text remains available.`);
+        setState("error");
+      }, 2500);
+    }, 60);
     return true;
   }, [state, supported, voices]);
 
