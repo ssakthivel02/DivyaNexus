@@ -26,7 +26,7 @@ export function selectSpeechVoice(
 ) {
   if (preferredVoiceURI) {
     const preferred = voices.find((voice) => voice.voiceURI === preferredVoiceURI);
-    if (preferred) return preferred;
+    if (preferred && preferred.lang.toLowerCase().split("-")[0] === language.toLowerCase().split("-")[0]) return preferred;
   }
 
   const normalisedLanguage = language.toLowerCase();
@@ -113,7 +113,10 @@ export function useSpeechSynthesis() {
     utterance.rate = clampSpeechRate(request.rate ?? 0.9, 0.9);
     utterance.pitch = Math.min(1.25, Math.max(0.75, request.pitch ?? 1));
 
-    const selectedVoice = selectSpeechVoice(voices, request.lang, request.voiceURI);
+    // Some browsers populate the voice list only after the first user gesture.
+    const currentVoices = window.speechSynthesis.getVoices();
+    if (currentVoices.length > 0) setVoices(currentVoices);
+    const selectedVoice = selectSpeechVoice(currentVoices.length > 0 ? currentVoices : voices, request.lang, request.voiceURI);
     if (!selectedVoice) {
       setActiveVoice("");
       setError(`No ${request.lang} speech voice is installed or exposed by this browser. Install or enable a matching voice, then reload this page. The written text remains available.`);
