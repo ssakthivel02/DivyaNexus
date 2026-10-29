@@ -193,6 +193,23 @@ test("browser silently ignoring a speech request shows a timeout error", async (
   await expect(controls.getByRole("alert")).toContainText("voice did not start speaking");
 });
 
+test("a saved wrong-language voice is ignored when playing Tamil", async ({ page }) => {
+  await installSpeechMock(page, { initialVoices: [
+    { name: "English Voice", lang: "en-GB", voiceURI: "saved-en" },
+    { name: "Tamil Voice", lang: "ta-IN", voiceURI: "current-ta" },
+  ] });
+  await page.addInitScript(() => {
+    localStorage.setItem("divyanexus.speechPreferences.v1", JSON.stringify({
+      version: 1, selectedItemId: "", rates: {}, voices: { "ta-IN": "saved-en" },
+    }));
+  });
+  await openRoute(page, "/audio");
+  const controls = page.locator(".speech-controls").first();
+  await controls.getByRole("button", { name: "Play", exact: true }).click();
+  await expect(controls).toHaveAttribute("data-speech-state", "speaking");
+  await expect(controls.locator(".speech-controls__voice")).toContainText("Tamil Voice");
+});
+
 test("speech start is deferred when a browser drops speak calls made immediately after cancel", async ({ page }) => {
   await installSpeechMock(page, { dropSpeakWithinMsAfterCancel: 40 });
   await openRoute(page, "/rig-veda?record=rig-veda-1-1-1");
