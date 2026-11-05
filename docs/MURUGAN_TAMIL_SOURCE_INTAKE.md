@@ -6,10 +6,10 @@ This register is for **website-hosted original Tamil text**, not links replacing
 
 - Attributed author: Arunagirinathar (classical work).
 - Primary public transcription candidate: Tamil Wikisource, page title “கந்தர் அனுபூதி”.
-- Source locator for editorial verification: https://ta.wikisource.org/wiki/கந்தர்_அனுபூதி
-- Source structure: opening invocation plus verses numbered 1–51 on that page.
-- Source license: inspect work-specific public-domain statement **and** Wikimedia contributor/attribution and ShareAlike requirements before republishing editorial elements. Record the permanent page revision ID, retrieval date, edition variance and the applicable terms.
-- **Current decision: NOT IMPORTED, NOT PUBLISHED.** Full text has not been compared and approved. No claim is made that the external page is this product's source-controlled text.
+- Selected source witness for editorial comparison: Tamil Wikisource, fixed revision **1526108** (2023-10-03): https://ta.wikisource.org/w/index.php?title=கந்தர்_அனுபூதி&oldid=1526108
+- Selected witness structure: opening invocation (`காப்பு`) plus numbered verses **1–51**, or 52 sections including the invocation. These counts describe this selected witness, **not** every Kandar Anubhuti edition. Other editions may contain additional numbered poems (e.g. https://kaumaram.com/anuboothi/index.html); do not silently mix editions.
+- Source reuse: verify the revision-specific contributor credits, relevant license or public-domain status, attribution and any ShareAlike obligations. Classical authorship alone does not clear editorial/transcription or recording rights.
+- **Current decision: IMPORTED FOR EDITORIAL REVIEW ONLY; NOT APPROVED FOR PUBLICATION.** A local 52-section candidate transcription is stored in `client/src/data/murugan/kandarAnubhutiTa.ts`, but the public reader does **not** import it and the library registry retains `reviewStatus: "pending-source-review"`. Structural checks passed; independent full source-to-repository text comparison, provenance/permission review, approved edition scope and named editorial sign-off remain outstanding. No published-work claim is authorized.
 
 ## Import acceptance for EACH work
 
