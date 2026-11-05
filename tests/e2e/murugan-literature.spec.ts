@@ -12,13 +12,13 @@ test.describe("Murugan Tamil library publication boundaries", () => {
     await expect(page.locator('main a[href^="http"]')).toHaveCount(0);
   });
 
-  test("shows staged complete Kandar Anubhuti in an explicitly unapproved local preview", async ({ page }) => {
+  test("keeps unapproved Tamil source out of public reader", async ({ page }) => {
     await page.goto("/murugan-literature");
-    await page.getByRole("button", { name: /கந்தர் அனுபூதி — ஆய்வு முன்னோட்டம்/ }).click();
-    await expect(page.getByRole("article", { name: "கந்தர் அனுபூதி ஆய்வு முன்னோட்டம்" })).toBeVisible();
-    await expect(page.getByText("பாடல் 51", { exact: true })).toBeVisible();
-    await expect(page.getByText(/குருவாய் வருவா யருள்வாய் குகனே/)).toBeVisible();
-    await expect(page.getByText(/வெளியீட்டு ஒப்புதல் பெற்ற பதிப்பு அல்ல/)).toBeVisible();
+    await expect(page.getByRole("button", { name: /கந்தர் அனுபூதி — ஆய்வு முன்னோட்டம்/ })).toHaveCount(0);
+    await expect(page.getByRole("article", { name: "கந்தர் அனுபூதி ஆய்வு முன்னோட்டம்" })).toHaveCount(0);
+    await expect(page.getByText("பாடல் 51", { exact: true })).toHaveCount(0);
+    await expect(page.getByText(/குருவாய் வருவா யருள்வாய் குகனே/)).toHaveCount(0);
+    await expect(page.getByText("கந்தர் அனுபூதி — சரிபார்ப்பு நிலுவையில்")).toBeVisible();
   });
 
   test("keeps search keyboard accessible and avoids horizontal overflow on mobile", async ({ page }) => {
