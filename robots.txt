@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://ssakthivel02.github.io/DivyaNexus/sitemap.xml

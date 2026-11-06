@@ -1,0 +1,295 @@
+import { randomUUID } from "crypto";
+
+export const CONTENT_CORRECTION_CATEGORIES = [
+  "source-attribution",
+  "citation-mismatch",
+  "transliteration",
+  "translation",
+  "tradition-context",
+  "unsupported-claim",
+  "accessibility",
+  "ask-divya-response",
+  "other",
+] as const;
+
+export type ContentCorrectionCategory = (typeof CONTENT_CORRECTION_CATEGORIES)[number];
+
+export const CONTENT_CORRECTION_STATUSES = [
+  "submitted",
+  "triage",
+  "source-review",
+  "needs-review",
+  "resolved",
+  "closed",
+] as const;
+
+export type ContentCorrectionStatus = (typeof CONTENT_CORRECTION_STATUSES)[number];
+
+export interface ContentCorrectionInput {
+  category: ContentCorrectionCategory;
+  concern: string;
+  pageUrl?: string;
+  recordId?: string;
+  askDivyaRequestId?: string;
+  questionedText?: string;
+  evidence?: string;
+}
+
+export interface ContentCorrectionRecord extends ContentCorrectionInput {
+  id: string;
+  status: ContentCorrectionStatus;
+  submittedAt: string;
+}
+
+export interface ContentCorrectionRetentionPolicy {
+  retentionMs: number;
+}
+
+export interface ContentCorrectionTrustedActor {
+  actorRef: string;
+}
+
+export interface ContentCorrectionSubmissionAdmission {
+  input: Readonly<ContentCorrectionInput>;
+}
+
+export type ContentCorrectionSubmissionAdmissionPolicy = (
+  request: ContentCorrectionSubmissionAdmission,
+) => Promise<boolean> | boolean;
+
+export interface ContentCorrectionTransitionAuthorization {
+  actor: ContentCorrectionTrustedActor;
+  record: ContentCorrectionRecord;
+  nextStatus: ContentCorrectionStatus;
+}
+
+export type ContentCorrectionTransitionAuthorizer = (
+  request: ContentCorrectionTransitionAuthorization,
+) => Promise<boolean> | boolean;
+
+export interface ContentCorrectionDeletionAuthorization {
+  actor: ContentCorrectionTrustedActor;
+  record: ContentCorrectionRecord;
+}
+
+export type ContentCorrectionDeletionAuthorizer = (
+  request: ContentCorrectionDeletionAuthorization,
+) => Promise<boolean> | boolean;
+
+export interface ContentCorrectionDeletionAuditEvent {
+  readonly id: string;
+  readonly correctionId: string;
+  readonly action: "deleted";
+  readonly occurredAt: string;
+  readonly previousStatus: ContentCorrectionStatus;
+  readonly actorRef: string;
+}
+
+export interface ContentCorrectionQueueStore {
+  enqueue(record: ContentCorrectionRecord): Promise<void> | void;
+  getById(id: string): Promise<ContentCorrectionRecord | null> | ContentCorrectionRecord | null;
+  purgeBefore(cutoffIso: string): Promise<number> | number;
+  transitionStatus(
+    id: string,
+    expectedStatus: ContentCorrectionStatus,
+    nextStatus: ContentCorrectionStatus,
+  ): Promise<ContentCorrectionRecord | null> | ContentCorrectionRecord | null;
+  deleteWithAudit?(
+    id: string,
+    expectedStatus: ContentCorrectionStatus,
+    event: ContentCorrectionDeletionAuditEvent,
+  ): Promise<boolean> | boolean;
+}
+
+const MAX_CONCERN_LENGTH = 2_000;
+const MAX_TEXT_LENGTH = 4_000;
+const MAX_EVIDENCE_LENGTH = 4_000;
+const MAX_IDENTIFIER_LENGTH = 200;
+const MAX_URL_LENGTH = 2_048;
+
+function optionalText(value: unknown, maxLength: number): string | undefined {
+  if (value === undefined || value === null) return undefined;
+  if (typeof value !== "string") throw new Error("INVALID_CORRECTION_REPORT");
+  const trimmed = value.trim();
+  if (!trimmed || trimmed.length > maxLength) throw new Error("INVALID_CORRECTION_REPORT");
+  return trimmed;
+}
+
+function normalizeCorrectionId(id: string): string {
+  const normalized = id.trim();
+  if (!normalized || normalized.length > MAX_IDENTIFIER_LENGTH) throw new Error("INVALID_CORRECTION_ID");
+  return normalized;
+}
+
+function normalizeAuditEventId(id: string): string {
+  const normalized = id.trim();
+  if (!normalized || normalized.length > MAX_IDENTIFIER_LENGTH) throw new Error("INVALID_CORRECTION_AUDIT_EVENT");
+  return normalized;
+}
+
+function validateContentCorrectionStatus(input: unknown): ContentCorrectionStatus {
+  if (!CONTENT_CORRECTION_STATUSES.includes(input as ContentCorrectionStatus)) {
+    throw new Error("INVALID_CORRECTION_STATUS");
+  }
+  return input as ContentCorrectionStatus;
+}
+
+export function validateContentCorrectionTrustedActor(input: unknown): ContentCorrectionTrustedActor {
+  if (!input || typeof input !== "object") throw new Error("INVALID_CORRECTION_ACTOR");
+  const actorRef = optionalText((input as Record<string, unknown>).actorRef, MAX_IDENTIFIER_LENGTH);
+  if (!actorRef) throw new Error("INVALID_CORRECTION_ACTOR");
+  return { actorRef };
+}
+
+export function validateContentCorrectionInput(input: unknown): ContentCorrectionInput {
+  if (!input || typeof input !== "object") throw new Error("INVALID_CORRECTION_REPORT");
+  const value = input as Record<string, unknown>;
+  if (!CONTENT_CORRECTION_CATEGORIES.includes(value.category as ContentCorrectionCategory)) {
+    throw new Error("INVALID_CORRECTION_CATEGORY");
+  }
+
+  const concern = optionalText(value.concern, MAX_CONCERN_LENGTH);
+  if (!concern) throw new Error("INVALID_CORRECTION_REPORT");
+
+  const pageUrl = optionalText(value.pageUrl, MAX_URL_LENGTH);
+  const recordId = optionalText(value.recordId, MAX_IDENTIFIER_LENGTH);
+  const askDivyaRequestId = optionalText(value.askDivyaRequestId, MAX_IDENTIFIER_LENGTH);
+  const questionedText = optionalText(value.questionedText, MAX_TEXT_LENGTH);
+  const evidence = optionalText(value.evidence, MAX_EVIDENCE_LENGTH);
+
+  if (!pageUrl && !recordId && !askDivyaRequestId) {
+    throw new Error("CORRECTION_TARGET_REQUIRED");
+  }
+
+  return {
+    category: value.category as ContentCorrectionCategory,
+    concern,
+    ...(pageUrl ? { pageUrl } : {}),
+    ...(recordId ? { recordId } : {}),
+    ...(askDivyaRequestId ? { askDivyaRequestId } : {}),
+    ...(questionedText ? { questionedText } : {}),
+    ...(evidence ? { evidence } : {}),
+  };
+}
+
+export function validateContentCorrectionRetentionPolicy(input: unknown): ContentCorrectionRetentionPolicy {
+  if (!input || typeof input !== "object") throw new Error("INVALID_CORRECTION_RETENTION_POLICY");
+  const retentionMs = (input as Record<string, unknown>).retentionMs;
+  if (typeof retentionMs !== "number" || !Number.isSafeInteger(retentionMs) || retentionMs <= 0) {
+    throw new Error("INVALID_CORRECTION_RETENTION_POLICY");
+  }
+  return { retentionMs };
+}
+
+export interface ContentCorrectionServiceOptions {
+  store: ContentCorrectionQueueStore;
+  submissionAdmissionPolicy?: ContentCorrectionSubmissionAdmissionPolicy;
+  transitionAuthorizer?: ContentCorrectionTransitionAuthorizer;
+  deletionAuthorizer?: ContentCorrectionDeletionAuthorizer;
+  idFactory?: () => string;
+  auditEventIdFactory?: () => string;
+  now?: () => Date;
+}
+
+export class ContentCorrectionService {
+  private readonly idFactory: () => string;
+  private readonly auditEventIdFactory: () => string;
+  private readonly now: () => Date;
+
+  constructor(private readonly options: ContentCorrectionServiceOptions) {
+    this.idFactory = options.idFactory ?? (() => `correction-${randomUUID()}`);
+    this.auditEventIdFactory = options.auditEventIdFactory ?? (() => `correction-audit-${randomUUID()}`);
+    this.now = options.now ?? (() => new Date());
+  }
+
+  private async enqueueValidated(validated: ContentCorrectionInput): Promise<ContentCorrectionRecord> {
+    const record: ContentCorrectionRecord = {
+      ...validated,
+      id: this.idFactory(),
+      status: "submitted",
+      submittedAt: this.now().toISOString(),
+    };
+    await this.options.store.enqueue(record);
+    return record;
+  }
+
+  async submit(input: unknown): Promise<ContentCorrectionRecord> {
+    return await this.enqueueValidated(validateContentCorrectionInput(input));
+  }
+
+  async submitGuarded(input: unknown): Promise<ContentCorrectionRecord> {
+    const validated = validateContentCorrectionInput(input);
+    const policy = this.options.submissionAdmissionPolicy;
+    if (!policy) throw new Error("CORRECTION_ABUSE_CONTROL_REQUIRED");
+
+    const admissionInput = Object.freeze({ ...validated }) as Readonly<ContentCorrectionInput>;
+    const admitted = await policy({ input: admissionInput });
+    if (admitted !== true) throw new Error("CORRECTION_SUBMISSION_REJECTED");
+
+    return await this.enqueueValidated(validated);
+  }
+
+  async get(id: string): Promise<ContentCorrectionRecord | null> {
+    return await this.options.store.getById(normalizeCorrectionId(id));
+  }
+
+  async purgeExpired(policy: unknown): Promise<number> {
+    const { retentionMs } = validateContentCorrectionRetentionPolicy(policy);
+    const cutoff = new Date(this.now().getTime() - retentionMs);
+    if (Number.isNaN(cutoff.getTime())) throw new Error("INVALID_CORRECTION_RETENTION_POLICY");
+
+    const purged = await this.options.store.purgeBefore(cutoff.toISOString());
+    if (!Number.isSafeInteger(purged) || purged < 0) throw new Error("INVALID_CORRECTION_PURGE_RESULT");
+    return purged;
+  }
+
+  async transitionStatus(id: string, nextStatus: unknown, actor: unknown): Promise<ContentCorrectionRecord> {
+    const normalizedId = normalizeCorrectionId(id);
+    const normalizedNextStatus = validateContentCorrectionStatus(nextStatus);
+    const trustedActor = validateContentCorrectionTrustedActor(actor);
+    const current = await this.options.store.getById(normalizedId);
+    if (!current) throw new Error("CORRECTION_NOT_FOUND");
+    if (current.status === normalizedNextStatus) throw new Error("INVALID_CORRECTION_STATUS_TRANSITION");
+
+    const authorizer = this.options.transitionAuthorizer;
+    if (!authorizer) throw new Error("CORRECTION_AUTHORIZATION_REQUIRED");
+    const authorized = await authorizer({ actor: trustedActor, record: current, nextStatus: normalizedNextStatus });
+    if (authorized !== true) throw new Error("CORRECTION_TRANSITION_FORBIDDEN");
+
+    const updated = await this.options.store.transitionStatus(normalizedId, current.status, normalizedNextStatus);
+    if (!updated) throw new Error("CORRECTION_STATUS_CONFLICT");
+    if (updated.id !== normalizedId || updated.status !== normalizedNextStatus) {
+      throw new Error("INVALID_CORRECTION_TRANSITION_RESULT");
+    }
+    return updated;
+  }
+
+  async deleteCorrection(id: string, actor: unknown): Promise<ContentCorrectionDeletionAuditEvent> {
+    const normalizedId = normalizeCorrectionId(id);
+    const trustedActor = validateContentCorrectionTrustedActor(actor);
+    const current = await this.options.store.getById(normalizedId);
+    if (!current) throw new Error("CORRECTION_NOT_FOUND");
+
+    const authorizer = this.options.deletionAuthorizer;
+    if (!authorizer) throw new Error("CORRECTION_DELETION_AUTHORIZATION_REQUIRED");
+    const authorized = await authorizer({ actor: trustedActor, record: current });
+    if (authorized !== true) throw new Error("CORRECTION_DELETION_FORBIDDEN");
+
+    const deleteWithAudit = this.options.store.deleteWithAudit;
+    if (!deleteWithAudit) throw new Error("CORRECTION_ATOMIC_DELETE_AUDIT_REQUIRED");
+
+    const event: ContentCorrectionDeletionAuditEvent = Object.freeze({
+      id: normalizeAuditEventId(this.auditEventIdFactory()),
+      correctionId: normalizedId,
+      action: "deleted",
+      occurredAt: this.now().toISOString(),
+      previousStatus: current.status,
+      actorRef: trustedActor.actorRef,
+    });
+
+    const deleted = await deleteWithAudit(normalizedId, current.status, event);
+    if (deleted === false) throw new Error("CORRECTION_DELETE_CONFLICT");
+    if (deleted !== true) throw new Error("INVALID_CORRECTION_DELETE_RESULT");
+    return event;
+  }
+}

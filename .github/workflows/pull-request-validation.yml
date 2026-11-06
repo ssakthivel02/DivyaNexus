@@ -1,0 +1,82 @@
+name: Validate DivyaNexus React App
+
+on:
+  pull_request:
+    branches:
+      - main
+      - feature/divyanexus-wave9-speech-reader-hardening
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: divyanexus-validation-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: TypeScript check
+        run: pnpm run check
+
+      - name: Validate source portability and release markers
+        run: node scripts/validate-source-boundaries.mjs
+
+      - name: Validate router, manifest and sitemap
+        run: pnpm exec tsx scripts/validate-route-manifest.ts
+
+      - name: Validate route metadata and canonical contracts
+        run: pnpm exec tsx scripts/validate-route-metadata.ts
+
+      - name: Validate editorial depth registry
+        run: pnpm exec tsx scripts/validate-editorial-registry.ts
+
+      - name: Validate PWA and offline contracts
+        run: node scripts/validate-pwa-assets.mjs
+
+      - name: Validate owner-selected artwork
+        run: node scripts/validate-owner-artwork.mjs
+
+      - name: Validate readability and bilingual browser audio
+        run: node scripts/validate-readability-audio.mjs
+
+      - name: Validate Wave 9 speech and reader hardening
+        run: node scripts/validate-speech-reader-wave9.mjs
+
+      - name: Validate Wave 10 Knowledge Nexus
+        run: node scripts/validate-knowledge-nexus-wave10.mjs
+
+      - name: Run deterministic unit tests
+        run: pnpm run test:unit
+
+      - name: Build production application
+        env:
+          VITE_BASE_PATH: /
+        run: pnpm run build
+
+      - name: Materialize GitHub Pages direct routes
+        run: pnpm exec tsx scripts/materialize-pages-routes.ts
+
+      - name: Validate deployable build artifact
+        run: node scripts/validate-build-artifact.mjs

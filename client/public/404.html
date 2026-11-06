@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="robots" content="noindex" />
+    <title>Opening DivyaNexus…</title>
+    <script>
+      (function () {
+        var knownRoutes = ["explore", "ask-divya", "ask", "search", "scriptures", "bhagavad-gita", "rig-veda", "upanishads", "deities", "temples", "rishis", "festivals", "glossary", "life-guidance", "guidance", "learning", "kids", "audio", "library", "about", "sources", "privacy", "terms", "delete-account", "delete-data", "disclaimer", "contact"];
+        var parts = window.location.pathname.split("/").filter(Boolean);
+        var isProjectPage = parts.length > 1 && knownRoutes.indexOf(parts[0]) === -1;
+        var base = isProjectPage ? "/" + parts[0] + "/" : "/";
+        var routeParts = isProjectPage ? parts.slice(1) : parts;
+        var route = "/" + routeParts.join("/") + window.location.search + window.location.hash;
+        window.location.replace(base + "?path=" + encodeURIComponent(route));
+      })();
+    </script>
+  </head>
+  <body>Opening DivyaNexus…</body>
+</html>
