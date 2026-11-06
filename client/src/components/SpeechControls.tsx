@@ -88,7 +88,7 @@ export function SpeechControls({
           ? `Selected voice: ${selectedVoice.name}.`
           : hasMatchingVoice
             ? `${matchingVoices.length} matching ${selected.lang} voice${matchingVoices.length === 1 ? " is" : "s are"} available.`
-            : `No matching ${selected.lang} voice was reported; the browser may use a fallback voice.`;
+            : `No matching ${selected.lang} voice was reported. Install or enable that language voice to use audio; the written text remains available.`;
 
   const play = () => speech.speak({
     text: selected.text,
