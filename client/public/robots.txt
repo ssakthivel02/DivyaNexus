@@ -1,4 +1,0 @@
-User-agent: *
-Allow: /
-
-Sitemap: https://divyanexus.omsaravanabhava.org/sitemap.xml

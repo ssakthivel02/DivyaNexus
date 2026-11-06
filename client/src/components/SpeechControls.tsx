@@ -19,6 +19,7 @@ const stateLabels: Record<SpeechState, string> = {
   unsupported: "Not supported",
   loading: "Loading voices",
   ready: "Ready",
+  starting: "Starting",
   speaking: "Speaking",
   paused: "Paused",
   stopped: "Stopped",
@@ -119,7 +120,7 @@ export function SpeechControls({
     }));
   };
 
-  const playbackBusy = speech.state === "speaking" || speech.state === "paused";
+  const playbackBusy = speech.state === "starting" || speech.state === "speaking" || speech.state === "paused";
   const playDisabled = !speech.supported || speech.voicesLoading || playbackBusy;
 
   return (

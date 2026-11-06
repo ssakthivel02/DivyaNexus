@@ -222,6 +222,30 @@ test("speech start is deferred when a browser drops speak calls made immediately
   expect(counts.speakCount).toBe(1);
 });
 
+test("Stop cancels a queued speech request before the deferred start", async ({ page }) => {
+  await page.clock.install({ time: new Date("2026-11-06T08:00:00Z") });
+  await installSpeechMock(page);
+  await openRoute(page, "/audio");
+  await page.clock.pauseAt(new Date("2026-11-06T08:01:00Z"));
+
+  const controls = page.locator(".speech-controls").first();
+  // Invoke directly so a paused animation clock does not delay Playwright pointer actions.
+  await controls.getByRole("button", { name: "Play", exact: true }).evaluate((button) => (button as HTMLButtonElement).click());
+  await expect(controls).toHaveAttribute("data-speech-state", "starting");
+  const stop = controls.getByRole("button", { name: "Stop", exact: true });
+  await expect(stop).toBeEnabled();
+  await stop.evaluate((button) => (button as HTMLButtonElement).click());
+  await expect(controls).toHaveAttribute("data-speech-state", "stopped");
+
+  // The original 60 ms start callback must not speak after Stop invalidates its generation.
+  await page.clock.runFor(300);
+  const counts = await page.evaluate(() => (
+    window as typeof window & { __speechMock: { counts: () => { speakCount: number } } }
+  ).__speechMock.counts());
+  expect(counts.speakCount).toBe(0);
+  await expect(controls).toHaveAttribute("data-speech-state", "stopped");
+});
+
 test("changing rooms cancels active speech and prevents overlap", async ({ page }) => {
   await installSpeechMock(page);
   await openRoute(page, "/audio");

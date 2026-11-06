@@ -13,6 +13,7 @@ export type SpeechState =
   | "unsupported"
   | "loading"
   | "ready"
+  | "starting"
   | "speaking"
   | "paused"
   | "stopped"
@@ -56,7 +57,7 @@ export function useSpeechSynthesis() {
       return () => { mountedRef.current = false; };
     }
 
-    const settleReady = () => setState((current) => current === "speaking" || current === "paused" ? current : "ready");
+    const settleReady = () => setState((current) => current === "starting" || current === "speaking" || current === "paused" ? current : "ready");
     const loadVoices = () => {
       setVoices(window.speechSynthesis.getVoices());
       settleReady();
@@ -126,7 +127,9 @@ export function useSpeechSynthesis() {
     utterance.voice = selectedVoice;
     setActiveVoice(selectedVoice.name);
     setError("");
-    setState("ready");
+    // A request has been queued but has not produced a real onstart event yet.
+    // Keep Stop enabled during the 60 ms defer window.
+    setState("starting");
 
     const updateIfCurrent = (callback: () => void) => {
       if (mountedRef.current && generationRef.current === generation) callback();
