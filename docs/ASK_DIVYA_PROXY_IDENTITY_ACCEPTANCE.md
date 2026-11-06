@@ -13,6 +13,29 @@ The characterization tests in `tests/unit/askDivyaProxyIdentityBoundary.test.ts`
 
 **These tests do not prove Render's actual ingress topology or whether it sanitizes forwarded headers.**
 
+## Verified Render control-plane inventory (read-only, 2026-11-06)
+
+This inventory was obtained from the **existing** Render service and deployment records; no new service, deploy, restart, network probe or configuration change was performed.
+
+| Field | Observed value |
+| --- | --- |
+| Render workspace | `My Workspace` (`tea-danue82jnfac739th8lg`) |
+| Service | `divyanexus-ask-staging` (`srv-dar87aid0e5s73bs1bf0`) |
+| Service URL | `https://divyanexus-ask-staging.onrender.com` |
+| Source repo / configured branch | `ssakthivel02/DivyaNexus` / `main` |
+| Auto-deploy / PR previews | Off / off |
+| Service state | Not suspended; maintenance mode disabled |
+| Instances / region | 1 / Singapore |
+| Render IP allow-list | `0.0.0.0/0` (world-accessible at service layer; not proof of application authorization) |
+| Latest live deploy ID | `dep-datnra6gekts73biptng` |
+| Latest live deployed commit | `f70c08e684e21ef46bec646de4f71c54d48cdb51` |
+| Live deploy completed | 2026-09-29T08:59:31.927107Z |
+| Deploy trigger | API |
+
+**Interpretation:** the staging service is on a **September 29** deployment, not this draft PR's head `9e619dbdf625f7a94886541d4c1a250c1fa3649e` or the current main baseline listed above. CI for a branch does not attest to the deployed binary. These control-plane values do **not** establish which forwarded headers Render strips or trusts, the observed `req.ip`, actual request-rate bucket isolation, or runtime security under multiple client networks. No proxy trust configuration change is authorized from this inventory alone.
+
+**Remaining gate:** obtain authorized, privacy-preserving ingress evidence tied to this exact live deploy ID. If runtime changes are subsequently proposed, reconcile main, PR head and deployment identities first and obtain explicit staging-owner approval before any rollout.
+
 ## Non-mutating Render acceptance matrix
 
 1. Confirm the existing Render service identity `divyanexus-ask-staging`, its deployed SHA and auto-deploy setting. Do not create a duplicate service.
