@@ -32,7 +32,7 @@ This inventory was obtained from the **existing** Render service and deployment 
 | Live deploy completed | 2026-09-29T08:59:31.927107Z |
 | Deploy trigger | API |
 
-**Interpretation:** the staging service is on a **September 29** deployment, not this draft PR's head `9e619dbdf625f7a94886541d4c1a250c1fa3649e` or the current main baseline listed above. CI for a branch does not attest to the deployed binary. These control-plane values do **not** establish which forwarded headers Render strips or trusts, the observed `req.ip`, actual request-rate bucket isolation, or runtime security under multiple client networks. No proxy trust configuration change is authorized from this inventory alone.
+**Interpretation:** the staging service is on a **September 29** deployment, not this draft PR's current head `bc50dd13aa6d93451dfa81ee2bf5661f3f8590fa` or the current main baseline listed above. CI for a branch does not attest to the deployed binary. These control-plane values do **not** establish which forwarded headers Render strips or trusts, the observed `req.ip`, actual request-rate bucket isolation, or runtime security under multiple client networks. No proxy trust configuration change is authorized from this inventory alone.
 
 **Remaining gate:** obtain authorized, privacy-preserving ingress evidence tied to this exact live deploy ID. If runtime changes are subsequently proposed, reconcile main, PR head and deployment identities first and obtain explicit staging-owner approval before any rollout.
 
