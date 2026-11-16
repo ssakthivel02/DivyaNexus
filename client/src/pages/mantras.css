@@ -1,5 +1,5 @@
 /* DivyaNexus mantra research candidate — isolated styling, no global redesign. */
-.mantra-library { color: var(--ink, #ece6dc); padding: clamp(1.5rem, 3vw, 3rem) 1rem 5rem; }
+.mantra-library { color: var(--pearl); padding: clamp(1.5rem, 3vw, 3rem) 1rem 5rem; }
 .mantra-library__inner { max-width: 1180px; margin: auto; }
 .mantra-library__back { display: inline-flex; align-items: center; gap: .4rem; color: inherit; margin-bottom: 1.3rem; }
 .mantra-library h1 { font-size: clamp(2rem, 5vw, 3.6rem); margin: .5rem 0; line-height: 1.12; }
@@ -7,11 +7,11 @@
 .mantra-library__lead { font-size: 1.06rem; max-width: 65ch; line-height: 1.7; }
 .mantra-library__review { border-left: 3px solid #d4ac69; padding: 1rem 1.2rem; background: rgba(173,138,76,.10); line-height: 1.65; margin: 1.5rem 0; }
 .mantra-library__layout { display: grid; grid-template-columns: minmax(260px, .8fr) minmax(0, 1.5fr); gap: 1.4rem; align-items: start; margin-top: 2rem; }
-.mantra-library__browse, .mantra-library__detail { border: 1px solid rgba(173,138,76,.30); border-radius: 1.1rem; background: rgba(20,26,43,.36); padding: clamp(1rem, 2.5vw, 1.7rem); min-width: 0; }
+.mantra-library__browse, .mantra-library__detail { border: 1px solid var(--line-strong); border-radius: 1.1rem; background: var(--panel); padding: clamp(1rem, 2.5vw, 1.7rem); min-width: 0; }
 .mantra-library__label { font-size: .875rem; font-weight: 650; display: block; margin: .9rem 0 .4rem; }
 .mantra-library__search { display: flex; gap: .5rem; align-items: center; border: 1px solid #a18c6d; border-radius: .7rem; padding: .55rem .75rem; }
 .mantra-library__search input { min-width: 0; width: 100%; border: 0; color: inherit; background: transparent; font: inherit; }
-.mantra-library select { width: 100%; padding: .75rem; border-radius: .65rem; background: #242b3e; color: #fff; border: 1px solid #a18c6d; font: inherit; }
+.mantra-library select { width: 100%; padding: .75rem; border-radius: .65rem; background: var(--panel-solid); color: var(--pearl); border: 1px solid var(--line-strong); font: inherit; }
 .mantra-library__results { margin: 1.2rem 0 .65rem; opacity: .85; font-size: .87rem; }
 .mantra-library__items { display: grid; gap: .5rem; max-height: 600px; overflow: auto; }
 .mantra-library__item { text-align: left; display: grid; gap: .25rem; width: 100%; border-radius: .7rem; padding: .8rem .85rem; border: 1px solid rgba(173,138,76,.26); color: inherit; background: transparent; cursor: pointer; font: inherit; }
@@ -26,7 +26,7 @@
 .mantra-library__meaning, .mantra-library__source { padding: 1rem 0; border-top: 1px solid rgba(173,138,76,.3); line-height: 1.75; }
 .mantra-library__meaning h3 { margin: 0; font-size: 1.1rem; }
 .mantra-library__source { display: grid; gap: .3rem; }
-.mantra-library__source a { color: #f2ce83; text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
+.mantra-library__source a { color: var(--gold-bright); text-decoration: underline; text-underline-offset: 3px; overflow-wrap: anywhere; }
 .mantra-library__counter { margin-top: 1rem; padding: 1.25rem; border: 1px solid rgba(173,138,76,.5); border-radius: 1rem; background: rgba(173,138,76,.08); }
 .mantra-library__counter h3 { margin: 0; }
 .mantra-library__counter-hint, .mantra-library__privacy { font-size: .88rem; line-height: 1.6; opacity: .85; }
