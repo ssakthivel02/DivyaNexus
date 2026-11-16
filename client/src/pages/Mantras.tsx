@@ -40,7 +40,7 @@ export default function Mantras() {
   const selected = mantraRecords.find((item) => item.id === state.selectedId) ?? mantraRecords[0];
   const count = state.counts[selected.id] ?? 0;
   const completed = count >= state.goal;
-  const categories = ["All", ...new Set(mantraRecords.map((item) => item.tradition))];
+  const categories = ["All", ...Array.from(new Set(mantraRecords.map((item) => item.tradition)))];
   const visible = useMemo(() => {
     const term = query.trim().toLocaleLowerCase();
     return mantraRecords.filter((item) => (category === "All" || item.tradition === category) &&
