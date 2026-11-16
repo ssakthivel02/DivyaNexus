@@ -51,6 +51,13 @@ export const routeMetaByPath: Readonly<Record<string, RouteMeta>> = {
     schemaType: "SearchResultsPage",
     label: "Search",
   },
+  "/mantras": {
+    title: "Mantra Library and Japa Counter — DivyaNexus",
+    description: "Explore Tamil-first mantra candidates, transliterations, source references, editorial review boundaries and a private browser-only chanting counter.",
+    robots: "noindex,follow",
+    schemaType: "CollectionPage",
+    label: "Mantra Library — editorial candidate",
+  },
   "/scriptures": {
     title: "Scripture Learning Library — DivyaNexus",
     description: "Begin with source-aware scripture records, readable transliteration, bilingual editorial meaning, visible references and clearly separated reflection.",
