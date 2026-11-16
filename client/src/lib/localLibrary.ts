@@ -160,6 +160,7 @@ export async function deleteNote(noteId: string) {
 
 export async function clearLocalLibrary() {
   Object.values(preferenceKeys).forEach((key) => window.localStorage.removeItem(key));
+  window.localStorage.removeItem("divyanexus.japa.v1");
   window.localStorage.removeItem(SPEECH_PREFERENCES_STORAGE_KEY);
   window.localStorage.removeItem(LOCAL_LEARNING_PROGRESS_STORAGE_KEY);
   try {
