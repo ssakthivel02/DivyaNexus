@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { Link } from "wouter";
 import { ArrowLeft, RotateCcw, Search, Undo2 } from "lucide-react";
-import { japaGoals, MANTRA_EDITORIAL_STATUS, mantraRecords } from "@/data/mantras";
+import { japaGoals, MANTRA_EDITORIAL_STATUS, mantraRecords, stepJapaCount } from "@/data/mantras";
 import "./mantras.css";
 
 const STORE_KEY = "divyanexus.japa.v1";
@@ -53,10 +53,10 @@ export default function Mantras() {
     catch { /* Private browsing or full storage: counter remains usable in memory. */ }
   }, [state]);
 
-  const updateCount = (step: number) => {
+  const updateCount = (step: 1 | -1) => {
     setState((current) => {
       const previous = current.counts[current.selectedId] ?? 0;
-      const next = Math.max(0, Math.min(current.goal, previous + step));
+      const next = stepJapaCount(previous, current.goal, step);
       return { ...current, counts: { ...current.counts, [current.selectedId]: next } };
     });
   };
@@ -73,7 +73,7 @@ export default function Mantras() {
         <p className="scene-kicker">DIVYANEXUS / DEVOTIONAL STUDY</p>
         <h1>Mantra Library <span lang="ta">மந்திரத் தொகுப்பு</span></h1>
         <p className="mantra-library__lead">Explore {mantraRecords.length} carefully labelled mantra candidates with Tamil reading aids, transliteration, source leads, and a private one-tap japa counter.</p>
-        <p className="mantra-library__review" role="note"><strong>Editorial gate:</strong> {MANTRA_EDITORIAL_STATUS}. Source links are research leads, not final approval. Tamil renderings are approximate pronunciation aids, not original Tamil compositions. Practices and initiation rules vary by tradition.</p>
+        <p className="mantra-library__review" role="note"><strong>Editorial gate:</strong> {MANTRA_EDITORIAL_STATUS}. Source links are research leads, not final approval. Tamil-script Sanskrit renderings are approximate pronunciation aids; Tamil devotional invocations retain their own language. Practices and initiation rules vary by tradition.</p>
 
         <div className="mantra-library__layout">
           <section className="mantra-library__browse" aria-label="Choose a mantra">
@@ -122,11 +122,11 @@ export default function Mantras() {
               <select id="japa-goal" value={state.goal} onChange={(event) => setState((current) => ({ ...current, goal: Number(event.target.value) }))}>
                 {japaGoals.map((goal) => <option key={goal} value={goal}>{goal} chants</option>)}
               </select>
-              <p className="mantra-library__count" aria-live="polite">{Math.min(count, state.goal)} <span>/ {state.goal}</span></p>
+              <p className="mantra-library__count" aria-live="polite">{count} <span>/ {state.goal}</span></p>
               <div className="mantra-library__progress" role="progressbar" aria-label="Chants completed" aria-valuemin={0} aria-valuemax={state.goal} aria-valuenow={Math.min(count, state.goal)}>
                 <span style={{ width: `${Math.min(100, (count / state.goal) * 100)}%` }} />
               </div>
-              <p className="mantra-library__counter-hint">{completed ? "Target reached. வேல் வேல் முருகா! 🙏" : `${state.goal - count} remaining`}</p>
+              <p className="mantra-library__counter-hint">{completed ? "Target reached. ஜப எண்ணிக்கை நிறைவு! 🙏" : `${state.goal - count} remaining`}</p>
               <button type="button" className="mantra-library__tap" disabled={completed} onClick={() => { updateCount(1); setNotice(""); }}>+1 · Count one chant</button>
               <div className="mantra-library__counter-tools">
                 <button type="button" disabled={count === 0} onClick={() => { updateCount(-1); setNotice(""); }}><Undo2 size={16} aria-hidden="true" /> Undo</button>
