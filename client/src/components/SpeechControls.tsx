@@ -19,6 +19,7 @@ const stateLabels: Record<SpeechState, string> = {
   unsupported: "Not supported",
   loading: "Loading voices",
   ready: "Ready",
+  starting: "Starting",
   speaking: "Speaking",
   paused: "Paused",
   stopped: "Stopped",
@@ -87,7 +88,7 @@ export function SpeechControls({
           ? `Selected voice: ${selectedVoice.name}.`
           : hasMatchingVoice
             ? `${matchingVoices.length} matching ${selected.lang} voice${matchingVoices.length === 1 ? " is" : "s are"} available.`
-            : `No matching ${selected.lang} voice was reported; the browser may use a fallback voice.`;
+            : `No matching ${selected.lang} voice was reported. Install or enable that language voice to use audio; the written text remains available.`;
 
   const play = () => speech.speak({
     text: selected.text,
@@ -119,7 +120,7 @@ export function SpeechControls({
     }));
   };
 
-  const playbackBusy = speech.state === "speaking" || speech.state === "paused";
+  const playbackBusy = speech.state === "starting" || speech.state === "speaking" || speech.state === "paused";
   const playDisabled = !speech.supported || speech.voicesLoading || playbackBusy;
 
   return (
