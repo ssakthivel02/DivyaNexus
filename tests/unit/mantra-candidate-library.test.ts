@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { japaGoals, MANTRA_EDITORIAL_STATUS, mantraRecords } from "../../client/src/data/mantras";
+import { japaGoals, MANTRA_EDITORIAL_STATUS, mantraRecords, stepJapaCount } from "../../client/src/data/mantras";
 
 describe("DivyaNexus high-priority mantra candidate set", () => {
   it("preserves unique IDs, readable Tamil, transliteration, and descriptions", () => {
@@ -38,5 +38,30 @@ describe("DivyaNexus high-priority mantra candidate set", () => {
     expect(records.get("surya-gayatri")?.sourceLabel).toContain("3.62.10");
     expect(records.get("shiva-mahamrityunjaya")?.sourceLabel).toContain("7.59.12");
     expect(records.get("peace-asato")?.sourceLabel).toContain("1.3.28");
+  });
+});
+
+describe("Japa counter regression and source triage", () => {
+  it("counts a full round without exceeding the goal", () => {
+    let count = 0;
+    for (let i = 0; i < 110; i++) count = stepJapaCount(count, 108, 1);
+    expect(count).toBe(108);
+    expect(stepJapaCount(count, 108, -1)).toBe(107);
+    expect(stepJapaCount(0, 108, -1)).toBe(0);
+  });
+  it("preserves actual repetitions when the target is reduced", () => {
+    expect(stepJapaCount(80, 21, 1)).toBe(80);
+    expect(stepJapaCount(80, 21, -1)).toBe(79);
+    expect(stepJapaCount(79, 108, 1)).toBe(80);
+  });
+  it("retains all 19 unique staged entries and the tradition-specific source", () => {
+    expect(mantraRecords).toHaveLength(19);
+    expect(mantraRecords.filter((item) => item.evidenceStatus === "linked-reference")).toHaveLength(14);
+    const records = new Map(mantraRecords.map((item) => [item.id, item]));
+    expect(records.get("krishna-mahamantra")?.sourceUrl).toBe("https://iskcon.org/meditation/");
+    expect(records.get("peace-asato")?.sourceUrl).toBe("https://heritage.iitk.ac.in/BRU/1.3.28");
+    for (const id of ["murugan-skanda-sharanam", "murugan-shanmuga-sharanam", "murugan-sharanam"]) {
+      expect(records.get(id)?.sourceUrl).toBe("https://omsaravanabhava.org/murugan-mantras.html");
+    }
   });
 });
