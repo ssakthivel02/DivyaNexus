@@ -3,7 +3,7 @@
 **Release status: EDITORIAL HOLD.** This branch is a draft candidate, not authorisation to publish. No deployment or merge is included.
 
 ## Scope
-- Sixteen high-priority mantra/name-japa candidates covering Murugan, Shiva, Ganesha, Vishnu, Rama, Krishna, Devi, Hanuman, Lakshmi, Saraswati, Ayyappa, the Gayatri, and Upanishadic peace prayers.
+- Nineteen high-priority mantra/name-japa candidates covering Murugan, Shiva, Ganesha, Vishnu, Rama, Krishna, Devi, Hanuman, Lakshmi, Saraswati, Ayyappa, the Gayatri, and Upanishadic peace prayers.
 - Tamil reading aid, Devanagari where applicable, IAST-style Roman transliteration, concise original editorial Tamil/English explanations and source-review status.
 - Search and deity/tradition filter in a standalone `/mantras` route.
 - Client-only japa counter, targets 11/21/54/108/1008, persistent per-mantra counts, Undo and confirmed Reset. It is manual and optional. No autoplay, recording, voice validation, login, API bill, analytics, or server write.
@@ -18,13 +18,15 @@
 - Rig Veda recitation accents are omitted from the readable candidate. Tamil phonetics are approximations and should not be treated as a substitute for Vedic oral transmission.
 - Sources for research comparison:
   - https://omsaravanabhava.org/murugan-mantras.html
-  - https://sanskritdocuments.org/doc_devii/shivapanchAkSharIbhAShyam-ta.pdf
+  - https://sanskritdocuments.org/doc_devii/shivapanchAkSharIbhAShyam.html
   - https://www.arshavidya.org.uk/a/pdfs/GanapatiAtharvashirshaUpanishad.pdf
   - https://ignca.gov.in/Asi_data/16305.pdf
-  - https://indike.org/pramana/in.veda.upanisad.vaisnava.kalisantarana
+  - https://iskcon.org/meditation/ (Krishna-first displayed tradition)
+  - https://indike.org/pramana/in.veda.upanisad.vaisnava.kalisantarana (Rama-first comparison only)
   - https://www.swamiayyappan.in/mantras
   - https://vedshala.org/rigveda/3/62/10
   - https://www.vedicsamhita.in/vedas/rigveda/7/59
+  - https://heritage.iitk.ac.in/BRU/1.3.28 (institutional comparison)
   - https://upanishads.org.in/u/brihadaranyaka/p/1.3.28
   - https://upanishads.org.in/u/taittiriya/p/2.invocation
 
@@ -40,3 +42,11 @@
 - No mandatory ritual count (108 is a configurable option, not a universal rule).
 - No unverified long stotras, copyrighted audio, phonetic grading or audio synthesis.
 - No modifications to the separate Murugan literature PR #81 or DivyaNexus content factory.
+
+## 20 November 2026 continuation — targeted source and engineering reconciliation
+- Viewed the OmSaravanaBhava mantra page and confirmed the displayed short Tamil forms for Skanda Sharanam, Shanmuga Sharanam and Muruga Sharanam. Added only these three short devotional invocations with original explanatory summaries; no long-stotra or audio copying. Total 19 candidates (14 with source leads, five exact-source pending).
+- Compared the ISKCON official meditation page with the Kali-Santarana Upanishad witness: use ISKCON for the displayed Krishna-first form, and retain Rama-first as a distinct witness, not a conflicting proof of identical text.
+- Confirmed a verse-level Rigveda 3.62.10 reading aid, Rigveda 7.59.12 location, and IIT Kanpur Heritage 1.3.28 location. Improved Tamil summary of the latter to retain the third clause about mortality. These checks are not a completed human Sanskrit/Tamil review.
+- Source pages, editions, and any modern commentary/reuse licences must be checked separately before release. This repository is public: draft/noindex is not a copyright, confidentiality, or access-control boundary. No modern source translation, audio, or long text imported by this continuation.
+- Fixed target reduction followed by Undo so that one tap removes just one previously counted repetition, rather than silently truncating saved counts to the new goal. Neutral bilingual completion text is appropriate across traditions. Added deterministic regressions.
+- Keep the existing PR #83 runner fix separate; no duplicate workflow edits here. No merge/deploy. The five outstanding source records, human text/rights approval and exact-head browser validation remain open.
