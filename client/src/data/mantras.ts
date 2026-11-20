@@ -132,9 +132,9 @@ export const mantraRecords: readonly MantraRecord[] = [
     "iast": "śrī rāma jayam",
     "englishMeaning": "A widely used Tamil name-recitation honoring Rama; not presented as a Vedic verse.",
     "tamilMeaning": "ராம நாமத்தைப் போற்றும் பரவலான தமிழ் நாமஜபம்.",
-    "sourceLabel": "Traditional Tamil nama-japa; edition review needed",
-    "sourceUrl": "",
-    "evidenceStatus": "editorial-review-needed"
+    "sourceLabel": "Covaipost — 2016 report on Rama Nama Japa (documented devotional usage, not a canonical verse)",
+    "sourceUrl": "https://www.covaipost.com/coimbatore360/on-a-mission-to-complete-100-crore-rama-nama-japa/",
+    "evidenceStatus": "linked-reference"
   },
   {
     "id": "krishna-mahamantra",
@@ -158,9 +158,9 @@ export const mantraRecords: readonly MantraRecord[] = [
     "iast": "oṃ duṃ durgāyai namaḥ",
     "englishMeaning": "A popular devotional salutation to Durga; textual lineage needs editorial confirmation.",
     "tamilMeaning": "துர்கா தேவியை வணங்கும் வழக்குப் மந்திரம்; மூலப் பரம்பரைச் சரிபார்ப்பு தேவை.",
-    "sourceLabel": "Traditional invocation; exact source pending",
-    "sourceUrl": "",
-    "evidenceStatus": "editorial-review-needed"
+    "sourceLabel": "Drik Panchang — Durga Beeja Mantra (modern devotional listing; earliest textual lineage unestablished)",
+    "sourceUrl": "https://www.drikpanchang.com/vedic-mantra/goddesses/durga/mantra/durga-beej-mantra.html",
+    "evidenceStatus": "linked-reference"
   },
   {
     "id": "hanuman-namah",
@@ -171,9 +171,9 @@ export const mantraRecords: readonly MantraRecord[] = [
     "iast": "oṃ hanumate namaḥ",
     "englishMeaning": "A common salutation to Hanuman; not identified here as a verse quotation.",
     "tamilMeaning": "அனுமனை வணங்கும் பொதுவான நாமஜபம்.",
-    "sourceLabel": "Traditional invocation; exact source pending",
-    "sourceUrl": "",
-    "evidenceStatus": "editorial-review-needed"
+    "sourceLabel": "Drik Panchang — Hanuman Sahasranamavali, name 1 (modern devotional witness)",
+    "sourceUrl": "https://www.drikpanchang.com/deities-namavali/gods/god-hanuman/1000-hanuman-names.html?lang=en",
+    "evidenceStatus": "linked-reference"
   },
   {
     "id": "lakshmi-mahalakshmi",
@@ -184,9 +184,9 @@ export const mantraRecords: readonly MantraRecord[] = [
     "iast": "oṃ śrīṃ mahālakṣmyai namaḥ",
     "englishMeaning": "A popular Lakshmi invocation; script and lineage require additional review.",
     "tamilMeaning": "மகாலட்சுமியை வணங்கும் வழக்குப் மந்திரம்; உரை சரிபார்ப்பு தேவை.",
-    "sourceLabel": "Traditional invocation; exact source pending",
-    "sourceUrl": "",
-    "evidenceStatus": "editorial-review-needed"
+    "sourceLabel": "Drik Panchang — Adi Lakshmi Ashtottara Shatanamavali, name 55 (modern devotional witness)",
+    "sourceUrl": "https://www.drikpanchang.com/deities-namavali/goddesses/lakshmi/ashta-lakshmi/adi-lakshmi/108-adi-lakshmi-names.html",
+    "evidenceStatus": "linked-reference"
   },
   {
     "id": "saraswati-aim",
@@ -197,9 +197,9 @@ export const mantraRecords: readonly MantraRecord[] = [
     "iast": "oṃ aiṃ sarasvatyai namaḥ",
     "englishMeaning": "A common Saraswati salutation; precise source tradition awaits review.",
     "tamilMeaning": "சரஸ்வதி தேவியை வணங்கும் வழக்குப் மந்திரம்; மூலச் சரிபார்ப்பு தேவை.",
-    "sourceLabel": "Traditional invocation; exact source pending",
-    "sourceUrl": "",
-    "evidenceStatus": "editorial-review-needed"
+    "sourceLabel": "Drik Panchang — Saraswati Moola Mantra, item 1 (modern devotional listing; earliest textual lineage unestablished)",
+    "sourceUrl": "https://www.drikpanchang.com/vedic-mantra/goddesses/saraswati/saraswati-mantras.html",
+    "evidenceStatus": "linked-reference"
   },
   {
     "id": "ayyappa-sharanam",
