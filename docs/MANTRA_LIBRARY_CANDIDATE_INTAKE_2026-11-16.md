@@ -50,3 +50,16 @@
 - Source pages, editions, and any modern commentary/reuse licences must be checked separately before release. This repository is public: draft/noindex is not a copyright, confidentiality, or access-control boundary. No modern source translation, audio, or long text imported by this continuation.
 - Fixed target reduction followed by Undo so that one tap removes just one previously counted repetition, rather than silently truncating saved counts to the new goal. Neutral bilingual completion text is appropriate across traditions. Added deterministic regressions.
 - Keep the existing PR #83 runner fix separate; no duplicate workflow edits here. No merge/deploy. The five outstanding source records, human text/rights approval and exact-head browser validation remain open.
+
+## Additional source reconciliation — 20 November 2026
+All 19 displayed candidates now have a linked research reference; this is not 19 verified canonical texts. The five previously unlinked records were compared to the following rendered public pages:
+
+| Record | Evidence and limitation |
+|---|---|
+| rama-jayam | [Covaipost, Rama Nama Japa report](https://www.covaipost.com/coimbatore360/on-a-mission-to-complete-100-crore-rama-nama-japa/) (2016): documents chanting and writing Sri Rama Jayam. This is devotional usage evidence, not proof of a Sanskrit original or ancient verse. |
+| devi-durgayai | [Drik Panchang, Durga Beeja Mantra](https://www.drikpanchang.com/vedic-mantra/goddesses/durga/mantra/durga-beej-mantra.html): displayed short Devanagari form matches. Earliest edition and lineage remain unestablished. |
+| hanuman-namah | [Drik Panchang, Hanuman Sahasranamavali](https://www.drikpanchang.com/deities-namavali/gods/god-hanuman/1000-hanuman-names.html?lang=en): name 1 matches; not a claim of universal initiation practice. |
+| lakshmi-mahalakshmi | [Drik Panchang, Adi Lakshmi Ashtottara](https://www.drikpanchang.com/deities-namavali/goddesses/lakshmi/ashta-lakshmi/adi-lakshmi/108-adi-lakshmi-names.html): name 55 matches; not an authenticated critical edition. |
+| saraswati-aim | [Drik Panchang, Saraswati mantras](https://www.drikpanchang.com/vedic-mantra/goddesses/saraswati/saraswati-mantras.html): item 1 matches; earliest textual lineage remains unestablished. |
+
+These are supplemental bibliographic links only. No modern prose translations, complete namavali, ritual instructions, copyrighted images or recordings were imported. Textual edition, Tamil transliteration, lineage, bīja/teacher-guidance context, and rights review remain mandatory before publication. All older counts in this document are historical snapshots. No new mantra entries were added in this cycle.
