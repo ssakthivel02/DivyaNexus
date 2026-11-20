@@ -118,4 +118,36 @@ test.describe("browser-local library backup", () => {
     await expect(page.locator(".library-cinema__stat").nth(0)).toContainText("0");
     await expect(page.locator(".library-cinema__stat").nth(3)).toContainText("0");
   });
+  test("exports, merges, and clears chanting progress without double counting", async ({ page }) => {
+    const key = "divyanexus.japa.v1";
+    await openLibrary(page);
+    await page.evaluate((storageKey) => localStorage.setItem(storageKey, JSON.stringify({
+      selectedId: "murugan-saravanabhava", goal: 108, counts: { "murugan-saravanabhava": 80 },
+    })), key);
+
+    const payload = { format: "divyanexus-local-library", version: 3, japaProgress: {
+      selectedId: "shiva-panchakshara", goal: 21, counts: {
+        "murugan-saravanabhava": 21, "shiva-panchakshara": 12, "unknown-id": 50, "hanuman-namah": 1009,
+      },
+    }};
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "japa-backup.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(payload)),
+    });
+    await expect(page.locator(".library-cinema__status")).toContainText("Local data restored");
+    const expected = { selectedId: "murugan-saravanabhava", goal: 108,
+      counts: { "murugan-saravanabhava": 80, "shiva-panchakshara": 12 } };
+    await expect.poll(() => page.evaluate((storageKey) => JSON.parse(localStorage.getItem(storageKey) ?? "null"), key)).toEqual(expected);
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export local data" }).click();
+    const exportedPath = await (await downloadPromise).path();
+    expect(exportedPath).not.toBeNull();
+    expect(JSON.parse(await readFile(exportedPath!, "utf8")).japaProgress).toEqual(expected);
+
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "Clear local data" }).click();
+    await expect(page.locator(".library-cinema__status")).toHaveText("Browser-local study data cleared");
+    expect(await page.evaluate((storageKey) => localStorage.getItem(storageKey), key)).toBeNull();
+  });
+
 });

@@ -63,3 +63,9 @@ All 19 displayed candidates now have a linked research reference; this is not 19
 | saraswati-aim | [Drik Panchang, Saraswati mantras](https://www.drikpanchang.com/vedic-mantra/goddesses/saraswati/saraswati-mantras.html): item 1 matches; earliest textual lineage remains unestablished. |
 
 These are supplemental bibliographic links only. No modern prose translations, complete namavali, ritual instructions, copyrighted images or recordings were imported. Textual edition, Tamil transliteration, lineage, bīja/teacher-guidance context, and rights review remain mandatory before publication. All older counts in this document are historical snapshots. No new mantra entries were added in this cycle.
+
+## Chant backup/restore continuation — 20 November 2026
+- Extend the existing browser-local library JSON version 3 with an optional `japaProgress` field. Legacy files without it leave existing progress unchanged. No new service or storage location.
+- Validate only known catalogue IDs and integers 0–1008. Keep actual counts after a reduced goal; never add repeated imports. Restore uses the larger count per mantra and keeps existing selection/goal; a fresh browser adopts the backup preferences. An explicit restore can recover a previously reset count. Unknown and malformed fields are ignored. Private mode or denied storage is identified as temporary on the mantra page.
+- Use the same storage key for reading, clearing, backup and restore. Exports may disclose devotional activity; users should keep files private. No automatic upload or cross-device sync. Concurrent tabs are not synchronised by this change.
+- Add six deterministic backup regression tests and a browser backup/clear regression to the existing suite; exact-head CI must still qualify the changes. Preserve PR #83 as independent runner fix. Editorial gate remains in place; no new source text or additional mantra records in this cycle.

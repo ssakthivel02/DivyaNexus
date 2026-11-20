@@ -4,39 +4,14 @@ import { ArrowLeft, RotateCcw, Search, Undo2 } from "lucide-react";
 import { japaGoals, MANTRA_EDITORIAL_STATUS, mantraRecords, stepJapaCount } from "@/data/mantras";
 import "./mantras.css";
 
-const STORE_KEY = "divyanexus.japa.v1";
-type JapaState = { selectedId: string; goal: number; counts: Record<string, number> };
-const defaultState: JapaState = { selectedId: mantraRecords[0].id, goal: 108, counts: {} };
-
-function readState(): JapaState {
-  try {
-    const raw = window.localStorage.getItem(STORE_KEY);
-    if (!raw) return defaultState;
-    const parsed: unknown = JSON.parse(raw);
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) return defaultState;
-    const state = parsed as Record<string, unknown>;
-    const selectedId = mantraRecords.some((item) => item.id === state.selectedId)
-      ? state.selectedId as string : defaultState.selectedId;
-    const goal = japaGoals.find((value) => value === state.goal) ?? 108;
-    const counts: Record<string, number> = {};
-    if (state.counts && typeof state.counts === "object" && !Array.isArray(state.counts)) {
-      const incoming = state.counts as Record<string, unknown>;
-      for (const item of mantraRecords) {
-        const value = incoming[item.id];
-        if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0 && value <= 1008) {
-          counts[item.id] = value;
-        }
-      }
-    }
-    return { selectedId, goal, counts };
-  } catch { return defaultState; }
-}
+import { defaultJapaProgress, readJapaProgress, writeJapaProgress, type JapaState } from "@/lib/localJapaProgress";
 
 export default function Mantras() {
-  const [state, setState] = useState<JapaState>(readState);
+  const [state, setState] = useState<JapaState>(() => readJapaProgress() ?? defaultJapaProgress());
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("All");
   const [notice, setNotice] = useState("");
+  const [persisted, setPersisted] = useState(true);
   const selected = mantraRecords.find((item) => item.id === state.selectedId) ?? mantraRecords[0];
   const count = state.counts[selected.id] ?? 0;
   const completed = count >= state.goal;
@@ -49,8 +24,8 @@ export default function Mantras() {
   }, [category, query]);
 
   useEffect(() => {
-    try { window.localStorage.setItem(STORE_KEY, JSON.stringify(state)); }
-    catch { /* Private browsing or full storage: counter remains usable in memory. */ }
+    try { writeJapaProgress(state); setPersisted(true); }
+    catch { setPersisted(false); }
   }, [state]);
 
   const updateCount = (step: 1 | -1) => {
@@ -133,7 +108,7 @@ export default function Mantras() {
                 <button type="button" disabled={count === 0} onClick={reset}><RotateCcw size={16} aria-hidden="true" /> Reset this mantra</button>
               </div>
               {notice && <p role="status">{notice}</p>}
-              <p className="mantra-library__privacy">Saved only in this browser. No login, cloud sync, audio recording, or streak tracking. The local library's data-clear operation also removes this count; its existing export currently does not include it.</p>
+              <p className="mantra-library__privacy">{persisted ? "Progress is stored only in this browser." : "Browser storage is unavailable; this count is temporary and may be lost on reload."} No login, cloud sync, audio recording, or streak tracking. <Link href="/library">Back up, restore, or clear local data in My Library.</Link> Restore keeps the higher valid count per mantra; backups may contain private devotional activity, so keep them secure.</p>
             </div>
           </section>
         </div>

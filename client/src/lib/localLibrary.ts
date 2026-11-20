@@ -14,6 +14,7 @@ import {
   SPEECH_PREFERENCES_STORAGE_KEY,
   writeSpeechPreferences,
 } from "@/lib/speechPreferences";
+import { JAPA_STORAGE_KEY, mergeJapaProgress, readJapaProgress, sanitiseJapaProgress, writeJapaProgress } from "@/lib/localJapaProgress";
 
 export type LocalNote = {
   id: string;
@@ -160,7 +161,7 @@ export async function deleteNote(noteId: string) {
 
 export async function clearLocalLibrary() {
   Object.values(preferenceKeys).forEach((key) => window.localStorage.removeItem(key));
-  window.localStorage.removeItem("divyanexus.japa.v1");
+  window.localStorage.removeItem(JAPA_STORAGE_KEY);
   window.localStorage.removeItem(SPEECH_PREFERENCES_STORAGE_KEY);
   window.localStorage.removeItem(LOCAL_LEARNING_PROGRESS_STORAGE_KEY);
   try {
@@ -233,6 +234,12 @@ export async function importLocalLibrary(text: string): Promise<LocalLibraryImpo
     writeLocalLearningProgress(sanitiseLocalLearningProgress(payload.learningProgress));
   }
 
+  // Optional field in the existing v3 backup; older files leave the current count intact.
+  if (sanitiseJapaProgress(payload.japaProgress)) {
+    const merged = mergeJapaProgress(readJapaProgress(), payload.japaProgress);
+    if (merged) writeJapaProgress(merged);
+  }
+
   if (notes.length) {
     const db = await openNotesDb();
     await new Promise<void>((resolve, reject) => {
@@ -276,6 +283,7 @@ export async function exportLocalLibrary() {
     preferences: Object.fromEntries(Object.entries(preferenceKeys).map(([key, storageKey]) => [key, window.localStorage.getItem(storageKey)])),
     speechPreferences: readSpeechPreferences(),
     learningProgress: readLocalLearningProgress(),
+    japaProgress: readJapaProgress(),
   };
   const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
   const anchor = document.createElement("a");
