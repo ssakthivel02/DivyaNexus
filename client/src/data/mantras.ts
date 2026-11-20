@@ -28,8 +28,8 @@ export const mantraRecords: readonly MantraRecord[] = [
     "iast": "oṃ saravaṇabhava",
     "englishMeaning": "An invocation of Murugan by his Saravana name.",
     "tamilMeaning": "சரவணபவ திருநாமத்தால் முருகனை வணங்குதல்.",
-    "sourceLabel": "Murugan Mantra Collection",
-    "sourceUrl": "https://omsaravanabhava.org/murugan-mantras.html",
+    "sourceLabel": "Shri Subrahmanya Shadakshara Mantra — independent textual witness for Om Sharavanabhava/Saravanabhava",
+    "sourceUrl": "https://sanskritdocuments.org/doc_subrahmanya/subrahmaNyaShaDakSharamantraH2.html",
     "evidenceStatus": "linked-reference"
   },
   {
@@ -93,8 +93,8 @@ export const mantraRecords: readonly MantraRecord[] = [
     "iast": "oṃ namaḥ śivāya",
     "englishMeaning": "Salutations to Shiva; commonly called the five-syllable mantra (excluding Om).",
     "tamilMeaning": "சிவபெருமானுக்கு வணக்கம் செலுத்தும் பஞ்சாட்சரத் திருநாமம்.",
-    "sourceLabel": "Shiva Panchakshari Bhashyam",
-    "sourceUrl": "https://sanskritdocuments.org/doc_devii/shivapanchAkSharIbhAShyam.html",
+    "sourceLabel": "Shiva Shadakshara Stotram — explicit Om Namah Shivaya witness",
+    "sourceUrl": "https://sanskritdocuments.org/doc_shiva/shivaShaDakSharastotram3.pdf",
     "evidenceStatus": "linked-reference"
   },
   {

@@ -99,3 +99,12 @@ This pass reviewed source strength and displayed-text support without importing 
 The branch contains short traditional/formulaic texts plus original project-authored Tamil/English explanations. This review did **not** establish a blanket legal licence for third-party pages, translations, recordings, images, or commentary. Keep only short text-level comparison links; do not copy modern prose translations or media. Human Tamil/Sanskrit pronunciation/script review and project-owner publication approval remain required before removing `noindex`, merging, or deploying.
 
 **Disposition after this pass:** technical/source triage improved, but **EDITORIAL HOLD remains**. The next review should focus narrowly on (1) the Shiva `Om` prefix lineage, (2) Murugan independent textual witnesses where available, and (3) whether bīja-mantra records require teacher/lineage context before public display.
+
+
+## Independent source strengthening — 20 November 2026 (second pass)
+Two displayed forms received stronger independent text-level witnesses; no mantra wording was changed.
+
+- **Murugan — Om Saravanabhava:** Sanskrit Documents' `Shri Subrahmanya Shadakshara Mantra` explicitly gives the mula-mantra `Om Sharavanabhava`/IAST `oṃ śaravaṇabhava`. The record now points to this independent textual witness instead of relying only on the project-owned OmSaravanaBhava devotional page. This does not independently certify Tamil phonetics, initiation practice, recension history or universal lineage.
+- **Shiva — Om Namah Shivaya:** the `Shiva Shadakshara Stotram` explicitly prints `ॐ नमः शिवाय`, supporting the displayed six-syllable form including `Om`. The earlier Panchakshari Bhashyam remains useful evidence for the five-syllable `namaḥ śivāya` tradition, but the candidate now links to the witness matching the actual displayed form.
+
+These are provenance improvements only. Human Tamil/Sanskrit text/pronunciation review, tradition/lineage context, rights review, and owner publication approval remain mandatory. No bīja/teacher-guidance policy has been relaxed and no new candidate was added.
