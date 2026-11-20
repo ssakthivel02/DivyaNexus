@@ -69,3 +69,33 @@ These are supplemental bibliographic links only. No modern prose translations, c
 - Validate only known catalogue IDs and integers 0–1008. Keep actual counts after a reduced goal; never add repeated imports. Restore uses the larger count per mantra and keeps existing selection/goal; a fresh browser adopts the backup preferences. An explicit restore can recover a previously reset count. Unknown and malformed fields are ignored. Private mode or denied storage is identified as temporary on the mantra page.
 - Use the same storage key for reading, clearing, backup and restore. Exports may disclose devotional activity; users should keep files private. No automatic upload or cross-device sync. Concurrent tabs are not synchronised by this change.
 - Add six deterministic backup regression tests and a browser backup/clear regression to the existing suite; exact-head CI must still qualify the changes. Preserve PR #83 as independent runner fix. Editorial gate remains in place; no new source text or additional mantra records in this cycle.
+
+
+## Independent source/text review — 20 November 2026
+This pass reviewed source strength and displayed-text support without importing modern commentary or treating source linkage as publication approval.
+
+### Strong text-witness support
+- **Ganesha — Om Gam Ganapataye Namah:** the Gaṇapati Atharvaśīrṣa mantra section directly attests `oṃ gaṃ gaṇapataye namaḥ`. Keep as source-supported candidate; Vedic svara is intentionally omitted in the readable display.
+- **Vishnu — Om Namo Narayanaya:** the Nārāyaṇa Upaniṣad explicitly describes `Om` + `namah` + `Nārāyaṇāya` as the eight-syllable formula. Keep source-supported candidate.
+- **Gayatri / Savitri — RV 3.62.10:** displayed unaccented Sanskrit/IAST corresponds to the cited Rigveda verse. Keep source-supported candidate, with the existing warning that Vedic accents are omitted.
+- **Mahamrityunjaya — RV 7.59.12:** displayed unaccented Sanskrit/IAST corresponds to the cited Rigveda verse. Keep source-supported candidate; do not attach health or outcome guarantees.
+- **Asato Ma — Bṛhadāraṇyaka Upaniṣad 1.3.28:** the three-clause prayer is directly attested. Keep source-supported candidate.
+- **Saha Navavatu — Taittirīya Upaniṣad invocation:** displayed Sanskrit/IAST is source-supported. Keep source-supported candidate.
+
+### Source-supported usage, but lineage/canonical scope remains limited
+- **Hare Krishna Maha-mantra:** ISKCON directly supports the Krishna-first Gaudiya recitation shown here. The 1914 minor-Upanishad witness preserves a Rama-first order in the Kali-Santarana Upaniṣad. Keep the record explicitly tradition-specific; do not collapse the two orders into one universal canonical form.
+- **Shiva — Om Namah Shivaya:** the cited Shiva Panchakshari Bhashyam directly attests `namaḥ śivāya` as the five-syllable mantra; it does not by itself establish the added `Om` prefix. Keep the candidate HOLD wording unless a lineage/source specifically supporting the displayed prefixed form is added.
+- **Murugan short invocations (5 records):** the existing OmSaravanaBhava collection supports the displayed Tamil devotional forms, but that site is a project-owned devotional witness rather than an independent critical edition. Keep as Tamil devotional candidates; do not upgrade them to Vedic/canonical-text status on this evidence alone.
+- **Ayyappa — Swamiye Saranam Ayyappa:** the cited devotional source directly supports the displayed usage. Treat as devotional usage evidence, not an ancient textual-edition claim.
+
+### Modern devotional-listing evidence only
+- **Durga — Om Dum Durgayai Namah:** the cited modern devotional listing matches the displayed short form, but earliest textual lineage remains unestablished.
+- **Hanuman — Om Hanumate Namah:** the cited Hanuman Sahasranamavali listing contains the displayed name-form; this establishes a devotional textual witness, not a universal initiation claim.
+- **Lakshmi — Om Shrim Mahalakshmyai Namah:** the cited Adi Lakshmi Ashtottara listing contains this exact short form as name 55; treat as namavali/devotional witness rather than a standalone critically established moola-mantra source.
+- **Saraswati — Om Aim Saraswatyai Namah:** the cited modern devotional page directly displays the short form; earliest textual lineage remains unestablished.
+- **Sri Rama Jayam:** current evidence documents devotional practice/usage only. It is not being presented as a Vedic verse or uniquely canonical Sanskrit formula.
+
+### Rights and publication boundary
+The branch contains short traditional/formulaic texts plus original project-authored Tamil/English explanations. This review did **not** establish a blanket legal licence for third-party pages, translations, recordings, images, or commentary. Keep only short text-level comparison links; do not copy modern prose translations or media. Human Tamil/Sanskrit pronunciation/script review and project-owner publication approval remain required before removing `noindex`, merging, or deploying.
+
+**Disposition after this pass:** technical/source triage improved, but **EDITORIAL HOLD remains**. The next review should focus narrowly on (1) the Shiva `Om` prefix lineage, (2) Murugan independent textual witnesses where available, and (3) whether bīja-mantra records require teacher/lineage context before public display.
