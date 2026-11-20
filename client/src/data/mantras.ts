@@ -46,6 +46,45 @@ export const mantraRecords: readonly MantraRecord[] = [
     "evidenceStatus": "linked-reference"
   },
   {
+    "id": "murugan-skanda-sharanam",
+    "tradition": "Murugan",
+    "title": "Skanda Sharanam",
+    "tamil": "ஸ்கந்தா சரணம், சரவணபவ குகா சரணம்",
+    "devanagari": "",
+    "iast": "skandā śaraṇam, saravaṇabhava guhā śaraṇam",
+    "englishMeaning": "A devotional invocation of refuge in Skanda, Saravanabhava and Guha.",
+    "tamilMeaning": "ஸ்கந்தன், சரவணபவன், குகன் எனும் திருநாமங்களைப் போற்றிச் சரணடையும் பக்தி முழக்கம்.",
+    "sourceLabel": "OmSaravanaBhava — Murugan Mantra Collection (devotional usage; editorial review pending)",
+    "sourceUrl": "https://omsaravanabhava.org/murugan-mantras.html",
+    "evidenceStatus": "linked-reference"
+  },
+  {
+    "id": "murugan-shanmuga-sharanam",
+    "tradition": "Murugan",
+    "title": "Shanmuga Sharanam",
+    "tamil": "ஷண்முகா சரணம் சரணம், ஸ்கந்த குரோ சரணம்",
+    "devanagari": "",
+    "iast": "ṣaṇmukhā śaraṇam śaraṇam, skanda guro śaraṇam",
+    "englishMeaning": "A devotional invocation of refuge in Shanmuga and Skanda as teacher.",
+    "tamilMeaning": "ஷண்முகனையும் குருவாகிய ஸ்கந்தனையும் சரணடையும் பக்தி முழக்கம்.",
+    "sourceLabel": "OmSaravanaBhava — Murugan Mantra Collection (devotional usage; editorial review pending)",
+    "sourceUrl": "https://omsaravanabhava.org/murugan-mantras.html",
+    "evidenceStatus": "linked-reference"
+  },
+  {
+    "id": "murugan-sharanam",
+    "tradition": "Murugan",
+    "title": "Muruga Sharanam",
+    "tamil": "முருகா சரணம், கந்தா சரணம்",
+    "devanagari": "",
+    "iast": "murugā śaraṇam, kandā śaraṇam",
+    "englishMeaning": "A Tamil devotional invocation of refuge in Murugan.",
+    "tamilMeaning": "முருகனையும் கந்தனையும் போற்றிச் சரணடையும் தமிழ் பக்தி முழக்கம்.",
+    "sourceLabel": "OmSaravanaBhava — Murugan Mantra Collection (devotional usage; editorial review pending)",
+    "sourceUrl": "https://omsaravanabhava.org/murugan-mantras.html",
+    "evidenceStatus": "linked-reference"
+  },
+  {
     "id": "shiva-panchakshara",
     "tradition": "Shiva",
     "title": "Om Namah Shivaya",
@@ -55,7 +94,7 @@ export const mantraRecords: readonly MantraRecord[] = [
     "englishMeaning": "Salutations to Shiva; commonly called the five-syllable mantra (excluding Om).",
     "tamilMeaning": "சிவபெருமானுக்கு வணக்கம் செலுத்தும் பஞ்சாட்சரத் திருநாமம்.",
     "sourceLabel": "Shiva Panchakshari Bhashyam",
-    "sourceUrl": "https://sanskritdocuments.org/doc_devii/shivapanchAkSharIbhAShyam-ta.pdf",
+    "sourceUrl": "https://sanskritdocuments.org/doc_devii/shivapanchAkSharIbhAShyam.html",
     "evidenceStatus": "linked-reference"
   },
   {
@@ -104,10 +143,10 @@ export const mantraRecords: readonly MantraRecord[] = [
     "tamil": "ஹரே கிருஷ்ண ஹரே கிருஷ்ண கிருஷ்ண கிருஷ்ண ஹரே ஹரே । ஹரே ராம ஹரே ராம ராம ராம ஹரே ஹரே ॥",
     "devanagari": "हरे कृष्ण हरे कृष्ण कृष्ण कृष्ण हरे हरे । हरे राम हरे राम राम राम हरे हरे ॥",
     "iast": "hare kṛṣṇa hare kṛṣṇa kṛṣṇa kṛṣṇa hare hare | hare rāma hare rāma rāma rāma hare hare ||",
-    "englishMeaning": "A Krishna-first Vaishnava recitation; the Kali-Santarana Upanishad is often printed Rama-first. Versions differ.",
+    "englishMeaning": "A Krishna-first Gaudiya Vaishnava name-recitation. Other textual witnesses, including Rama-first Kali-Santarana Upanishad editions, differ.",
     "tamilMeaning": "கிருஷ்ணர் பெயரை முதலில் கூறும் வைணவ வழக்குப் பதிப்பு; சில நூல்பதிப்புகளில் ராமர் பெயர் முதலில் வரும்.",
-    "sourceLabel": "Kali-Santarana Upanishad; variant note",
-    "sourceUrl": "https://indike.org/pramana/in.veda.upanisad.vaisnava.kalisantarana",
+    "sourceLabel": "ISKCON — Krishna-first Gaudiya Vaishnava recitation",
+    "sourceUrl": "https://iskcon.org/meditation/",
     "evidenceStatus": "linked-reference"
   },
   {
@@ -209,9 +248,9 @@ export const mantraRecords: readonly MantraRecord[] = [
     "devanagari": "असतो मा सद्गमय । तमसो मा ज्योतिर्गमय । मृत्योर्मा अमृतं गमय ॥",
     "iast": "asato mā sad gamaya | tamaso mā jyotir gamaya | mṛtyor mā amṛtaṃ gamaya ||",
     "englishMeaning": "A prayer to move from unreality to reality, from darkness to light, and from mortality to immortality.",
-    "tamilMeaning": "பொய்மையிலிருந்து உண்மைக்கும் இருளிலிருந்து ஒளிக்கும் வழிநடத்த வேண்டுதல்.",
+    "tamilMeaning": "உண்மையற்ற நிலையிலிருந்து உண்மைக்கும், இருளிலிருந்து ஒளிக்கும், மரணத்திலிருந்து மரணமற்ற நிலைக்கும் வழிநடத்த வேண்டுதல்.",
     "sourceLabel": "Brihadaranyaka Upanishad 1.3.28",
-    "sourceUrl": "https://upanishads.org.in/u/brihadaranyaka/p/1.3.28",
+    "sourceUrl": "https://heritage.iitk.ac.in/BRU/1.3.28",
     "evidenceStatus": "linked-reference"
   },
   {
@@ -230,3 +269,9 @@ export const mantraRecords: readonly MantraRecord[] = [
 ];
 export const japaGoals = [11, 21, 54, 108, 1008] as const;
 export const MANTRA_EDITORIAL_STATUS = "Candidate texts — not yet approved for production publication";
+
+/** Count one completed recitation; lowering a goal must never erase prior repetitions. */
+export function stepJapaCount(count: number, goal: number, step: 1 | -1): number {
+  if (step === -1) return Math.max(0, count - 1);
+  return count >= goal ? count : Math.min(goal, count + 1);
+}
