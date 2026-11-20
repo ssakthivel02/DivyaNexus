@@ -31,6 +31,7 @@ const Home = lazy(() => import("@/pages/Home"));
 const KnowledgeNexus = lazy(() => import("@/pages/KnowledgeNexus"));
 const LegalPage = lazy(() => import("@/pages/LegalPage"));
 const Library = lazy(() => import("@/pages/Library"));
+const MuruganLiterature = lazy(() => import("@/pages/MuruganLiterature"));
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const ScriptureReader = lazy(() => import("@/pages/ScriptureReader"));
 const SearchPage = lazy(() => import("@/pages/SearchPage"));
@@ -71,6 +72,7 @@ function AppRoutes({ onAsk, onSearch }: { onAsk: () => void; onSearch: () => voi
       <Route path="/collection-status" component={CollectionStatus} />
       <Route path="/audio" component={Audio} />
       <Route path="/library" component={Library} />
+      <Route path="/murugan-literature" component={MuruganLiterature} />
       <Route path="/about" component={About} />
       <Route path="/sources">{() => <LegalPage page="sources" />}</Route>
       <Route path="/privacy">{() => <LegalPage page="privacy" />}</Route>
