@@ -208,6 +208,14 @@ export async function importLocalLibrary(text: string): Promise<LocalLibraryImpo
   }
 
   const payload = parsed as Record<string, unknown>;
+  // Reject unsupported or foreign backups before mutating any browser data.
+  if (payload.format !== "divyanexus-local-library") {
+    throw new Error("This is not a DivyaNexus local-data backup.");
+  }
+  if (typeof payload.version !== "number" || !Number.isInteger(payload.version) ||
+      ![1, 2, 3].includes(payload.version)) {
+    throw new Error("Unsupported DivyaNexus backup version. Export a supported v1, v2 or v3 backup.");
+  }
   const bookmarks = unique([...toStringArray(payload.bookmarks), ...getBookmarks()]);
   const history = unique([...toStringArray(payload.history), ...getHistory()], 12);
   const savedSearches = unique([...toStringArray(payload.savedSearches), ...getSavedSearches()], 8);
