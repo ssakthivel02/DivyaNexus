@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import { japaGoals, MANTRA_EDITORIAL_STATUS, mantraRecords, stepJapaCount } from "../../client/src/data/mantras";
+import { mantraIds } from "../../client/src/data/mantraCatalog";
 
 describe("DivyaNexus high-priority mantra candidate set", () => {
   it("preserves unique IDs, readable Tamil, transliteration, and descriptions", () => {
     expect(mantraRecords.length).toBeGreaterThanOrEqual(12);
     expect(new Set(mantraRecords.map((item) => item.id)).size).toBe(mantraRecords.length);
+    expect(mantraIds).toEqual(mantraRecords.map((item) => item.id));
     for (const mantra of mantraRecords) {
       expect(mantra.id).toMatch(/^[a-z0-9-]+$/);
       expect(mantra.title.trim().length).toBeGreaterThan(3);
