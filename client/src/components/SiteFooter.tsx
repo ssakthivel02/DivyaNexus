@@ -18,7 +18,7 @@ export function SiteFooter() {
       <div className="site-footer__topline"><span>DIVYANEXUS / LIVING ARCHIVE</span><span aria-hidden="true" /><Link href="/collection-status">Review collection depth <ArrowUpRight size={14} aria-hidden="true" /></Link></div>
       <div className="site-footer__grid">
         <div className="site-footer__intro"><BrandMark /><p>A bilingual Vedic knowledge space for careful study, cultural discovery, and devotional reflection.</p><p className="site-footer__notice">Educational and devotional reflection only. No outcome is guaranteed.</p></div>
-        {footerGroups.map((group) => <details key={group.title} className="site-footer__group" open><summary>{group.title}<ChevronDown size={16} aria-hidden="true" /></summary><div>{group.links.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}</div></details>)}
+        {footerGroups.map((group) => <details key={group.title} className="site-footer__group" open><summary>{group.title}<ChevronDown size={16} aria-hidden="true" /></summary><div>{group.links.filter(([, href]) => href !== "/mantras" || import.meta.env.VITE_MANTRA_CANDIDATES === "review").map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}</div></details>)}
       </div>
       <div className="site-footer__bar"><span>© 2026 DivyaNexus</span><span lang="ta">கல்வி மற்றும் பக்தி சிந்தனைக்காக மட்டுமே.</span><span>Browser-local data remains in your browser unless a feature says otherwise.</span></div>
     </footer>
