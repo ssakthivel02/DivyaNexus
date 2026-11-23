@@ -1,10 +1,10 @@
-import { japaGoals, mantraRecords } from "../data/mantras";
+import { japaGoals, mantraIds } from "../data/mantraCatalog";
 
 export const JAPA_STORAGE_KEY = "divyanexus.japa.v1";
 export type JapaState = { selectedId: string; goal: number; counts: Record<string, number> };
 
 export function defaultJapaProgress(): JapaState {
-  return { selectedId: mantraRecords[0].id, goal: 108, counts: {} };
+  return { selectedId: mantraIds[0], goal: 108, counts: {} };
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -14,14 +14,14 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 /** Only catalogue IDs and bounded integer counts are accepted from storage or backups. */
 export function sanitiseJapaProgress(value: unknown): JapaState | null {
   if (!isRecord(value) || !isRecord(value.counts)) return null;
-  const selectedId = mantraRecords.find((item) => item.id === value.selectedId)?.id ?? mantraRecords[0].id;
+  const selectedId = mantraIds.find((id) => id === value.selectedId) ?? mantraIds[0];
   const goal = japaGoals.find((item) => item === value.goal) ?? 108;
   const counts: Record<string, number> = {};
-  for (const item of mantraRecords) {
-    if (!Object.prototype.hasOwnProperty.call(value.counts, item.id)) continue;
-    const count = value.counts[item.id];
+  for (const id of mantraIds) {
+    if (!Object.prototype.hasOwnProperty.call(value.counts, id)) continue;
+    const count = value.counts[id];
     if (typeof count === "number" && Number.isSafeInteger(count) && count >= 0 && count <= 1008) {
-      counts[item.id] = count;
+      counts[id] = count;
     }
   }
   return { selectedId, goal, counts };
