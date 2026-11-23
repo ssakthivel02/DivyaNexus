@@ -267,7 +267,7 @@ export const mantraRecords: readonly MantraRecord[] = [
     "evidenceStatus": "linked-reference"
   }
 ];
-export const japaGoals = [11, 21, 54, 108, 1008] as const;
+export { japaGoals } from "./mantraCatalog";
 export const MANTRA_EDITORIAL_STATUS = "Candidate texts — not yet approved for production publication";
 
 /** Count one completed recitation; lowering a goal must never erase prior repetitions. */
