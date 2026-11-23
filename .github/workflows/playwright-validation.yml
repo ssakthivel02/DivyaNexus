@@ -50,6 +50,8 @@ jobs:
       - name: Build production application
         env:
           VITE_BASE_PATH: /
+          # Preview candidate texts only in the isolated browser acceptance build.
+          VITE_MANTRA_CANDIDATES: review
         run: pnpm run build
 
       - name: Install Chromium
