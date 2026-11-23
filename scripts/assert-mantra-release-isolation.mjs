@@ -17,9 +17,9 @@ async function inspect(directory) {
       await inspect(path);
       continue;
     }
-    if (!entry.isFile() || !/\\.(?:js|html|css|json|map)$/.test(entry.name)) continue;
+    if (!entry.isFile() || !/\.(?:js|html|css|json|map)$/.test(entry.name)) continue;
     const shortPath = relative(root.pathname, path);
-    if (/^Mantras-[^/]+\\.js$/i.test(entry.name)) {
+    if (/^Mantras-[^/]+\.js$/i.test(entry.name)) {
       throw new Error(`Unapproved mantra reader chunk included in release: ${shortPath}`);
     }
     const contents = await readFile(path, "utf8");
