@@ -241,6 +241,10 @@ function titleCaseSlug(value: string) {
 
 export function resolveRouteMeta(location: string): RouteMeta {
   const path = location.split("?")[0].replace(/\/$/, "") || "/";
+  // Disabled editorial candidate routes must not advertise unpublished content metadata.
+  if (path === "/mantras" && import.meta.env.VITE_MANTRA_CANDIDATES !== "review") {
+    return { ...notFoundMeta, image: defaultImage };
+  }
   const direct = routeMetaByPath[path];
   if (direct) return { ...direct, image: direct.image ?? defaultImage };
   if (path.startsWith("/deities/")) {
