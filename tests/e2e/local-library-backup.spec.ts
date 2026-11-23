@@ -118,6 +118,36 @@ test.describe("browser-local library backup", () => {
     await expect(page.locator(".library-cinema__stat").nth(0)).toContainText("0");
     await expect(page.locator(".library-cinema__stat").nth(3)).toContainText("0");
   });
+  test("rejects foreign and unsupported backup envelopes without changing local data", async ({ page }) => {
+    await openLibrary(page);
+    const keys = ["divyanexus.bookmarks", "divyanexus.theme", "divyanexus.japa.v1"];
+    const baseline = [JSON.stringify(["gita-2-47"]), "day", JSON.stringify({
+      selectedId: "murugan-saravanabhava", goal: 108, counts: { "murugan-saravanabhava": 37 },
+    })];
+    await page.evaluate(({ keys, baseline }) => {
+      keys.forEach((key, index) => localStorage.setItem(key, baseline[index]));
+    }, { keys, baseline });
+
+    const invalid = [
+      { format: "another-product", version: 3, preferences: { theme: "night" } },
+      { format: "divyanexus-local-library", version: 999, bookmarks: ["untrusted"] },
+      { format: "divyanexus-local-library", bookmarks: ["untrusted"] },
+      { format: "divyanexus-local-library", version: "3", bookmarks: ["untrusted"] },
+      { format: "divyanexus-local-library", version: 1.5, bookmarks: ["untrusted"] },
+    ];
+    for (const [index, payload] of invalid.entries()) {
+      await page.locator('input[type="file"]').setInputFiles({
+        name: `bad-backup-${index}.json`, mimeType: "application/json",
+        buffer: Buffer.from(JSON.stringify(payload)),
+      });
+      await expect(page.locator(".library-cinema__status")).toContainText(
+        /not a DivyaNexus local-data backup|Unsupported DivyaNexus backup version/,
+      );
+      const actual = await page.evaluate((names) => names.map((name) => localStorage.getItem(name)), keys);
+      expect(actual).toEqual(baseline);
+    }
+  });
+
   test("exports, merges, and clears chanting progress without double counting", async ({ page }) => {
     const key = "divyanexus.japa.v1";
     await openLibrary(page);
