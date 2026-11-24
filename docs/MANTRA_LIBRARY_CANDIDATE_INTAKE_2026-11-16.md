@@ -108,3 +108,9 @@ Two displayed forms received stronger independent text-level witnesses; no mantr
 - **Shiva — Om Namah Shivaya:** the `Shiva Shadakshara Stotram` explicitly prints `ॐ नमः शिवाय`, supporting the displayed six-syllable form including `Om`. The earlier Panchakshari Bhashyam remains useful evidence for the five-syllable `namaḥ śivāya` tradition, but the candidate now links to the witness matching the actual displayed form.
 
 These are provenance improvements only. Human Tamil/Sanskrit text/pronunciation review, tradition/lineage context, rights review, and owner publication approval remain mandatory. No bīja/teacher-guidance policy has been relaxed and no new candidate was added.
+
+
+## 24 November 2026 — non-destructive study-progress restore
+- Browser-local study journey restore now **unions valid completed steps** per journey with existing local progress. Local order wins; imported historical steps are added once. Re-importing the same file is idempotent, matching the existing conservative backup semantics for notes and japa counts. A restore is not a substitute for a user-initiated reset.
+- Four unit regressions and a browser import/re-import/export regression cover overlapping journeys, malformed fields, repeated imports, and prototype-safety handling.
+- This only modifies the existing PR #85 candidate branch. It does not alter main, production, provider calls, subscriptions, the separate content factory, or other PRs. Exact-head CI and editorial HOLD remain required before publication.

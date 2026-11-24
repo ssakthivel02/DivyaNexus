@@ -240,4 +240,39 @@ test.describe("browser-local library backup", () => {
     await expect(page.getByRole("heading", { name: /Keep a quiet margin for study/ })).toBeVisible();
   });
 
+  test("older progress backup merges instead of erasing later study, including repeated imports", async ({ page }) => {
+    await openLibrary(page);
+    const newer = { "gita-context": ["step-2", "step-3"], "veda-foundations": ["intro"] };
+    await page.evaluate(({ key, newer }) => localStorage.setItem(key, JSON.stringify(newer)),
+      { key: LEARNING_PROGRESS_KEY, newer });
+    const backup = {
+      format: "divyanexus-local-library", version: 3,
+      learningProgress: { "gita-context": ["step-1", "step-2"], "temple-context": ["visit"] },
+    };
+    const restore = async () => {
+      await page.locator('input[type="file"]').setInputFiles({
+        name: "older-study-progress.json", mimeType: "application/json",
+        buffer: Buffer.from(JSON.stringify(backup)),
+      });
+      await expect(page.locator(".library-cinema__status")).toContainText("Local data restored");
+    };
+    const combined = {
+      "gita-context": ["step-2", "step-3", "step-1"],
+      "veda-foundations": ["intro"],
+      "temple-context": ["visit"],
+    };
+    await restore();
+    await expect.poll(() => page.evaluate((key) =>
+      JSON.parse(localStorage.getItem(key) ?? "{}"), LEARNING_PROGRESS_KEY)).toEqual(combined);
+    await restore();
+    expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "{}"),
+      LEARNING_PROGRESS_KEY)).toEqual(combined);
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export local data" }).click();
+    const downloadPath = await (await downloadPromise).path();
+    expect(downloadPath).not.toBeNull();
+    expect(JSON.parse(await readFile(downloadPath!, "utf8")).learningProgress).toEqual(combined);
+  });
+
 });

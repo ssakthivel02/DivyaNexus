@@ -13,6 +13,21 @@ export function sanitiseLocalLearningProgress(value: unknown): LocalLearningProg
   );
 }
 
+/** Restoring a backup adds recorded completion, without discarding newer local steps.
+ * Existing order wins, duplicates are suppressed, and a repeated restore is idempotent.
+ */
+export function mergeLocalLearningProgress(current: unknown, backup: unknown): LocalLearningProgress {
+  const saved = sanitiseLocalLearningProgress(current);
+  const incoming = sanitiseLocalLearningProgress(backup);
+  const byJourney = new Map<string, string[]>(
+    Object.entries(saved).map(([journeyId, stepIds]) => [journeyId, [...stepIds]]),
+  );
+  for (const [journeyId, stepIds] of Object.entries(incoming)) {
+    byJourney.set(journeyId, Array.from(new Set([...(byJourney.get(journeyId) ?? []), ...stepIds])));
+  }
+  return Object.fromEntries(byJourney);
+}
+
 export function readLocalLearningProgress(): LocalLearningProgress {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY);

@@ -5,7 +5,7 @@
 import {
   LOCAL_LEARNING_PROGRESS_STORAGE_KEY,
   readLocalLearningProgress,
-  sanitiseLocalLearningProgress,
+  mergeLocalLearningProgress,
   writeLocalLearningProgress,
 } from "@/lib/localLearningProgress";
 import {
@@ -247,7 +247,7 @@ export async function importLocalLibrary(text: string): Promise<LocalLibraryImpo
   }
 
   if (payload.learningProgress !== undefined) {
-    writeLocalLearningProgress(sanitiseLocalLearningProgress(payload.learningProgress));
+    writeLocalLearningProgress(mergeLocalLearningProgress(readLocalLearningProgress(), payload.learningProgress));
   }
 
   // Optional field in the existing v3 backup; older files leave the current count intact.
