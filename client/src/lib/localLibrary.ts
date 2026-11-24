@@ -248,16 +248,42 @@ export async function importLocalLibrary(text: string): Promise<LocalLibraryImpo
     if (merged) writeJapaProgress(merged);
   }
 
+  let importedNotes = 0;
   if (notes.length) {
     const db = await openNotesDb();
-    await new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction("notes", "readwrite");
-      const store = transaction.objectStore("notes");
-      notes.forEach((note) => store.put(note));
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error);
-      transaction.onabort = () => reject(transaction.error);
-    });
+    try {
+      await new Promise<void>((resolve, reject) => {
+        const transaction = db.transaction("notes", "readwrite");
+        const store = transaction.objectStore("notes");
+        const request = store.getAll();
+        request.onsuccess = () => {
+          const existing = request.result as LocalNote[];
+          const usedIds = new Set(existing.map((note) => note.id));
+          // A stable content/date signature prevents repeated imports from making copies.
+          // A matching ID with different contents must never overwrite the local note.
+          const fingerprint = (note: LocalNote) => JSON.stringify([
+            note.recordId, note.title, note.body, note.updatedAt,
+          ]);
+          const known = new Set(existing.map(fingerprint));
+          for (const note of notes) {
+            const signature = fingerprint(note);
+            if (known.has(signature)) continue;
+            let id = note.id;
+            while (usedIds.has(id)) id = crypto.randomUUID();
+            store.put({ ...note, id });
+            usedIds.add(id);
+            known.add(signature);
+            importedNotes++;
+          }
+        };
+        request.onerror = () => transaction.abort();
+        transaction.oncomplete = () => resolve();
+        transaction.onerror = () => reject(transaction.error);
+        transaction.onabort = () => reject(transaction.error);
+      });
+    } finally {
+      db.close();
+    }
   }
 
   window.dispatchEvent(new CustomEvent("divyanexus-library-change"));
@@ -265,7 +291,7 @@ export async function importLocalLibrary(text: string): Promise<LocalLibraryImpo
     bookmarks: bookmarks.length,
     history: history.length,
     savedSearches: savedSearches.length,
-    notes: notes.length,
+    notes: importedNotes,
   };
 }
 

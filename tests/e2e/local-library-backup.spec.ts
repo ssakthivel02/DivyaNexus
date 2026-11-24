@@ -180,4 +180,44 @@ test.describe("browser-local library backup", () => {
     expect(await page.evaluate((storageKey) => localStorage.getItem(storageKey), key)).toBeNull();
   });
 
+  test("restoring an older note ID never overwrites a newer local note or duplicates imports", async ({ page }) => {
+    await openLibrary(page);
+    const original = {
+      id: "collision-note-1", recordId: "gita-2-47", title: "Latest local reflection",
+      body: "Newer local wording that must survive restore.", updatedAt: "2026-11-23T10:00:00.000Z",
+    };
+    const prior = {
+      id: "collision-note-1", recordId: "gita-2-47", title: "Recovered older reflection",
+      body: "Older backup wording must also be preserved.", updatedAt: "2026-11-10T10:00:00.000Z",
+    };
+    const restore = async (name: string, notes: typeof original[]) => {
+      await page.locator('input[type="file"]').setInputFiles({
+        name, mimeType: "application/json",
+        buffer: Buffer.from(JSON.stringify({ format: "divyanexus-local-library", version: 3, notes })),
+      });
+      await expect(page.locator(".library-cinema__status")).toContainText("Local data restored");
+    };
+    await restore("initial-notes.json", [original]);
+    await expect(page.getByText(original.title, { exact: true })).toHaveCount(1);
+    await restore("older-notes.json", [prior]);
+    await expect(page.getByText(original.title, { exact: true })).toHaveCount(1);
+    await expect(page.getByText(prior.title, { exact: true })).toHaveCount(1);
+    await restore("older-notes.json", [prior]);
+    await expect(page.getByText(prior.title, { exact: true })).toHaveCount(1);
+    await expect(page.locator(".library-cinema__status")).toContainText("0 imported notes");
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export local data" }).click();
+    const download = await downloadPromise;
+    const path = await download.path();
+    expect(path).not.toBeNull();
+    const exported = JSON.parse(await readFile(path!, "utf8"));
+    expect(exported.notes).toHaveLength(2);
+    expect(exported.notes.find((note: typeof original) => note.id === original.id)).toMatchObject(original);
+    expect(exported.notes.find((note: typeof original) => note.title === prior.title)).toMatchObject({
+      title: prior.title, body: prior.body, updatedAt: prior.updatedAt,
+    });
+    expect(exported.notes.find((note: typeof original) => note.title === prior.title)?.id).not.toBe(original.id);
+  });
+
 });
