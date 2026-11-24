@@ -220,4 +220,24 @@ test.describe("browser-local library backup", () => {
     expect(exported.notes.find((note: typeof original) => note.title === prior.title)?.id).not.toBe(original.id);
   });
 
+  test("fails closed on unreadable browser notes instead of downloading an incomplete backup", async ({ page }) => {
+    await page.addInitScript(() => {
+      // Simulate privacy/storage denial before the application first opens IndexedDB.
+      Object.defineProperty(window, "indexedDB", {
+        configurable: true,
+        value: { open: () => { throw new DOMException("Blocked by browser", "SecurityError"); } },
+      });
+    });
+    await openLibrary(page);
+    let downloadCount = 0;
+    page.on("download", () => { downloadCount += 1; });
+    await page.getByRole("button", { name: "Export local data" }).click();
+    await expect(page.locator(".library-cinema__status")).toContainText(
+      "Export blocked: Browser notes storage could not be read. Backup was not created.",
+    );
+    expect(downloadCount).toBe(0);
+    // Reading shelves is allowed to degrade, but exporting must not falsely claim completeness.
+    await expect(page.getByRole("heading", { name: /Keep a quiet margin for study/ })).toBeVisible();
+  });
+
 });

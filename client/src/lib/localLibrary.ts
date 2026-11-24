@@ -118,15 +118,23 @@ function openNotesDb(): Promise<IDBDatabase> {
   });
 }
 
-export async function listNotes(): Promise<LocalNote[]> {
+/** Normal reader mode degrades gracefully when IndexedDB is disabled.
+ * Backup mode fails closed: an unreadable note store must never be exported as an empty notes array.
+ */
+export async function listNotes(options: { strict?: boolean } = {}): Promise<LocalNote[]> {
   try {
     const db = await openNotesDb();
-    return await new Promise((resolve, reject) => {
-      const request = db.transaction("notes", "readonly").objectStore("notes").getAll();
-      request.onsuccess = () => resolve((request.result as LocalNote[]).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
-      request.onerror = () => reject(request.error);
-    });
+    try {
+      return await new Promise((resolve, reject) => {
+        const request = db.transaction("notes", "readonly").objectStore("notes").getAll();
+        request.onsuccess = () => resolve((request.result as LocalNote[]).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+        request.onerror = () => reject(request.error);
+      });
+    } finally {
+      db.close();
+    }
   } catch {
+    if (options.strict) throw new Error("Browser notes storage could not be read. Backup was not created.");
     return [];
   }
 }
@@ -313,7 +321,7 @@ export async function exportLocalLibrary() {
     bookmarks: getBookmarks(),
     history: getHistory(),
     savedSearches: getSavedSearches(),
-    notes: await listNotes(),
+    notes: await listNotes({ strict: true }),
     preferences: Object.fromEntries(Object.entries(preferenceKeys).map(([key, storageKey]) => [key, window.localStorage.getItem(storageKey)])),
     speechPreferences: readSpeechPreferences(),
     learningProgress: readLocalLearningProgress(),

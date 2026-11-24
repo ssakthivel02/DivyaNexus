@@ -84,6 +84,17 @@ export default function Library() {
     }
   };
 
+  const exportData = async () => {
+    try {
+      await exportLocalLibrary();
+      setStatus("Backup download requested. Verify the file in Downloads before clearing local data.");
+    } catch (error) {
+      setStatus(error instanceof Error
+        ? `Export blocked: ${error.message}`
+        : "Export blocked: local data could not be read. No complete backup was created.");
+    }
+  };
+
   const removeNote = async (noteId: string) => {
     await deleteNote(noteId);
     setStatus("Local note deleted");
@@ -103,7 +114,7 @@ export default function Library() {
     <section className="library-cinema__overview" aria-label="Local study totals">
       <div className="library-cinema__stat"><strong>{bookmarks.length}</strong><span>Saved records</span></div><div className="library-cinema__stat"><strong>{history.length}</strong><span>Reading trails</span></div><div className="library-cinema__stat"><strong>{searches.length}</strong><span>Saved searches</span></div><div className="library-cinema__stat"><strong>{notes.length}</strong><span>Local notes</span></div>
       <div className="library-cinema__actions">
-        <button className="library-cinema__export" onClick={exportLocalLibrary}><Download size={16} aria-hidden="true" />Export local data</button>
+        <button className="library-cinema__export" onClick={exportData}><Download size={16} aria-hidden="true" />Export local data</button>
         <button className="library-cinema__import" onClick={() => importInput.current?.click()}><Upload size={16} aria-hidden="true" />Restore local data</button>
         <input ref={importInput} type="file" accept="application/json,.json" className="library-cinema__file-input" aria-label="Choose DivyaNexus local data JSON" onChange={(event) => restore(event.target.files?.[0])} />
         <button className="library-cinema__clear" onClick={clear}><Trash2 size={16} aria-hidden="true" />Clear local data</button>
