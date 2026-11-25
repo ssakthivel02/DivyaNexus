@@ -240,6 +240,41 @@ test.describe("browser-local library backup", () => {
     await expect(page.getByRole("heading", { name: /Keep a quiet margin for study/ })).toBeVisible();
   });
 
+  test("blocked notes database rejects restore before changing existing local preferences or progress", async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(window, "indexedDB", {
+        configurable: true,
+        value: { open: () => { throw new DOMException("Blocked by browser", "SecurityError"); } },
+      });
+    });
+    await openLibrary(page);
+    const keys = ["divyanexus.bookmarks", "divyanexus.theme", LEARNING_PROGRESS_KEY, "divyanexus.japa.v1"];
+    const original = [
+      JSON.stringify(["gita-2-47"]), "dawn", JSON.stringify({ "gita-context": ["step-3"] }),
+      JSON.stringify({ selectedId: "murugan-saravanabhava", goal: 108, counts: { "murugan-saravanabhava": 42 } }),
+    ];
+    await page.evaluate(({ keys, original }) => {
+      keys.forEach((key, i) => localStorage.setItem(key, original[i]));
+    }, { keys, original });
+    const backup = {
+      format: "divyanexus-local-library", version: 3,
+      bookmarks: ["rig-veda-1-1-1"],
+      preferences: { theme: "night" },
+      learningProgress: { "gita-context": ["step-1"] },
+      japaProgress: { selectedId: "shiva-panchakshara", goal: 21, counts: { "murugan-saravanabhava": 77 } },
+      notes: [{ id: "new-note", recordId: "gita-2-47", title: "Must not be partial", body: "Do not import", updatedAt: "2026-11-24T12:00:00.000Z" }],
+    };
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "notes-storage-denied.json", mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify(backup)),
+    });
+    await expect(page.locator(".library-cinema__status")).toContainText(
+      "Restore was not started; existing local data is unchanged.",
+    );
+    expect(await page.evaluate((names) => names.map((name) => localStorage.getItem(name)), keys)).toEqual(original);
+    await expect(page.getByText("Must not be partial", { exact: true })).toHaveCount(0);
+  });
+
   test("older progress backup merges instead of erasing later study, including repeated imports", async ({ page }) => {
     await openLibrary(page);
     const newer = { "gita-context": ["step-2", "step-3"], "veda-foundations": ["intro"] };

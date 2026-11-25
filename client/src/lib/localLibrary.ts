@@ -229,6 +229,16 @@ export async function importLocalLibrary(text: string): Promise<LocalLibraryImpo
   const savedSearches = unique([...toStringArray(payload.savedSearches), ...getSavedSearches()], 8);
   const notes = validImportedNotes(payload.notes);
 
+  // Reject a blocked/unreadable notes database before changing any other local data.
+  // This preflight covers storage denial; it is not a cross-store atomic transaction.
+  if (notes.length) {
+    try {
+      await listNotes({ strict: true });
+    } catch {
+      throw new Error("Browser notes storage is unavailable. Restore was not started; existing local data is unchanged.");
+    }
+  }
+
   writeJson(preferenceKeys.bookmarks, bookmarks);
   writeJson(preferenceKeys.history, history);
   writeJson(preferenceKeys.searches, savedSearches);
