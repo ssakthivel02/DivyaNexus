@@ -60,10 +60,10 @@ function captureLocalStorage(keys: readonly string[]) {
 }
 
 function restoreLocalStorage(snapshot: ReadonlyMap<string, string | null>) {
-  for (const [key, value] of snapshot) {
+  snapshot.forEach((value, key) => {
     if (value === null) window.localStorage.removeItem(key);
     else window.localStorage.setItem(key, value);
-  }
+  });
 }
 
 function unique(values: string[], limit?: number) {
