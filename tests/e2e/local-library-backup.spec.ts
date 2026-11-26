@@ -118,4 +118,249 @@ test.describe("browser-local library backup", () => {
     await expect(page.locator(".library-cinema__stat").nth(0)).toContainText("0");
     await expect(page.locator(".library-cinema__stat").nth(3)).toContainText("0");
   });
+  test("rejects foreign and unsupported backup envelopes without changing local data", async ({ page }) => {
+    await openLibrary(page);
+    const keys = ["divyanexus.bookmarks", "divyanexus.theme", "divyanexus.japa.v1"];
+    const baseline = [JSON.stringify(["gita-2-47"]), "day", JSON.stringify({
+      selectedId: "murugan-saravanabhava", goal: 108, counts: { "murugan-saravanabhava": 37 },
+    })];
+    await page.evaluate(({ keys, baseline }) => {
+      keys.forEach((key, index) => localStorage.setItem(key, baseline[index]));
+    }, { keys, baseline });
+
+    const invalid = [
+      { format: "another-product", version: 3, preferences: { theme: "night" } },
+      { format: "divyanexus-local-library", version: 999, bookmarks: ["untrusted"] },
+      { format: "divyanexus-local-library", bookmarks: ["untrusted"] },
+      { format: "divyanexus-local-library", version: "3", bookmarks: ["untrusted"] },
+      { format: "divyanexus-local-library", version: 1.5, bookmarks: ["untrusted"] },
+    ];
+    for (const [index, payload] of invalid.entries()) {
+      await page.locator('input[type="file"]').setInputFiles({
+        name: `bad-backup-${index}.json`, mimeType: "application/json",
+        buffer: Buffer.from(JSON.stringify(payload)),
+      });
+      await expect(page.locator(".library-cinema__status")).toContainText(
+        /not a DivyaNexus local-data backup|Unsupported DivyaNexus backup version/,
+      );
+      const actual = await page.evaluate((names) => names.map((name) => localStorage.getItem(name)), keys);
+      expect(actual).toEqual(baseline);
+    }
+  });
+
+  test("exports, merges, and clears chanting progress without double counting", async ({ page }) => {
+    const key = "divyanexus.japa.v1";
+    await openLibrary(page);
+    await page.evaluate((storageKey) => localStorage.setItem(storageKey, JSON.stringify({
+      selectedId: "murugan-saravanabhava", goal: 108, counts: { "murugan-saravanabhava": 80 },
+    })), key);
+
+    const payload = { format: "divyanexus-local-library", version: 3, japaProgress: {
+      selectedId: "shiva-panchakshara", goal: 21, counts: {
+        "murugan-saravanabhava": 21, "shiva-panchakshara": 12, "unknown-id": 50, "hanuman-namah": 1009,
+      },
+    }};
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "japa-backup.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(payload)),
+    });
+    await expect(page.locator(".library-cinema__status")).toContainText("Local data restored");
+    const expected = { selectedId: "murugan-saravanabhava", goal: 108,
+      counts: { "murugan-saravanabhava": 80, "shiva-panchakshara": 12 } };
+    await expect.poll(() => page.evaluate((storageKey) => JSON.parse(localStorage.getItem(storageKey) ?? "null"), key)).toEqual(expected);
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export local data" }).click();
+    const exportedPath = await (await downloadPromise).path();
+    expect(exportedPath).not.toBeNull();
+    expect(JSON.parse(await readFile(exportedPath!, "utf8")).japaProgress).toEqual(expected);
+
+    page.once("dialog", (dialog) => dialog.accept());
+    await page.getByRole("button", { name: "Clear local data" }).click();
+    await expect(page.locator(".library-cinema__status")).toHaveText("Browser-local study data cleared");
+    expect(await page.evaluate((storageKey) => localStorage.getItem(storageKey), key)).toBeNull();
+  });
+
+  test("restoring an older note ID never overwrites a newer local note or duplicates imports", async ({ page }) => {
+    await openLibrary(page);
+    const original = {
+      id: "collision-note-1", recordId: "gita-2-47", title: "Latest local reflection",
+      body: "Newer local wording that must survive restore.", updatedAt: "2026-11-23T10:00:00.000Z",
+    };
+    const prior = {
+      id: "collision-note-1", recordId: "gita-2-47", title: "Recovered older reflection",
+      body: "Older backup wording must also be preserved.", updatedAt: "2026-11-10T10:00:00.000Z",
+    };
+    const restore = async (name: string, notes: typeof original[]) => {
+      await page.locator('input[type="file"]').setInputFiles({
+        name, mimeType: "application/json",
+        buffer: Buffer.from(JSON.stringify({ format: "divyanexus-local-library", version: 3, notes })),
+      });
+      await expect(page.locator(".library-cinema__status")).toContainText("Local data restored");
+    };
+    await restore("initial-notes.json", [original]);
+    await expect(page.getByText(original.title, { exact: true })).toHaveCount(1);
+    await restore("older-notes.json", [prior]);
+    await expect(page.getByText(original.title, { exact: true })).toHaveCount(1);
+    await expect(page.getByText(prior.title, { exact: true })).toHaveCount(1);
+    await restore("older-notes.json", [prior]);
+    await expect(page.getByText(prior.title, { exact: true })).toHaveCount(1);
+    await expect(page.locator(".library-cinema__status")).toContainText("0 imported notes");
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export local data" }).click();
+    const download = await downloadPromise;
+    const path = await download.path();
+    expect(path).not.toBeNull();
+    const exported = JSON.parse(await readFile(path!, "utf8"));
+    expect(exported.notes).toHaveLength(2);
+    expect(exported.notes.find((note: typeof original) => note.id === original.id)).toMatchObject(original);
+    expect(exported.notes.find((note: typeof original) => note.title === prior.title)).toMatchObject({
+      title: prior.title, body: prior.body, updatedAt: prior.updatedAt,
+    });
+    expect(exported.notes.find((note: typeof original) => note.title === prior.title)?.id).not.toBe(original.id);
+  });
+
+  test("fails closed on unreadable browser notes instead of downloading an incomplete backup", async ({ page }) => {
+    await page.addInitScript(() => {
+      // Simulate privacy/storage denial before the application first opens IndexedDB.
+      Object.defineProperty(window, "indexedDB", {
+        configurable: true,
+        value: { open: () => { throw new DOMException("Blocked by browser", "SecurityError"); } },
+      });
+    });
+    await openLibrary(page);
+    let downloadCount = 0;
+    page.on("download", () => { downloadCount += 1; });
+    await page.getByRole("button", { name: "Export local data" }).click();
+    await expect(page.locator(".library-cinema__status")).toContainText(
+      "Export blocked: Browser notes storage could not be read. Backup was not created.",
+    );
+    expect(downloadCount).toBe(0);
+    // Reading shelves is allowed to degrade, but exporting must not falsely claim completeness.
+    await expect(page.getByRole("heading", { name: /Keep a quiet margin for study/ })).toBeVisible();
+  });
+
+  test("blocked notes database rejects restore before changing existing local preferences or progress", async ({ page }) => {
+    await page.addInitScript(() => {
+      Object.defineProperty(window, "indexedDB", {
+        configurable: true,
+        value: { open: () => { throw new DOMException("Blocked by browser", "SecurityError"); } },
+      });
+    });
+    await openLibrary(page);
+    const keys = ["divyanexus.bookmarks", "divyanexus.theme", LEARNING_PROGRESS_KEY, "divyanexus.japa.v1"];
+    const original = [
+      JSON.stringify(["gita-2-47"]), "dawn", JSON.stringify({ "gita-context": ["step-3"] }),
+      JSON.stringify({ selectedId: "murugan-saravanabhava", goal: 108, counts: { "murugan-saravanabhava": 42 } }),
+    ];
+    await page.evaluate(({ keys, original }) => {
+      keys.forEach((key, i) => localStorage.setItem(key, original[i]));
+    }, { keys, original });
+    const backup = {
+      format: "divyanexus-local-library", version: 3,
+      bookmarks: ["rig-veda-1-1-1"],
+      preferences: { theme: "night" },
+      learningProgress: { "gita-context": ["step-1"] },
+      japaProgress: { selectedId: "shiva-panchakshara", goal: 21, counts: { "murugan-saravanabhava": 77 } },
+      notes: [{ id: "new-note", recordId: "gita-2-47", title: "Must not be partial", body: "Do not import", updatedAt: "2026-11-24T12:00:00.000Z" }],
+    };
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "notes-storage-denied.json", mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify(backup)),
+    });
+    await expect(page.locator(".library-cinema__status")).toContainText(
+      "Restore was not started; existing local data is unchanged.",
+    );
+    expect(await page.evaluate((names) => names.map((name) => localStorage.getItem(name)), keys)).toEqual(original);
+    await expect(page.getByText("Must not be partial", { exact: true })).toHaveCount(0);
+  });
+
+  test("late note-write failure rolls back browser-local stores after a successful preflight", async ({ page }) => {
+    await openLibrary(page);
+    const keys = [
+      "divyanexus.bookmarks",
+      "divyanexus.theme",
+      LEARNING_PROGRESS_KEY,
+      "divyanexus.japa.v1",
+      "divyanexus.speechPreferences.v1",
+    ];
+    const original = [
+      JSON.stringify(["gita-2-47"]),
+      "dawn",
+      JSON.stringify({ "gita-context": ["step-3"] }),
+      JSON.stringify({ selectedId: "murugan-saravanabhava", goal: 108, counts: { "murugan-saravanabhava": 42 } }),
+      JSON.stringify({ version: 1, selectedItemId: "local", rates: { local: 0.9 }, voices: {} }),
+    ];
+    await page.evaluate(({ keys, original }) => {
+      keys.forEach((key, index) => localStorage.setItem(key, original[index]));
+      const nativeTransaction = IDBDatabase.prototype.transaction;
+      Object.defineProperty(IDBDatabase.prototype, "transaction", {
+        configurable: true,
+        value: function (...args: Parameters<IDBDatabase["transaction"]>) {
+          if (args[1] === "readwrite") throw new DOMException("Injected note write failure", "UnknownError");
+          return nativeTransaction.apply(this, args);
+        },
+      });
+    }, { keys, original });
+
+    const backup = {
+      format: "divyanexus-local-library",
+      version: 3,
+      bookmarks: ["rig-veda-1-1-1"],
+      preferences: { theme: "night" },
+      speechPreferences: { version: 1, selectedItemId: "backup", rates: { backup: 1.1 }, voices: {} },
+      learningProgress: { "gita-context": ["step-1"] },
+      japaProgress: { selectedId: "shiva-panchakshara", goal: 21, counts: { "murugan-saravanabhava": 77 } },
+      notes: [{
+        id: "late-failure-note", recordId: "gita-2-47", title: "Must roll back",
+        body: "A failed notes transaction must not leave other stores changed.", updatedAt: "2026-11-26T04:30:00.000Z",
+      }],
+    };
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "late-note-write-failure.json",
+      mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify(backup)),
+    });
+    await expect(page.locator(".library-cinema__status")).toContainText(
+      "Restore failed. Existing browser-local data was restored to its previous state.",
+    );
+    expect(await page.evaluate((names) => names.map((name) => localStorage.getItem(name)), keys)).toEqual(original);
+    await expect(page.getByText("Must roll back", { exact: true })).toHaveCount(0);
+  });
+
+  test("older progress backup merges instead of erasing later study, including repeated imports", async ({ page }) => {
+    await openLibrary(page);
+    const newer = { "gita-context": ["step-2", "step-3"], "veda-foundations": ["intro"] };
+    await page.evaluate(({ key, newer }) => localStorage.setItem(key, JSON.stringify(newer)),
+      { key: LEARNING_PROGRESS_KEY, newer });
+    const backup = {
+      format: "divyanexus-local-library", version: 3,
+      learningProgress: { "gita-context": ["step-1", "step-2"], "temple-context": ["visit"] },
+    };
+    const restore = async () => {
+      await page.locator('input[type="file"]').setInputFiles({
+        name: "older-study-progress.json", mimeType: "application/json",
+        buffer: Buffer.from(JSON.stringify(backup)),
+      });
+      await expect(page.locator(".library-cinema__status")).toContainText("Local data restored");
+    };
+    const combined = {
+      "gita-context": ["step-2", "step-3", "step-1"],
+      "veda-foundations": ["intro"],
+      "temple-context": ["visit"],
+    };
+    await restore();
+    await expect.poll(() => page.evaluate((key) =>
+      JSON.parse(localStorage.getItem(key) ?? "{}"), LEARNING_PROGRESS_KEY)).toEqual(combined);
+    await restore();
+    expect(await page.evaluate((key) => JSON.parse(localStorage.getItem(key) ?? "{}"),
+      LEARNING_PROGRESS_KEY)).toEqual(combined);
+
+    const downloadPromise = page.waitForEvent("download");
+    await page.getByRole("button", { name: "Export local data" }).click();
+    const downloadPath = await (await downloadPromise).path();
+    expect(downloadPath).not.toBeNull();
+    expect(JSON.parse(await readFile(downloadPath!, "utf8")).learningProgress).toEqual(combined);
+  });
+
 });

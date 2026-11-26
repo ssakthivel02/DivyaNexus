@@ -19,6 +19,9 @@ const primaryLinks = [
 const universeLinks = [
   ["Knowledge Nexus", "A connected high-tech doorway into the whole archive", "/nexus"],
   ["Explore all", "A living index of knowledge pathways", "/explore"],
+  ...(import.meta.env.VITE_MANTRA_CANDIDATES === "review"
+    ? [["Mantra library", "Bilingual mantra candidates and private japa counter", "/mantras"]] as const
+    : []),
   ["Deity universe", "Symbols, stories, and traditions", "/deities"],
   ["Life guidance", "Questions for the road ahead", "/life-guidance"],
   ["Kids universe", "Shared learning for young minds", "/kids"],

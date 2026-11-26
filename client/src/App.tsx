@@ -31,6 +31,10 @@ const Home = lazy(() => import("@/pages/Home"));
 const KnowledgeNexus = lazy(() => import("@/pages/KnowledgeNexus"));
 const LegalPage = lazy(() => import("@/pages/LegalPage"));
 const Library = lazy(() => import("@/pages/Library"));
+// Candidate texts are excluded from ordinary release builds until editorial approval.
+const Mantras = import.meta.env.VITE_MANTRA_CANDIDATES === "review"
+  ? lazy(() => import("@/pages/Mantras"))
+  : null;
 const NotFound = lazy(() => import("@/pages/NotFound"));
 const ScriptureReader = lazy(() => import("@/pages/ScriptureReader"));
 const SearchPage = lazy(() => import("@/pages/SearchPage"));
@@ -54,6 +58,7 @@ function AppRoutes({ onAsk, onSearch }: { onAsk: () => void; onSearch: () => voi
       <Route path="/ask-divya" component={AskDivya} />
       <Route path="/ask" component={AskDivya} />
       <Route path="/search" component={SearchPage} />
+      {Mantras && <Route path="/mantras" component={Mantras} />}
       <Route path="/scriptures">{() => <ScriptureReader kind="scriptures" />}</Route>
       <Route path="/bhagavad-gita">{() => <ScriptureReader kind="bhagavad-gita" />}</Route>
       <Route path="/rig-veda">{() => <ScriptureReader kind="rig-veda" />}</Route>

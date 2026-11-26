@@ -64,7 +64,7 @@ export default function Library() {
   };
 
   const clear = async () => {
-    if (window.confirm("Clear browser-local DivyaNexus bookmarks, history, saved searches, notes, and preferences from this browser?")) {
+    if (window.confirm("Clear browser-local DivyaNexus bookmarks, history, saved searches, notes, preferences, and chanting progress from this browser?")) {
       await clearLocalLibrary();
       setStatus("Browser-local study data cleared");
       await refresh();
@@ -81,6 +81,17 @@ export default function Library() {
       setStatus(error instanceof Error ? error.message : "The selected local-data file could not be restored.");
     } finally {
       if (importInput.current) importInput.current.value = "";
+    }
+  };
+
+  const exportData = async () => {
+    try {
+      await exportLocalLibrary();
+      setStatus("Backup download requested. Verify the file in Downloads before clearing local data.");
+    } catch (error) {
+      setStatus(error instanceof Error
+        ? `Export blocked: ${error.message}`
+        : "Export blocked: local data could not be read. No complete backup was created.");
     }
   };
 
@@ -103,7 +114,7 @@ export default function Library() {
     <section className="library-cinema__overview" aria-label="Local study totals">
       <div className="library-cinema__stat"><strong>{bookmarks.length}</strong><span>Saved records</span></div><div className="library-cinema__stat"><strong>{history.length}</strong><span>Reading trails</span></div><div className="library-cinema__stat"><strong>{searches.length}</strong><span>Saved searches</span></div><div className="library-cinema__stat"><strong>{notes.length}</strong><span>Local notes</span></div>
       <div className="library-cinema__actions">
-        <button className="library-cinema__export" onClick={exportLocalLibrary}><Download size={16} aria-hidden="true" />Export local data</button>
+        <button className="library-cinema__export" onClick={exportData}><Download size={16} aria-hidden="true" />Export local data</button>
         <button className="library-cinema__import" onClick={() => importInput.current?.click()}><Upload size={16} aria-hidden="true" />Restore local data</button>
         <input ref={importInput} type="file" accept="application/json,.json" className="library-cinema__file-input" aria-label="Choose DivyaNexus local data JSON" onChange={(event) => restore(event.target.files?.[0])} />
         <button className="library-cinema__clear" onClick={clear}><Trash2 size={16} aria-hidden="true" />Clear local data</button>
@@ -126,6 +137,6 @@ export default function Library() {
       <div className="library-cinema__notes-grid"><form className="library-cinema__composer" onSubmit={(event) => { event.preventDefault(); addNote(); }}><label>Note title<input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="A question to revisit" /></label><label>Reflection<textarea value={body} onChange={(event) => setBody(event.target.value)} placeholder="A thought, source, or line to return to…" /></label><button type="submit"><FileText size={16} aria-hidden="true" />Save locally</button></form><div className="library-cinema__note-stack">{notes.length ? notes.map((note) => <article key={note.id}><button type="button" className="library-cinema__delete-note" onClick={() => removeNote(note.id)} aria-label={`Delete note ${note.title}`}><X size={15} aria-hidden="true" /></button><p>{note.title}</p><span>{note.body || "No note text."}</span><small>Updated {new Date(note.updatedAt).toLocaleString("en-GB")}</small></article>) : <div className="library-cinema__empty library-cinema__empty--notes"><FileText size={22} aria-hidden="true" /><p>No local notes yet. Begin with a small question instead of a perfect summary.</p></div>}</div></div>
     </section>
 
-    <section className="library-cinema__integrity"><RotateCcw size={18} aria-hidden="true" /><p><strong>Backup, restore and deletion:</strong> Export creates a local JSON copy. Restore merges supported local records and ignores unknown fields. Clear local data removes only browser-local material; it does not delete a mobile-app account. For app-account requests, use <Link href="/delete-account">Delete Account</Link> or <Link href="/delete-data">Delete Data</Link>.</p></section>
+    <section className="library-cinema__integrity"><RotateCcw size={18} aria-hidden="true" /><p><strong>Backup, restore and deletion:</strong> Export creates a local JSON copy, including saved chanting progress when available. Keep the file private. Restore merges supported local records and ignores unknown fields. For chanting progress, the higher valid count per mantra is retained rather than adding counts together. Clear local data removes only browser-local material; it does not delete a mobile-app account. For app-account requests, use <Link href="/delete-account">Delete Account</Link> or <Link href="/delete-data">Delete Data</Link>.</p></section>
   </main>;
 }

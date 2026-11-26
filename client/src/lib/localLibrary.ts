@@ -5,15 +5,14 @@
 import {
   LOCAL_LEARNING_PROGRESS_STORAGE_KEY,
   readLocalLearningProgress,
-  sanitiseLocalLearningProgress,
-  writeLocalLearningProgress,
+  mergeLocalLearningProgress,
 } from "@/lib/localLearningProgress";
 import {
   readSpeechPreferences,
   sanitiseSpeechPreferences,
   SPEECH_PREFERENCES_STORAGE_KEY,
-  writeSpeechPreferences,
 } from "@/lib/speechPreferences";
+import { JAPA_STORAGE_KEY, mergeJapaProgress, readJapaProgress, sanitiseJapaProgress } from "@/lib/localJapaProgress";
 
 export type LocalNote = {
   id: string;
@@ -52,6 +51,19 @@ function readJson<T>(key: string, fallback: T): T {
 function writeJson<T>(key: string, value: T) {
   window.localStorage.setItem(key, JSON.stringify(value));
   window.dispatchEvent(new CustomEvent("divyanexus-library-change"));
+}
+
+function captureLocalStorage(keys: readonly string[]) {
+  const snapshot = new Map<string, string | null>();
+  for (const key of Array.from(new Set(keys))) snapshot.set(key, window.localStorage.getItem(key));
+  return snapshot;
+}
+
+function restoreLocalStorage(snapshot: ReadonlyMap<string, string | null>) {
+  snapshot.forEach((value, key) => {
+    if (value === null) window.localStorage.removeItem(key);
+    else window.localStorage.setItem(key, value);
+  });
 }
 
 function unique(values: string[], limit?: number) {
@@ -117,15 +129,23 @@ function openNotesDb(): Promise<IDBDatabase> {
   });
 }
 
-export async function listNotes(): Promise<LocalNote[]> {
+/** Normal reader mode degrades gracefully when IndexedDB is disabled.
+ * Backup mode fails closed: an unreadable note store must never be exported as an empty notes array.
+ */
+export async function listNotes(options: { strict?: boolean } = {}): Promise<LocalNote[]> {
   try {
     const db = await openNotesDb();
-    return await new Promise((resolve, reject) => {
-      const request = db.transaction("notes", "readonly").objectStore("notes").getAll();
-      request.onsuccess = () => resolve((request.result as LocalNote[]).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
-      request.onerror = () => reject(request.error);
-    });
+    try {
+      return await new Promise((resolve, reject) => {
+        const request = db.transaction("notes", "readonly").objectStore("notes").getAll();
+        request.onsuccess = () => resolve((request.result as LocalNote[]).sort((a, b) => b.updatedAt.localeCompare(a.updatedAt)));
+        request.onerror = () => reject(request.error);
+      });
+    } finally {
+      db.close();
+    }
   } catch {
+    if (options.strict) throw new Error("Browser notes storage could not be read. Backup was not created.");
     return [];
   }
 }
@@ -160,6 +180,7 @@ export async function deleteNote(noteId: string) {
 
 export async function clearLocalLibrary() {
   Object.values(preferenceKeys).forEach((key) => window.localStorage.removeItem(key));
+  window.localStorage.removeItem(JAPA_STORAGE_KEY);
   window.localStorage.removeItem(SPEECH_PREFERENCES_STORAGE_KEY);
   window.localStorage.removeItem(LOCAL_LEARNING_PROGRESS_STORAGE_KEY);
   try {
@@ -206,50 +227,135 @@ export async function importLocalLibrary(text: string): Promise<LocalLibraryImpo
   }
 
   const payload = parsed as Record<string, unknown>;
+  // Reject unsupported or foreign backups before mutating any browser data.
+  if (payload.format !== "divyanexus-local-library") {
+    throw new Error("This is not a DivyaNexus local-data backup.");
+  }
+  if (typeof payload.version !== "number" || !Number.isInteger(payload.version) ||
+      ![1, 2, 3].includes(payload.version)) {
+    throw new Error("Unsupported DivyaNexus backup version. Export a supported v1, v2 or v3 backup.");
+  }
   const bookmarks = unique([...toStringArray(payload.bookmarks), ...getBookmarks()]);
   const history = unique([...toStringArray(payload.history), ...getHistory()], 12);
   const savedSearches = unique([...toStringArray(payload.savedSearches), ...getSavedSearches()], 8);
   const notes = validImportedNotes(payload.notes);
 
-  writeJson(preferenceKeys.bookmarks, bookmarks);
-  writeJson(preferenceKeys.history, history);
-  writeJson(preferenceKeys.searches, savedSearches);
+  // Reject a blocked/unreadable notes database before changing any other local data.
+  // This preflight covers storage denial; it is not a cross-store atomic transaction.
+  if (notes.length) {
+    try {
+      await listNotes({ strict: true });
+    } catch {
+      throw new Error("Browser notes storage is unavailable. Restore was not started; existing local data is unchanged.");
+    }
+  }
 
   const preferences = payload.preferences;
+  const preferenceWrites: Array<[string, string]> = [];
   if (preferences && typeof preferences === "object" && !Array.isArray(preferences)) {
     const allowed = ["theme", "fontSize", "readerLanguage", "audioPosition"] as const;
     for (const key of allowed) {
       const value = (preferences as Record<string, unknown>)[key];
-      if (typeof value === "string") window.localStorage.setItem(preferenceKeys[key], value);
+      if (typeof value === "string") preferenceWrites.push([preferenceKeys[key], value]);
     }
   }
 
-  if (payload.speechPreferences !== undefined) {
-    writeSpeechPreferences(sanitiseSpeechPreferences(payload.speechPreferences));
+  const speechPreferences = payload.speechPreferences !== undefined
+    ? sanitiseSpeechPreferences(payload.speechPreferences)
+    : undefined;
+  const learningProgress = payload.learningProgress !== undefined
+    ? mergeLocalLearningProgress(readLocalLearningProgress(), payload.learningProgress)
+    : undefined;
+  const japaProgress = sanitiseJapaProgress(payload.japaProgress)
+    ? mergeJapaProgress(readJapaProgress(), payload.japaProgress)
+    : null;
+
+  const touchedStorageKeys = [
+    preferenceKeys.bookmarks,
+    preferenceKeys.history,
+    preferenceKeys.searches,
+    ...preferenceWrites.map(([key]) => key),
+    ...(speechPreferences ? [SPEECH_PREFERENCES_STORAGE_KEY] : []),
+    ...(learningProgress ? [LOCAL_LEARNING_PROGRESS_STORAGE_KEY] : []),
+    ...(japaProgress ? [JAPA_STORAGE_KEY] : []),
+  ];
+
+  let localStorageBefore: Map<string, string | null>;
+  try {
+    localStorageBefore = captureLocalStorage(touchedStorageKeys);
+  } catch {
+    throw new Error("Browser local storage is unavailable. Restore was not started; existing local data is unchanged.");
   }
 
-  if (payload.learningProgress !== undefined) {
-    writeLocalLearningProgress(sanitiseLocalLearningProgress(payload.learningProgress));
-  }
+  let importedNotes = 0;
+  try {
+    // Apply browser-local values without dispatching change events until every storage write succeeds.
+    window.localStorage.setItem(preferenceKeys.bookmarks, JSON.stringify(bookmarks));
+    window.localStorage.setItem(preferenceKeys.history, JSON.stringify(history));
+    window.localStorage.setItem(preferenceKeys.searches, JSON.stringify(savedSearches));
+    for (const [key, value] of preferenceWrites) window.localStorage.setItem(key, value);
+    if (speechPreferences) {
+      window.localStorage.setItem(SPEECH_PREFERENCES_STORAGE_KEY, JSON.stringify(speechPreferences));
+    }
+    if (learningProgress) {
+      window.localStorage.setItem(LOCAL_LEARNING_PROGRESS_STORAGE_KEY, JSON.stringify(learningProgress));
+    }
+    if (japaProgress) {
+      window.localStorage.setItem(JAPA_STORAGE_KEY, JSON.stringify(japaProgress));
+    }
 
-  if (notes.length) {
-    const db = await openNotesDb();
-    await new Promise<void>((resolve, reject) => {
-      const transaction = db.transaction("notes", "readwrite");
-      const store = transaction.objectStore("notes");
-      notes.forEach((note) => store.put(note));
-      transaction.oncomplete = () => resolve();
-      transaction.onerror = () => reject(transaction.error);
-      transaction.onabort = () => reject(transaction.error);
-    });
+    if (notes.length) {
+      const db = await openNotesDb();
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const transaction = db.transaction("notes", "readwrite");
+          const store = transaction.objectStore("notes");
+          const request = store.getAll();
+          request.onsuccess = () => {
+            const existing = request.result as LocalNote[];
+            const usedIds = new Set(existing.map((note) => note.id));
+            // A stable content/date signature prevents repeated imports from making copies.
+            // A matching ID with different contents must never overwrite the local note.
+            const fingerprint = (note: LocalNote) => JSON.stringify([
+              note.recordId, note.title, note.body, note.updatedAt,
+            ]);
+            const known = new Set(existing.map(fingerprint));
+            for (const note of notes) {
+              const signature = fingerprint(note);
+              if (known.has(signature)) continue;
+              let id = note.id;
+              while (usedIds.has(id)) id = crypto.randomUUID();
+              store.put({ ...note, id });
+              usedIds.add(id);
+              known.add(signature);
+              importedNotes++;
+            }
+          };
+          request.onerror = () => transaction.abort();
+          transaction.oncomplete = () => resolve();
+          transaction.onerror = () => reject(transaction.error);
+          transaction.onabort = () => reject(transaction.error);
+        });
+      } finally {
+        db.close();
+      }
+    }
+  } catch {
+    try {
+      restoreLocalStorage(localStorageBefore);
+    } catch {
+      throw new Error("Restore failed and browser local-data rollback could not be completed. Reload this page and verify existing local data before retrying.");
+    }
+    throw new Error("Restore failed. Existing browser-local data was restored to its previous state.");
   }
 
   window.dispatchEvent(new CustomEvent("divyanexus-library-change"));
+  if (learningProgress) window.dispatchEvent(new CustomEvent("divyanexus-learning-change"));
   return {
     bookmarks: bookmarks.length,
     history: history.length,
     savedSearches: savedSearches.length,
-    notes: notes.length,
+    notes: importedNotes,
   };
 }
 
@@ -271,10 +377,11 @@ export async function exportLocalLibrary() {
     bookmarks: getBookmarks(),
     history: getHistory(),
     savedSearches: getSavedSearches(),
-    notes: await listNotes(),
+    notes: await listNotes({ strict: true }),
     preferences: Object.fromEntries(Object.entries(preferenceKeys).map(([key, storageKey]) => [key, window.localStorage.getItem(storageKey)])),
     speechPreferences: readSpeechPreferences(),
     learningProgress: readLocalLearningProgress(),
+    japaProgress: readJapaProgress(),
   };
   const url = URL.createObjectURL(new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" }));
   const anchor = document.createElement("a");
