@@ -275,6 +275,59 @@ test.describe("browser-local library backup", () => {
     await expect(page.getByText("Must not be partial", { exact: true })).toHaveCount(0);
   });
 
+  test("late note-write failure rolls back browser-local stores after a successful preflight", async ({ page }) => {
+    await openLibrary(page);
+    const keys = [
+      "divyanexus.bookmarks",
+      "divyanexus.theme",
+      LEARNING_PROGRESS_KEY,
+      "divyanexus.japa.v1",
+      "divyanexus.speechPreferences.v1",
+    ];
+    const original = [
+      JSON.stringify(["gita-2-47"]),
+      "dawn",
+      JSON.stringify({ "gita-context": ["step-3"] }),
+      JSON.stringify({ selectedId: "murugan-saravanabhava", goal: 108, counts: { "murugan-saravanabhava": 42 } }),
+      JSON.stringify({ version: 1, selectedItemId: "local", rates: { local: 0.9 }, voices: {} }),
+    ];
+    await page.evaluate(({ keys, original }) => {
+      keys.forEach((key, index) => localStorage.setItem(key, original[index]));
+      const nativeTransaction = IDBDatabase.prototype.transaction;
+      Object.defineProperty(IDBDatabase.prototype, "transaction", {
+        configurable: true,
+        value: function (...args: Parameters<IDBDatabase["transaction"]>) {
+          if (args[1] === "readwrite") throw new DOMException("Injected note write failure", "UnknownError");
+          return nativeTransaction.apply(this, args);
+        },
+      });
+    }, { keys, original });
+
+    const backup = {
+      format: "divyanexus-local-library",
+      version: 3,
+      bookmarks: ["rig-veda-1-1-1"],
+      preferences: { theme: "night" },
+      speechPreferences: { version: 1, selectedItemId: "backup", rates: { backup: 1.1 }, voices: {} },
+      learningProgress: { "gita-context": ["step-1"] },
+      japaProgress: { selectedId: "shiva-panchakshara", goal: 21, counts: { "murugan-saravanabhava": 77 } },
+      notes: [{
+        id: "late-failure-note", recordId: "gita-2-47", title: "Must roll back",
+        body: "A failed notes transaction must not leave other stores changed.", updatedAt: "2026-11-26T04:30:00.000Z",
+      }],
+    };
+    await page.locator('input[type="file"]').setInputFiles({
+      name: "late-note-write-failure.json",
+      mimeType: "application/json",
+      buffer: Buffer.from(JSON.stringify(backup)),
+    });
+    await expect(page.locator(".library-cinema__status")).toContainText(
+      "Restore failed. Existing browser-local data was restored to its previous state.",
+    );
+    expect(await page.evaluate((names) => names.map((name) => localStorage.getItem(name)), keys)).toEqual(original);
+    await expect(page.getByText("Must roll back", { exact: true })).toHaveCount(0);
+  });
+
   test("older progress backup merges instead of erasing later study, including repeated imports", async ({ page }) => {
     await openLibrary(page);
     const newer = { "gita-context": ["step-2", "step-3"], "veda-foundations": ["intro"] };

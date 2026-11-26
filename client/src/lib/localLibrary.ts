@@ -6,15 +6,13 @@ import {
   LOCAL_LEARNING_PROGRESS_STORAGE_KEY,
   readLocalLearningProgress,
   mergeLocalLearningProgress,
-  writeLocalLearningProgress,
 } from "@/lib/localLearningProgress";
 import {
   readSpeechPreferences,
   sanitiseSpeechPreferences,
   SPEECH_PREFERENCES_STORAGE_KEY,
-  writeSpeechPreferences,
 } from "@/lib/speechPreferences";
-import { JAPA_STORAGE_KEY, mergeJapaProgress, readJapaProgress, sanitiseJapaProgress, writeJapaProgress } from "@/lib/localJapaProgress";
+import { JAPA_STORAGE_KEY, mergeJapaProgress, readJapaProgress, sanitiseJapaProgress } from "@/lib/localJapaProgress";
 
 export type LocalNote = {
   id: string;
@@ -53,6 +51,19 @@ function readJson<T>(key: string, fallback: T): T {
 function writeJson<T>(key: string, value: T) {
   window.localStorage.setItem(key, JSON.stringify(value));
   window.dispatchEvent(new CustomEvent("divyanexus-library-change"));
+}
+
+function captureLocalStorage(keys: readonly string[]) {
+  const snapshot = new Map<string, string | null>();
+  for (const key of Array.from(new Set(keys))) snapshot.set(key, window.localStorage.getItem(key));
+  return snapshot;
+}
+
+function restoreLocalStorage(snapshot: ReadonlyMap<string, string | null>) {
+  for (const [key, value] of snapshot) {
+    if (value === null) window.localStorage.removeItem(key);
+    else window.localStorage.setItem(key, value);
+  }
 }
 
 function unique(values: string[], limit?: number) {
@@ -239,72 +250,107 @@ export async function importLocalLibrary(text: string): Promise<LocalLibraryImpo
     }
   }
 
-  writeJson(preferenceKeys.bookmarks, bookmarks);
-  writeJson(preferenceKeys.history, history);
-  writeJson(preferenceKeys.searches, savedSearches);
-
   const preferences = payload.preferences;
+  const preferenceWrites: Array<[string, string]> = [];
   if (preferences && typeof preferences === "object" && !Array.isArray(preferences)) {
     const allowed = ["theme", "fontSize", "readerLanguage", "audioPosition"] as const;
     for (const key of allowed) {
       const value = (preferences as Record<string, unknown>)[key];
-      if (typeof value === "string") window.localStorage.setItem(preferenceKeys[key], value);
+      if (typeof value === "string") preferenceWrites.push([preferenceKeys[key], value]);
     }
   }
 
-  if (payload.speechPreferences !== undefined) {
-    writeSpeechPreferences(sanitiseSpeechPreferences(payload.speechPreferences));
-  }
+  const speechPreferences = payload.speechPreferences !== undefined
+    ? sanitiseSpeechPreferences(payload.speechPreferences)
+    : undefined;
+  const learningProgress = payload.learningProgress !== undefined
+    ? mergeLocalLearningProgress(readLocalLearningProgress(), payload.learningProgress)
+    : undefined;
+  const japaProgress = sanitiseJapaProgress(payload.japaProgress)
+    ? mergeJapaProgress(readJapaProgress(), payload.japaProgress)
+    : null;
 
-  if (payload.learningProgress !== undefined) {
-    writeLocalLearningProgress(mergeLocalLearningProgress(readLocalLearningProgress(), payload.learningProgress));
-  }
+  const touchedStorageKeys = [
+    preferenceKeys.bookmarks,
+    preferenceKeys.history,
+    preferenceKeys.searches,
+    ...preferenceWrites.map(([key]) => key),
+    ...(speechPreferences ? [SPEECH_PREFERENCES_STORAGE_KEY] : []),
+    ...(learningProgress ? [LOCAL_LEARNING_PROGRESS_STORAGE_KEY] : []),
+    ...(japaProgress ? [JAPA_STORAGE_KEY] : []),
+  ];
 
-  // Optional field in the existing v3 backup; older files leave the current count intact.
-  if (sanitiseJapaProgress(payload.japaProgress)) {
-    const merged = mergeJapaProgress(readJapaProgress(), payload.japaProgress);
-    if (merged) writeJapaProgress(merged);
+  let localStorageBefore: Map<string, string | null>;
+  try {
+    localStorageBefore = captureLocalStorage(touchedStorageKeys);
+  } catch {
+    throw new Error("Browser local storage is unavailable. Restore was not started; existing local data is unchanged.");
   }
 
   let importedNotes = 0;
-  if (notes.length) {
-    const db = await openNotesDb();
-    try {
-      await new Promise<void>((resolve, reject) => {
-        const transaction = db.transaction("notes", "readwrite");
-        const store = transaction.objectStore("notes");
-        const request = store.getAll();
-        request.onsuccess = () => {
-          const existing = request.result as LocalNote[];
-          const usedIds = new Set(existing.map((note) => note.id));
-          // A stable content/date signature prevents repeated imports from making copies.
-          // A matching ID with different contents must never overwrite the local note.
-          const fingerprint = (note: LocalNote) => JSON.stringify([
-            note.recordId, note.title, note.body, note.updatedAt,
-          ]);
-          const known = new Set(existing.map(fingerprint));
-          for (const note of notes) {
-            const signature = fingerprint(note);
-            if (known.has(signature)) continue;
-            let id = note.id;
-            while (usedIds.has(id)) id = crypto.randomUUID();
-            store.put({ ...note, id });
-            usedIds.add(id);
-            known.add(signature);
-            importedNotes++;
-          }
-        };
-        request.onerror = () => transaction.abort();
-        transaction.oncomplete = () => resolve();
-        transaction.onerror = () => reject(transaction.error);
-        transaction.onabort = () => reject(transaction.error);
-      });
-    } finally {
-      db.close();
+  try {
+    // Apply browser-local values without dispatching change events until every storage write succeeds.
+    window.localStorage.setItem(preferenceKeys.bookmarks, JSON.stringify(bookmarks));
+    window.localStorage.setItem(preferenceKeys.history, JSON.stringify(history));
+    window.localStorage.setItem(preferenceKeys.searches, JSON.stringify(savedSearches));
+    for (const [key, value] of preferenceWrites) window.localStorage.setItem(key, value);
+    if (speechPreferences) {
+      window.localStorage.setItem(SPEECH_PREFERENCES_STORAGE_KEY, JSON.stringify(speechPreferences));
     }
+    if (learningProgress) {
+      window.localStorage.setItem(LOCAL_LEARNING_PROGRESS_STORAGE_KEY, JSON.stringify(learningProgress));
+    }
+    if (japaProgress) {
+      window.localStorage.setItem(JAPA_STORAGE_KEY, JSON.stringify(japaProgress));
+    }
+
+    if (notes.length) {
+      const db = await openNotesDb();
+      try {
+        await new Promise<void>((resolve, reject) => {
+          const transaction = db.transaction("notes", "readwrite");
+          const store = transaction.objectStore("notes");
+          const request = store.getAll();
+          request.onsuccess = () => {
+            const existing = request.result as LocalNote[];
+            const usedIds = new Set(existing.map((note) => note.id));
+            // A stable content/date signature prevents repeated imports from making copies.
+            // A matching ID with different contents must never overwrite the local note.
+            const fingerprint = (note: LocalNote) => JSON.stringify([
+              note.recordId, note.title, note.body, note.updatedAt,
+            ]);
+            const known = new Set(existing.map(fingerprint));
+            for (const note of notes) {
+              const signature = fingerprint(note);
+              if (known.has(signature)) continue;
+              let id = note.id;
+              while (usedIds.has(id)) id = crypto.randomUUID();
+              store.put({ ...note, id });
+              usedIds.add(id);
+              known.add(signature);
+              importedNotes++;
+            }
+          };
+          request.onerror = () => transaction.abort();
+          transaction.oncomplete = () => resolve();
+          transaction.onerror = () => reject(transaction.error);
+          transaction.onabort = () => reject(transaction.error);
+        });
+      } finally {
+        db.close();
+      }
+    }
+  } catch {
+    try {
+      restoreLocalStorage(localStorageBefore);
+    } catch {
+      throw new Error("Restore failed and browser local-data rollback could not be completed. Reload this page and verify existing local data before retrying.");
+    }
+    throw new Error("Restore failed. Existing browser-local data was restored to its previous state.");
   }
 
   window.dispatchEvent(new CustomEvent("divyanexus-library-change"));
+  if (learningProgress) window.dispatchEvent(new CustomEvent("divyanexus-learning-change"));
   return {
     bookmarks: bookmarks.length,
     history: history.length,
